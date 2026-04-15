@@ -115,16 +115,52 @@ service cloud.firestore {
              data.addedAt is string;
     }
 
+    function isValidTravelProfile(data) {
+      return hasOnlyAllowedFields(['userId', 'destination', 'dateFrom', 'dateTo', 'budget', 'travelStyle', 'interests', 'age', 'bio', 'photoURL', 'optIn', 'updatedAt']) &&
+             data.userId is string && data.userId == request.auth.uid &&
+             data.destination is string &&
+             data.dateFrom is string &&
+             data.dateTo is string &&
+             (!('budget' in data) || data.budget is string) &&
+             (!('travelStyle' in data) || data.travelStyle in ['solo', 'couple', 'group']) &&
+             (!('interests' in data) || data.interests is list) &&
+             (!('age' in data) || data.age is number) &&
+             (!('bio' in data) || data.bio is string && data.bio.size() < 1000) &&
+             (!('photoURL' in data) || data.photoURL is string) &&
+             data.optIn is bool &&
+             (!('updatedAt' in data) || data.updatedAt is string);
+    }
+
+    function isValidMatch(data) {
+      return hasOnlyAllowedFields(['users', 'compatibilityScore', 'compatibilityReasons', 'commonInterests', 'potentialChallenges', 'status', 'user1Status', 'user2Status', 'createdAt']) &&
+             data.users is list && data.users.size() == 2 && request.auth.uid in data.users &&
+             data.compatibilityScore is number &&
+             (!('compatibilityReasons' in data) || data.compatibilityReasons is list) &&
+             (!('commonInterests' in data) || data.commonInterests is list) &&
+             (!('potentialChallenges' in data) || data.potentialChallenges is list) &&
+             data.status in ['pending', 'accepted', 'declined', 'connected'] &&
+             (!('user1Status' in data) || data.user1Status in ['pending', 'accepted', 'declined']) &&
+             (!('user2Status' in data) || data.user2Status in ['pending', 'accepted', 'declined']) &&
+             data.createdAt is string;
+    }
+
     // ===============================================================
     // Rules
     // ===============================================================
     match /users/{userId} {
-      allow read: if isOwner(userId);
+      allow read: if isOwner(userId) || isAuthenticated(); // Allow reading profiles for matching
       allow create: if isOwner(userId) && isValidUser(request.resource.data);
       allow update: if isOwner(userId) && isValidUser(request.resource.data) && 
                     request.resource.data.uid == resource.data.uid &&
                     request.resource.data.createdAt == resource.data.createdAt;
       allow delete: if isOwner(userId);
+
+      match /travelProfile/{profileId} {
+        allow read: if isAuthenticated();
+        allow create: if isOwner(userId) && isValidTravelProfile(request.resource.data);
+        allow update: if isOwner(userId) && isValidTravelProfile(request.resource.data);
+        allow delete: if isOwner(userId);
+      }
 
       match /wishlist/{wishlistItemId} {
         allow read: if isOwner(userId);
@@ -133,6 +169,15 @@ service cloud.firestore {
       }
     }
     
+    match /matches/{matchId} {
+      allow read: if isAuthenticated() && request.auth.uid in resource.data.users;
+      allow create: if isAuthenticated() && isValidMatch(request.resource.data);
+      allow update: if isAuthenticated() && request.auth.uid in resource.data.users && 
+                    isValidMatch(request.resource.data) &&
+                    request.resource.data.users == resource.data.users &&
+                    request.resource.data.createdAt == resource.data.createdAt;
+    }
+
     match /trips/{tripId} {
       allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
       allow create: if isAuthenticated() && isValidTrip(request.resource.data);

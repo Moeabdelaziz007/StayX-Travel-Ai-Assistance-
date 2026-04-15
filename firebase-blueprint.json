@@ -117,12 +117,53 @@
         "addedAt": { "type": "string", "format": "date-time" }
       },
       "required": ["userId", "destination", "videoTitle", "addedAt"]
+    },
+    "TravelProfile": {
+      "title": "TravelProfile",
+      "description": "User travel profile for buddy matching",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "destination": { "type": "string" },
+        "dateFrom": { "type": "string", "format": "date-time" },
+        "dateTo": { "type": "string", "format": "date-time" },
+        "budget": { "type": "string" },
+        "travelStyle": { "type": "string", "enum": ["solo", "couple", "group"] },
+        "interests": { "type": "array", "items": { "type": "string" } },
+        "age": { "type": "number" },
+        "bio": { "type": "string" },
+        "photoURL": { "type": "string" },
+        "optIn": { "type": "boolean" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "destination", "dateFrom", "dateTo", "optIn"]
+    },
+    "Match": {
+      "title": "Match",
+      "description": "A travel buddy match",
+      "type": "object",
+      "properties": {
+        "users": { "type": "array", "items": { "type": "string" } },
+        "compatibilityScore": { "type": "number" },
+        "compatibilityReasons": { "type": "array", "items": { "type": "string" } },
+        "commonInterests": { "type": "array", "items": { "type": "string" } },
+        "potentialChallenges": { "type": "array", "items": { "type": "string" } },
+        "status": { "type": "string", "enum": ["pending", "accepted", "declined", "connected"] },
+        "user1Status": { "type": "string", "enum": ["pending", "accepted", "declined"] },
+        "user2Status": { "type": "string", "enum": ["pending", "accepted", "declined"] },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["users", "compatibilityScore", "status", "createdAt"]
     }
   },
   "firestore": {
     "/users/{userId}": {
       "schema": { "$ref": "#/entities/UserProfile" },
       "description": "User profiles"
+    },
+    "/users/{userId}/travelProfile": {
+      "schema": { "$ref": "#/entities/TravelProfile" },
+      "description": "User travel profiles"
     },
     "/users/{userId}/wishlist/{wishlistItemId}": {
       "schema": { "$ref": "#/entities/WishlistItem" },
@@ -131,6 +172,10 @@
     "/trips/{tripId}": {
       "schema": { "$ref": "#/entities/Trip" },
       "description": "User trips"
+    },
+    "/matches/{matchId}": {
+      "schema": { "$ref": "#/entities/Match" },
+      "description": "Buddy matches"
     },
     "/appointments/{appointmentId}": {
       "schema": { "$ref": "#/entities/Appointment" },
