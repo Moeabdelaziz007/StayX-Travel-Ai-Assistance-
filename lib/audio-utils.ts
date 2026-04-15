@@ -19,9 +19,16 @@ export function float32ArrayToBase64(float32Array: Float32Array): string {
     int16Array[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
   }
   const bytes = new Uint8Array(int16Array.buffer);
-  let binaryString = '';
-  for (let i = 0; i < bytes.length; i++) {
-    binaryString += String.fromCharCode(bytes[i]);
+  
+  // Highly optimized conversion to base64 using chunks to avoid stack overflow
+  const CHUNK_SIZE = 0x8000;
+  let index = 0;
+  const length = bytes.length;
+  let binary = '';
+  while (index < length) {
+    const slice = bytes.subarray(index, Math.min(index + CHUNK_SIZE, length));
+    binary += String.fromCharCode.apply(null, Array.from(slice));
+    index += CHUNK_SIZE;
   }
-  return btoa(binaryString);
+  return btoa(binary);
 }

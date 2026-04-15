@@ -13,6 +13,8 @@ import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { toast } from 'sonner';
 import Markdown from 'react-markdown';
 
+import { useI18n } from '@/lib/i18n';
+
 const ai = new GoogleGenAI({ apiKey: process.env.NEXT_PUBLIC_GEMINI_API_KEY });
 
 interface WatchRoomSidebarProps {
@@ -21,6 +23,7 @@ interface WatchRoomSidebarProps {
 }
 
 export function WatchRoomSidebar({ videoTitle, videoDescription }: WatchRoomSidebarProps) {
+  const { language } = useI18n();
   const [content, setContent] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [destination, setDestination] = useState('Loading...');
@@ -43,7 +46,7 @@ export function WatchRoomSidebar({ videoTitle, videoDescription }: WatchRoomSide
         const dest = destResponse.text?.trim() || 'this destination';
         if (isMounted) setDestination(dest);
 
-        const systemInstruction = `You are a travel expert. Based on the video content about ${dest}, provide: 1) Best time to visit, 2) Current average hotel prices, 3) Top 3 must-do activities, 4) Visa requirements for Egyptian travelers, 5) Estimated total trip budget for 7 days. Format the response nicely using Markdown.`;
+        const systemInstruction = `You are a travel expert. Based on the video content about ${dest}, provide: 1) Best time to visit, 2) Current average hotel prices, 3) Top 3 must-do activities, 4) Visa requirements for Egyptian travelers, 5) Estimated total trip budget for 7 days. Format the response nicely using Markdown. ${language === 'ar' ? 'Please provide the response in Arabic.' : 'Please provide the response in English.'}`;
 
         const responseStream = await ai.models.generateContentStream({
           model: 'gemini-2.0-flash',
@@ -111,7 +114,7 @@ export function WatchRoomSidebar({ videoTitle, videoDescription }: WatchRoomSide
           className="bg-green-600 hover:bg-green-700 text-white gap-2"
         >
           <Heart className="h-4 w-4" />
-          <span className="hidden sm:inline">Add to Wishlist</span>
+          <span className="hidden sm:inline">{language === 'ar' ? 'أضف إلى قائمة الأمنيات' : 'Add to Wishlist'}</span>
         </Button>
       </div>
 
@@ -121,7 +124,7 @@ export function WatchRoomSidebar({ videoTitle, videoDescription }: WatchRoomSide
             <AccordionTrigger className="text-white hover:text-green-400 hover:no-underline">
               <div className="flex items-center gap-2">
                 <Sparkles className="h-4 w-4 text-green-500" />
-                AI Travel Insights
+                {language === 'ar' ? 'رؤى السفر بالذكاء الاصطناعي' : 'AI Travel Insights'}
               </div>
             </AccordionTrigger>
             <AccordionContent className="text-zinc-300">

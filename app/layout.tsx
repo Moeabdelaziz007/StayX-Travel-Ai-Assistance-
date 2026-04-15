@@ -3,6 +3,7 @@ import './globals.css';
 import { Geist } from "next/font/google";
 import { cn } from "@/lib/utils";
 import { AuthProvider } from '@/lib/auth-context';
+import { I18nProvider } from '@/lib/i18n';
 import { Toaster } from '@/components/ui/sonner';
 
 const geist = Geist({subsets:['latin'],variable:'--font-sans'});
@@ -17,8 +18,10 @@ export default function RootLayout({children}: {children: React.ReactNode}) {
     <html lang="en" className={cn("font-sans dark", geist.variable)}>
       <body suppressHydrationWarning className="bg-background text-foreground antialiased min-h-screen flex flex-col">
         <AuthProvider>
-          {children}
-          <Toaster />
+          <I18nProvider>
+            {children}
+            <Toaster />
+          </I18nProvider>
         </AuthProvider>
       </body>
     </html>

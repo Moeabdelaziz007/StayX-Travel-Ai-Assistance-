@@ -10,6 +10,8 @@ import { ensureUserProfile, updateUserPreferences, bookTrip, addAppointment, inv
 import { base64ToFloat32Array, float32ArrayToBase64 } from '@/lib/audio-utils';
 import { toast } from 'sonner';
 
+import { useI18n } from '@/lib/i18n';
+
 const ai = new GoogleGenAI({ apiKey: process.env.NEXT_PUBLIC_GEMINI_API_KEY });
 
 const tools: FunctionDeclaration[] = [
@@ -144,8 +146,9 @@ const tools: FunctionDeclaration[] = [
 ];
 
 export function VoiceAssistant({ onClose }: { onClose: () => void }) {
+  const { t, language } = useI18n();
   const [messages, setMessages] = useState<{ role: 'user' | 'assistant', content: string }[]>([
-    { role: 'assistant', content: "Hi! I'm StayX, your personal travel assistant. I'm connecting to the Live API..." }
+    { role: 'assistant', content: t('voice.connecting') }
   ]);
   const [isConnecting, setIsConnecting] = useState(true);
   const [isMicActive, setIsMicActive] = useState(false);
@@ -205,6 +208,9 @@ export function VoiceAssistant({ onClose }: { onClose: () => void }) {
       mediaStreamRef.current = stream;
       
       const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 16000 });
+      if (audioCtx.state === 'suspended') {
+        await audioCtx.resume();
+      }
       audioContextRef.current = audioCtx;
       
       const source = audioCtx.createMediaStreamSource(stream);
@@ -221,11 +227,13 @@ export function VoiceAssistant({ onClose }: { onClose: () => void }) {
 User Name: ${profile?.name || 'Traveler'}
 Preferred Budget: ${profile?.budgetPreference || 'moderate'}
 Personality: ${profile?.voiceTone || 'friendly'}
+Current Language: ${language === 'ar' ? 'Arabic' : 'English'}
 
 You have advanced reasoning and problem-solving abilities. You can search the web for live hotel and ticket prices, give recommendations, and manage bookings.
 Always be concise, helpful, and friendly. 
+${language === 'ar' ? 'Please respond in Arabic.' : 'Please respond in English.'}
 
-CRITICAL: When you successfully perform an action using a tool (like booking a trip, adding an appointment, or placing an order), provide a brief voice confirmation to the user (e.g., "Done! I've booked your trip to Tokyo.").
+CRITICAL: When you successfully perform an action using a tool (like booking a trip, adding an appointment, or placing an order), provide a brief voice confirmation to the user.
 
 You have access to Google Search for real-time information.`;
 
@@ -240,18 +248,18 @@ You have access to Google Search for real-time information.`;
           tools: [{ googleSearch: {} }, { functionDeclarations: tools }]
         },
         callbacks: {
-          onopen: () => {
+          onopen: async () => {
             setIsConnecting(false);
-            setMessages([{ role: 'assistant', content: "Connected! You can start speaking now." }]);
+            setMessages([{ role: 'assistant', content: t('voice.connected') }]);
+            
+            const session = await sessionPromise;
             
             processor.onaudioprocess = (e) => {
               if (!isMicActiveRef.current) return;
               const inputData = e.inputBuffer.getChannelData(0);
               const base64Data = float32ArrayToBase64(inputData);
-              sessionPromise.then((session) => {
-                session.sendRealtimeInput({
-                  audio: { data: base64Data, mimeType: 'audio/pcm;rate=16000' }
-                });
+              session.sendRealtimeInput({
+                audio: { data: base64Data, mimeType: 'audio/pcm;rate=16000' }
               });
             };
             source.connect(processor);

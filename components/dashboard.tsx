@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/lib/auth-context';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Plane, Youtube, LogOut, Mic, Compass, Bell, LayoutDashboard } from 'lucide-react';
+import { Plane, Youtube, LogOut, Mic, Compass, Bell, LayoutDashboard, Languages } from 'lucide-react';
 import { VoiceAssistant } from './voice-assistant';
 import { HomeView } from './home-view';
 import { TripsView } from './trips-view';
@@ -14,11 +14,13 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { db } from '@/lib/firebase';
 import { doc, updateDoc } from 'firebase/firestore';
+import { useI18n } from '@/lib/i18n';
 
 import { SearchCompareView } from './search-compare-view';
 
 export function Dashboard() {
   const { user, logout } = useAuth();
+  const { language, setLanguage, t, isRTL } = useI18n();
   const [activeTab, setActiveTab] = useState('home');
   const [isAssistantOpen, setIsAssistantOpen] = useState(false);
   const searchParams = useSearchParams();
@@ -74,11 +76,22 @@ export function Dashboard() {
         </div>
 
         <nav className="flex-1 space-y-1 overflow-y-auto pr-2">
-          <SidebarButton icon={LayoutDashboard} label="Dashboard" active={activeTab === 'home'} onClick={() => setActiveTab('home')} />
-          <SidebarButton icon={Plane} label="My Trips" active={activeTab === 'trips'} onClick={() => setActiveTab('trips')} />
-          <SidebarButton icon={Compass} label="SmartGet" active={activeTab === 'search'} onClick={() => setActiveTab('search')} />
-          <SidebarButton icon={Youtube} label="Watch Room" active={activeTab === 'watch'} onClick={() => setActiveTab('watch')} />
-          <SidebarButton icon={Bell} label="Notifications" active={activeTab === 'notifications'} onClick={() => setActiveTab('notifications')} />
+          <SidebarButton icon={LayoutDashboard} label={t('nav.dashboard')} active={activeTab === 'home'} onClick={() => setActiveTab('home')} />
+          <SidebarButton icon={Plane} label={t('nav.trips')} active={activeTab === 'trips'} onClick={() => setActiveTab('trips')} />
+          <SidebarButton icon={Compass} label={t('nav.smartget')} active={activeTab === 'search'} onClick={() => setActiveTab('search')} />
+          <SidebarButton icon={Youtube} label={t('nav.watch')} active={activeTab === 'watch'} onClick={() => setActiveTab('watch')} />
+          <SidebarButton icon={Bell} label={t('nav.notifications')} active={activeTab === 'notifications'} onClick={() => setActiveTab('notifications')} />
+          
+          <div className="pt-4 mt-4 border-t border-zinc-800">
+            <Button 
+              variant="ghost" 
+              className="w-full justify-start text-zinc-400 hover:text-white hover:bg-zinc-800"
+              onClick={() => setLanguage(language === 'en' ? 'ar' : 'en')}
+            >
+              <Languages className="mr-2 h-4 w-4 text-green-500" />
+              {language === 'en' ? 'العربية' : 'English'}
+            </Button>
+          </div>
         </nav>
 
         <div className="mt-auto pt-4 border-t border-zinc-800">

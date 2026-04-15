@@ -4,9 +4,13 @@ import { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Search, Play, Heart, Sparkles, Tv, Volume2, Settings, Youtube } from 'lucide-react';
-import { db, auth, loginWithYoutube } from '@/lib/firebase';
+import { Search, Play, Heart, Sparkles, Tv, Volume2, Settings, Youtube, Users } from 'lucide-react';
+import { db, auth, loginWithYoutube, rtdb } from '@/lib/firebase';
 import { collection, query, where, getDocs, limit } from 'firebase/firestore';
+import { ref, set, serverTimestamp } from 'firebase/database';
+import { nanoid } from 'nanoid';
+import { useRouter } from 'next/navigation';
+import { useI18n } from '@/lib/i18n';
 import { toggleFavorite } from '@/lib/travel-tools';
 import { toast } from 'sonner';
 import Image from 'next/image';
@@ -14,11 +18,33 @@ import { motion, AnimatePresence } from 'motion/react';
 import { WatchRoomSidebar } from './watch-room/WatchRoomSidebar';
 
 export function WatchRoom() {
+  const { t, language } = useI18n();
+  const router = useRouter();
   const [searchQuery, setSearchQuery] = useState('');
   const [videoId, setVideoId] = useState('dQw4w9WgXcQ');
   const [currentVideoTitle, setCurrentVideoTitle] = useState('World Travel Guide');
   const [suggestions, setSuggestions] = useState<any[]>([]);
   const [isTvOn, setIsTvOn] = useState(true);
+
+  const createRoom = async () => {
+    if (!auth.currentUser) return;
+    const roomId = nanoid(10);
+    const roomRef = ref(rtdb, `rooms/${roomId}`);
+    
+    try {
+      await set(roomRef, {
+        hostUid: auth.currentUser.uid,
+        videoId: videoId,
+        currentTime: 0,
+        isPlaying: false,
+        participants: { [auth.currentUser.uid]: true },
+        createdAt: serverTimestamp(),
+      });
+      router.push(`/room/${roomId}`);
+    } catch (e) {
+      toast.error("Failed to create room");
+    }
+  };
 
   useEffect(() => {
     const fetchSuggestions = async () => {
@@ -90,9 +116,15 @@ export function WatchRoom() {
             <Tv className="h-10 w-10 text-red-600" />
             STAY<span className="text-red-600">TV</span>
           </h1>
-          <p className="text-zinc-500 font-medium">Your personal travel entertainment hub.</p>
+          <p className="text-zinc-500 font-medium">{language === 'ar' ? 'مركز الترفيه الخاص بالسفر.' : 'Your personal travel entertainment hub.'}</p>
         </div>
         <div className="flex items-center gap-4">
+          <Button 
+            onClick={createRoom}
+            className="bg-green-600 hover:bg-green-700 text-white rounded-full gap-2 shadow-lg shadow-green-600/20"
+          >
+            <Users className="h-4 w-4" /> {t('nav.watch')}
+          </Button>
           <Button 
             variant="outline" 
             className="border-zinc-800 bg-zinc-900/50 text-zinc-400 hover:text-white rounded-full gap-2"
@@ -187,7 +219,7 @@ export function WatchRoom() {
             <div className="relative flex-1">
               <Search className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-zinc-500" />
               <Input 
-                placeholder="Paste YouTube URL or search for travel vlogs..." 
+                placeholder={language === 'ar' ? 'الصق رابط يوتيوب أو ابحث عن فيديوهات سفر...' : 'Paste YouTube URL or search for travel vlogs...'} 
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
