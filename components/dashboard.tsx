@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/lib/auth-context';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Plane, Youtube, LogOut, Mic, Compass, Bell, LayoutDashboard } from 'lucide-react';
+import { Plane, Youtube, LogOut, Mic, Compass, Bell, LayoutDashboard, Plus, Search as SearchIcon } from 'lucide-react';
 import { VoiceAssistant } from './voice-assistant';
 import { HomeView } from './home-view';
 import { TripsView } from './trips-view';
@@ -14,6 +14,7 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { db } from '@/lib/firebase';
 import { doc, updateDoc } from 'firebase/firestore';
+import { motion, AnimatePresence } from 'motion/react';
 
 import { SearchCompareView } from './search-compare-view';
 import { useI18n } from '@/lib/i18n';
@@ -87,10 +88,40 @@ export function Dashboard() {
 
         <nav className="flex-1 space-y-1 overflow-y-auto pr-2">
           <SidebarButton icon={LayoutDashboard} label={t('nav.dashboard')} active={activeTab === 'home'} onClick={() => setActiveTab('home')} />
-          <SidebarButton icon={Plane} label={t('nav.trips')} active={activeTab === 'trips'} onClick={() => setActiveTab('trips')} />
+          <SidebarButton icon={Plane} label={t('nav.trips')} active={activeTab === 'trips'} onClick={() => setActiveTab('trips')} badge="2" />
           <SidebarButton icon={Compass} label={t('nav.search')} active={activeTab === 'search'} onClick={() => setActiveTab('search')} />
-          <SidebarButton icon={Youtube} label={t('nav.watch')} active={activeTab === 'watch'} onClick={() => setActiveTab('watch')} />
-          <SidebarButton icon={Bell} label={t('nav.notifications')} active={activeTab === 'notifications'} onClick={() => setActiveTab('notifications')} />
+          <SidebarButton icon={Youtube} label={t('nav.watch')} active={activeTab === 'watch'} onClick={() => setActiveTab('watch')} badge="Live" />
+          <SidebarButton icon={Bell} label={t('nav.notifications')} active={activeTab === 'notifications'} onClick={() => setActiveTab('notifications')} badge="5" />
+          
+          <div className="pt-6 pb-2 px-3">
+            <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-4">Quick Actions</p>
+            <div className="space-y-2">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="w-full justify-start border-zinc-800 bg-zinc-900/50 text-zinc-400 hover:text-white hover:bg-zinc-800 rounded-xl gap-2"
+                onClick={() => setActiveTab('trips')}
+              >
+                <Plus className="h-4 w-4 text-emerald-500" /> New Trip
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="w-full justify-start border-zinc-800 bg-zinc-900/50 text-zinc-400 hover:text-white hover:bg-zinc-800 rounded-xl gap-2"
+                onClick={() => setActiveTab('search')}
+              >
+                <SearchIcon className="h-4 w-4 text-blue-500" /> Search Deals
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="w-full justify-start border-zinc-800 bg-zinc-900/50 text-zinc-400 hover:text-white hover:bg-zinc-800 rounded-xl gap-2"
+                onClick={() => setIsAssistantOpen(true)}
+              >
+                <Mic className="h-4 w-4 text-rose-500" /> Voice Assistant
+              </Button>
+            </div>
+          </div>
         </nav>
 
         <div className="mt-auto pt-4 border-t border-zinc-800">
@@ -141,18 +172,34 @@ export function Dashboard() {
   );
 }
 
-function SidebarButton({ icon: Icon, label, active, onClick }: { icon: any, label: string, active: boolean, onClick: () => void }) {
+function SidebarButton({ icon: Icon, label, active, onClick, badge }: { icon: any, label: string, active: boolean, onClick: () => void, badge?: string }) {
   return (
     <button
       onClick={onClick}
-      className={`flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
+      className={`relative group flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-300 ${
         active 
-          ? 'bg-zinc-800 text-white' 
-          : 'text-zinc-400 hover:bg-zinc-800/50 hover:text-white'
+          ? 'bg-zinc-800/80 text-white shadow-lg shadow-black/20' 
+          : 'text-zinc-400 hover:bg-zinc-800/40 hover:text-white'
       }`}
     >
-      <Icon className={`h-5 w-5 ${active ? 'text-green-400' : ''}`} />
-      {label}
+      {active && (
+        <motion.div 
+          layoutId="sidebar-active"
+          className="absolute left-0 w-1 h-6 bg-emerald-500 rounded-r-full"
+          transition={{ type: "spring", stiffness: 300, damping: 30 }}
+        />
+      )}
+      <Icon className={`h-5 w-5 transition-transform duration-300 group-hover:scale-110 ${active ? 'text-emerald-400' : 'text-zinc-500 group-hover:text-zinc-300'}`} />
+      <span className="flex-1 text-left">{label}</span>
+      {badge && (
+        <span className={`px-1.5 py-0.5 rounded-md text-[10px] font-bold ${
+          badge === 'Live' 
+            ? 'bg-rose-500/20 text-rose-500 animate-pulse' 
+            : 'bg-zinc-800 text-zinc-400'
+        }`}>
+          {badge}
+        </span>
+      )}
     </button>
   );
 }

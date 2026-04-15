@@ -9,6 +9,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Upload, FileText, AlertTriangle, CheckCircle, Loader2 } from 'lucide-react';
 import { GoogleGenAI, Type } from '@google/genai';
 import { toast } from 'sonner';
+import Image from 'next/image';
 
 const ai = new GoogleGenAI({ apiKey: process.env.NEXT_PUBLIC_GEMINI_API_KEY! });
 
@@ -90,13 +91,21 @@ export function DocumentAnalyzer() {
       </div>
 
       {preview && (
-        <div className="mt-4">
-          <img src={preview} alt="Preview" className="max-h-48 mx-auto rounded-lg" />
-          <Button onClick={analyzeDocument} disabled={isProcessing} className="w-full mt-4">
-            {isProcessing ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <FileText className="h-4 w-4 mr-2" />}
-            {isProcessing ? "Analyzing..." : "Analyze Document"}
-          </Button>
+        <div className="mt-4 relative h-48 w-full">
+          <Image 
+            src={preview} 
+            alt="Preview" 
+            fill 
+            className="object-contain rounded-lg" 
+            referrerPolicy="no-referrer"
+          />
         </div>
+      )}
+      {preview && (
+        <Button onClick={analyzeDocument} disabled={isProcessing} className="w-full mt-4">
+          {isProcessing ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <FileText className="h-4 w-4 mr-2" />}
+          {isProcessing ? "Analyzing..." : "Analyze Document"}
+        </Button>
       )}
 
       {isProcessing && (

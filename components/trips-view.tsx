@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Plane, MapPin, Calendar as CalendarIcon, Plus, CreditCard } from 'lucide-react';
+import { Plane, MapPin, Calendar as CalendarIcon, Plus, CreditCard, Sparkles, Loader2, Lightbulb } from 'lucide-react';
 import { db, auth } from '@/lib/firebase';
 import { collection, query, where, onSnapshot, orderBy } from 'firebase/firestore';
 import { initiatePayment } from '@/lib/travel-tools';
@@ -11,9 +11,34 @@ import { toast } from 'sonner';
 import { CalendarView } from './calendar-view';
 import { WeatherWidget } from './weather-widget';
 import { TripPlanner } from './trip-planner';
+import { useI18n } from '@/lib/i18n';
+import { GoogleGenAI } from '@google/genai';
+import ReactMarkdown from 'react-markdown';
 
 export function TripsView() {
+  const { t, language } = useI18n();
   const [trips, setTrips] = useState<any[]>([]);
+  const [tips, setTips] = useState<string>('');
+  const [isLoadingTips, setIsLoadingTips] = useState(false);
+
+  useEffect(() => {
+    const fetchTips = async () => {
+      if (!process.env.NEXT_PUBLIC_GEMINI_API_KEY) return;
+      setIsLoadingTips(true);
+      try {
+        const genAI = new GoogleGenAI(process.env.NEXT_PUBLIC_GEMINI_API_KEY);
+        const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+        const prompt = `Give me 3 short, creative travel tips for today. Language: ${language === 'ar' ? 'Arabic' : 'English'}. Format as markdown list.`;
+        const result = await model.generateContent(prompt);
+        setTips(result.response.text());
+      } catch (e) {
+        console.error(e);
+      } finally {
+        setIsLoadingTips(false);
+      }
+    };
+    fetchTips();
+  }, [language]);
 
   useEffect(() => {
     if (!auth.currentUser) return;
@@ -52,12 +77,12 @@ export function TripsView() {
     <div className="space-y-6 pb-12">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-white">My Trips & Itinerary</h1>
+          <h1 className="text-3xl font-bold tracking-tight text-white">{t('nav.trips')}</h1>
           <p className="text-zinc-400">Manage your upcoming adventures, bookings, and schedule.</p>
         </div>
-        <Button className="bg-green-500 hover:bg-green-600 text-black font-semibold">
+        <Button className="bg-emerald-500 hover:bg-emerald-600 text-white font-semibold rounded-full px-6 shadow-lg shadow-emerald-500/20 transition-all hover:scale-105">
           <Plus className="mr-2 h-4 w-4" />
-          New Trip
+          {t('home.create')}
         </Button>
       </div>
 
@@ -65,23 +90,45 @@ export function TripsView() {
         {/* Left Column: Trips & Weather */}
         <div className="lg:col-span-2 space-y-6">
           {/* Weather Widget */}
-          <div className="h-[200px]">
+          <div className="h-[200px] rounded-3xl overflow-hidden border border-zinc-800/50 shadow-2xl">
             <WeatherWidget location={trips.length > 0 ? trips[0].destination : "Paris, France"} />
           </div>
 
+          {/* Today's Travel Tips */}
+          <Card className="border-emerald-500/20 bg-zinc-900/40 backdrop-blur-xl rounded-3xl overflow-hidden">
+            <CardContent className="p-6">
+              <div className="flex items-center gap-2 mb-4">
+                <div className="h-8 w-8 rounded-lg bg-emerald-500/20 flex items-center justify-center text-emerald-500">
+                  <Lightbulb className="h-5 w-5" />
+                </div>
+                <h3 className="text-lg font-bold text-white">{t('trips.travel_tips')}</h3>
+              </div>
+              {isLoadingTips ? (
+                <div className="flex items-center gap-2 text-zinc-500 text-sm animate-pulse">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Generating fresh tips...
+                </div>
+              ) : (
+                <div className="prose prose-invert prose-sm max-w-none">
+                  <ReactMarkdown>{tips}</ReactMarkdown>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
           <h2 className="text-xl font-semibold text-white pt-4">Bookings & Payments</h2>
           {trips.length === 0 && (
-            <div className="text-center py-12 text-zinc-500 border border-dashed border-zinc-800 rounded-xl">
+            <div className="text-center py-12 text-zinc-500 border border-dashed border-zinc-800 rounded-3xl bg-zinc-900/20">
               <Plane className="h-8 w-8 mx-auto mb-2 opacity-50" />
               <p>No trips booked yet.</p>
               <p className="text-sm">Ask StayX to plan your next adventure!</p>
             </div>
           )}
           {trips.map(trip => (
-            <Card key={trip.id} className="border-zinc-800 bg-zinc-900/50 hover:bg-zinc-900 transition-colors cursor-pointer group">
+            <Card key={trip.id} className="border-zinc-800/50 bg-zinc-900/40 backdrop-blur-md hover:bg-zinc-800/60 transition-all cursor-pointer group rounded-3xl overflow-hidden">
               <CardContent className="p-6 flex items-center justify-between">
                 <div className="flex items-center gap-4">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-full bg-zinc-800 text-green-400 group-hover:bg-green-500/10 transition-colors">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-zinc-800 text-emerald-400 group-hover:bg-emerald-500/10 transition-colors">
                     <MapPin className="h-6 w-6" />
                   </div>
                   <div>
@@ -96,16 +143,16 @@ export function TripsView() {
                 </div>
                 <div className="flex flex-col items-end gap-2">
                   <div className="flex items-center gap-2">
-                    <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                      trip.status === 'booked' ? 'bg-green-500/20 text-green-400' : 'bg-blue-500/20 text-blue-400'
+                    <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${
+                      trip.status === 'booked' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-blue-500/20 text-blue-400'
                     }`}>
-                      {trip.status?.charAt(0).toUpperCase() + trip.status?.slice(1)}
+                      {trip.status}
                     </span>
                     {trip.paymentStatus && (
-                      <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                      <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${
                         trip.paymentStatus === 'paid' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-amber-500/20 text-amber-400'
                       }`}>
-                        {trip.paymentStatus.toUpperCase()}
+                        {trip.paymentStatus}
                       </span>
                     )}
                   </div>
@@ -113,7 +160,7 @@ export function TripsView() {
                     {trip.paymentStatus === 'unpaid' && (
                       <Button 
                         size="sm" 
-                        className="bg-green-500 hover:bg-green-600 text-black font-semibold"
+                        className="bg-emerald-500 hover:bg-emerald-600 text-white font-bold rounded-xl h-9 px-4"
                         onClick={(e) => {
                           e.stopPropagation();
                           handlePayment(trip);
@@ -123,7 +170,7 @@ export function TripsView() {
                         Pay Now
                       </Button>
                     )}
-                    <Button variant="ghost" size="sm" className="text-zinc-400 hover:text-white">View Details</Button>
+                    <Button variant="ghost" size="sm" className="text-zinc-400 hover:text-white hover:bg-zinc-800/50 rounded-xl">View Details</Button>
                   </div>
                 </div>
               </CardContent>
@@ -133,7 +180,7 @@ export function TripsView() {
 
         {/* Right Column: Calendar & Planner */}
         <div className="lg:col-span-1 space-y-6">
-          <div className="bg-zinc-900/30 border border-zinc-800 rounded-3xl p-4">
+          <div className="bg-zinc-900/40 backdrop-blur-xl border border-zinc-800/50 rounded-[2rem] p-4 shadow-2xl">
             <CalendarView />
           </div>
           <TripPlanner />

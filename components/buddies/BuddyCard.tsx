@@ -6,6 +6,8 @@ import { Check, X, User } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useState } from 'react';
 
+import Image from 'next/image';
+
 interface BuddyCardProps {
   match: any;
   onConnect: (matchId: string, otherUserId: string) => void;
@@ -37,7 +39,13 @@ export function BuddyCard({ match, onConnect, onPass, otherUser }: BuddyCardProp
     <Card className="bg-zinc-900 border-zinc-800 overflow-hidden w-full max-w-sm mx-auto">
       <div className="relative h-48 bg-zinc-800 flex items-center justify-center">
         {otherUser.photoURL ? (
-          <img src={otherUser.photoURL} alt={otherUser.name || 'User'} className="w-full h-full object-cover" />
+          <Image 
+            src={otherUser.photoURL} 
+            alt={otherUser.name || 'User'} 
+            fill 
+            className="object-cover" 
+            referrerPolicy="no-referrer"
+          />
         ) : (
           <User className="h-24 w-24 text-zinc-600" />
         )}

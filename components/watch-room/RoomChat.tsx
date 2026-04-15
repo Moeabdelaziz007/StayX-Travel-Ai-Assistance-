@@ -131,7 +131,7 @@ export function RoomChat({ roomId }: RoomChatProps) {
             <div key={msg.id} className={`flex gap-3 ${msg.uid === auth.currentUser?.uid ? 'flex-row-reverse' : ''}`}>
               <Avatar className="h-8 w-8 border border-zinc-700">
                 {msg.isAI ? (
-                  <div className="bg-green-500/20 h-full w-full flex items-center justify-center text-green-500">
+                  <div className="bg-emerald-500/20 h-full w-full flex items-center justify-center text-emerald-500">
                     <Bot className="h-4 w-4" />
                   </div>
                 ) : (
@@ -144,9 +144,9 @@ export function RoomChat({ roomId }: RoomChatProps) {
                 <span className="text-[10px] text-zinc-500 mb-1">{msg.displayName}</span>
                 <div className={`px-3 py-2 rounded-2xl max-w-[200px] sm:max-w-[250px] text-sm ${
                   msg.isAI 
-                    ? 'bg-green-500/10 text-green-50 border border-green-500/20 rounded-tl-sm' 
+                    ? 'bg-emerald-500/10 text-emerald-50 border border-emerald-500/20 rounded-tl-sm' 
                     : msg.uid === auth.currentUser?.uid
-                      ? 'bg-red-600 text-white rounded-tr-sm'
+                      ? 'bg-rose-600 text-white rounded-tr-sm'
                       : 'bg-zinc-800 text-zinc-100 rounded-tl-sm'
                 }`}>
                   {msg.text}
@@ -163,9 +163,9 @@ export function RoomChat({ roomId }: RoomChatProps) {
             value={newMessage}
             onChange={(e) => setNewMessage(e.target.value)}
             placeholder={language === 'ar' ? 'اكتب رسالة...' : 'Type a message...'}
-            className="bg-zinc-950 border-zinc-800 focus-visible:ring-red-500"
+            className="bg-zinc-950 border-zinc-800 focus-visible:ring-emerald-500"
           />
-          <Button type="submit" size="icon" className="bg-red-600 hover:bg-red-700 text-white shrink-0">
+          <Button type="submit" size="icon" className="bg-emerald-600 hover:bg-emerald-700 text-white shrink-0">
             <Send className="h-4 w-4" />
           </Button>
         </form>

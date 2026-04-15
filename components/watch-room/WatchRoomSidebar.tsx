@@ -118,13 +118,13 @@ export function WatchRoomSidebar({ videoTitle, videoDescription }: WatchRoomSide
   };
 
   return (
-    <Card className="flex flex-col h-full border-zinc-800 bg-zinc-900/50 overflow-hidden">
-      <div className="sticky top-0 z-10 bg-zinc-900/90 backdrop-blur-md border-b border-zinc-800 p-4 flex items-center justify-between">
+    <Card className="flex flex-col h-full border-zinc-800/50 bg-zinc-900/40 backdrop-blur-xl overflow-hidden">
+      <div className="sticky top-0 z-10 bg-zinc-900/90 backdrop-blur-md border-b border-zinc-800/50 p-4 flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <MapPin className="h-5 w-5 text-green-500" />
+          <MapPin className="h-5 w-5 text-emerald-500" />
           <h3 className="font-bold text-white truncate max-w-[150px] sm:max-w-[200px]">{destination}</h3>
           {!isLoading && destination !== 'Loading...' && destination !== 'Unknown Destination' && (
-            <Badge variant="outline" className="border-green-500/30 text-green-400 bg-green-500/10 ml-2 hidden sm:inline-flex">
+            <Badge variant="outline" className="border-emerald-500/30 text-emerald-400 bg-emerald-500/10 ml-2 hidden sm:inline-flex">
               AI Insight
             </Badge>
           )}
@@ -132,7 +132,7 @@ export function WatchRoomSidebar({ videoTitle, videoDescription }: WatchRoomSide
         <Button 
           size="sm" 
           onClick={handleAddToWishlist}
-          className="bg-green-600 hover:bg-green-700 text-white gap-2"
+          className="bg-emerald-600 hover:bg-emerald-700 text-white gap-2 shadow-lg shadow-emerald-600/20 transition-all hover:scale-105"
         >
           <Heart className="h-4 w-4" />
           <span className="hidden sm:inline">Add to Wishlist</span>
@@ -141,10 +141,10 @@ export function WatchRoomSidebar({ videoTitle, videoDescription }: WatchRoomSide
 
       <CardContent className="p-4 overflow-y-auto custom-scrollbar flex-1">
         <Accordion defaultValue={['insights']} className="w-full">
-          <AccordionItem value="insights" className="border-zinc-800">
-            <AccordionTrigger className="text-white hover:text-green-400 hover:no-underline">
+          <AccordionItem value="insights" className="border-zinc-800/50">
+            <AccordionTrigger className="text-white hover:text-emerald-400 hover:no-underline">
               <div className="flex items-center gap-2">
-                <Sparkles className="h-4 w-4 text-green-500" />
+                <Sparkles className="h-4 w-4 text-emerald-500" />
                 AI Travel Insights
               </div>
             </AccordionTrigger>

@@ -29,6 +29,29 @@ const translations: Record<Language, Translations> = {
     'watch.search': 'SEARCH',
     'watch.up_next': 'Up Next',
     'watch.refresh': 'Refresh',
+    'home.welcome_name': 'Welcome back, {name}!',
+    'home.where_to': 'Where are you traveling next?',
+    'home.dest.dubai': 'Dubai',
+    'home.dest.paris': 'Paris',
+    'home.dest.istanbul': 'Istanbul',
+    'home.dest.bangkok': 'Bangkok',
+    'stats.trending': 'Trending Now',
+    'stats.best_deal': 'Best Deal Today',
+    'stats.ai_recommend': 'AI Recommendation',
+    'stats.dubai_price': 'Dubai from $299',
+    'stats.profile_based': 'Based on your profile',
+    'stats.deals_found': 'Deals Found',
+    'stats.avg_price': 'Avg. Price',
+    'stats.best_platform': 'Best Platform',
+    'trips.quick_add': 'Quick Add',
+    'trips.travel_tips': 'Today\'s Travel Tips',
+    'trips.add_appointment': 'Add Appointment',
+    'trips.title': 'Title',
+    'trips.type': 'Type',
+    'trips.time': 'Time',
+    'trips.details': 'Details',
+    'trips.price': 'Price',
+    'trips.save': 'Save',
   },
   ar: {
     'nav.dashboard': 'لوحة القيادة',
@@ -50,6 +73,29 @@ const translations: Record<Language, Translations> = {
     'watch.search': 'بحث',
     'watch.up_next': 'التالي',
     'watch.refresh': 'تحديث',
+    'home.welcome_name': 'مرحباً بعودتك، {name}!',
+    'home.where_to': 'إلى أين ستسافر المرة القادمة؟',
+    'home.dest.dubai': 'دبي',
+    'home.dest.paris': 'باريس',
+    'home.dest.istanbul': 'إسطنبول',
+    'home.dest.bangkok': 'بانكوك',
+    'stats.trending': 'الأكثر تداولاً الآن',
+    'stats.best_deal': 'أفضل عرض اليوم',
+    'stats.ai_recommend': 'توصية الذكاء الاصطناعي',
+    'stats.dubai_price': 'دبي ابتداءً من $299',
+    'stats.profile_based': 'بناءً على ملفك الشخصي',
+    'stats.deals_found': 'العروض الموجودة',
+    'stats.avg_price': 'متوسط السعر',
+    'stats.best_platform': 'أفضل منصة',
+    'trips.quick_add': 'إضافة سريعة',
+    'trips.travel_tips': 'نصائح السفر اليوم',
+    'trips.add_appointment': 'إضافة موعد',
+    'trips.title': 'العنوان',
+    'trips.type': 'النوع',
+    'trips.time': 'الوقت',
+    'trips.details': 'التفاصيل',
+    'trips.price': 'السعر',
+    'trips.save': 'حفظ',
   }
 };
 
@@ -62,20 +108,24 @@ interface I18nContextType {
 const I18nContext = createContext<I18nContextType | undefined>(undefined);
 
 export function I18nProvider({ children }: { children: React.ReactNode }) {
-  const [language, setLanguage] = useState<Language>('en');
+  const [language, setLanguage] = useState<Language>(() => {
+    if (typeof window !== 'undefined') {
+      const savedLang = localStorage.getItem('language') as Language;
+      if (savedLang && (savedLang === 'en' || savedLang === 'ar')) {
+        return savedLang;
+      }
+    }
+    return 'en';
+  });
 
   useEffect(() => {
-    const savedLang = localStorage.getItem('language') as Language;
-    if (savedLang && (savedLang === 'en' || savedLang === 'ar')) {
-      setLanguage(savedLang);
-    }
-  }, []);
+    document.documentElement.dir = language === 'ar' ? 'rtl' : 'ltr';
+    document.documentElement.lang = language;
+  }, [language]);
 
   const handleSetLanguage = (lang: Language) => {
     setLanguage(lang);
     localStorage.setItem('language', lang);
-    document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
-    document.documentElement.lang = lang;
   };
 
   const t = (key: string): string => {

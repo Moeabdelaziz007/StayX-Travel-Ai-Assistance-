@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import { db } from '@/lib/firebase';
 import { doc, onSnapshot, updateDoc } from 'firebase/firestore';
 
@@ -23,6 +23,18 @@ export function SyncedPlayer({ roomId, videoId, isHost }: SyncedPlayerProps) {
   const [isReady, setIsReady] = useState(false);
   const lastSyncTime = useRef(0);
   const isUpdatingFromRemote = useRef(false);
+
+  const onPlayerStateChange = useCallback((event: any) => {
+    if (!isHost || isUpdatingFromRemote.current || !playerRef.current) return;
+
+    const isPlaying = event.data === window.YT.PlayerState.PLAYING;
+    const currentTime = playerRef.current.getCurrentTime();
+
+    updateDoc(doc(db, 'rooms', roomId), {
+      isPlaying,
+      currentTime
+    }).catch(console.error);
+  }, [isHost, roomId]);
 
   useEffect(() => {
     // Load YouTube API
@@ -63,7 +75,7 @@ export function SyncedPlayer({ roomId, videoId, isHost }: SyncedPlayerProps) {
         playerRef.current.destroy();
       }
     };
-  }, []);
+  }, [videoId, isHost, onPlayerStateChange]);
 
   // Handle videoId changes
   useEffect(() => {
@@ -128,18 +140,6 @@ export function SyncedPlayer({ roomId, videoId, isHost }: SyncedPlayerProps) {
 
     return () => clearInterval(syncInterval);
   }, [isHost, isReady, roomId]);
-
-  const onPlayerStateChange = (event: any) => {
-    if (!isHost || isUpdatingFromRemote.current) return;
-
-    const isPlaying = event.data === window.YT.PlayerState.PLAYING;
-    const currentTime = playerRef.current.getCurrentTime();
-
-    updateDoc(doc(db, 'rooms', roomId), {
-      isPlaying,
-      currentTime
-    }).catch(console.error);
-  };
 
   return (
     <div className="w-full h-full relative pointer-events-none">

@@ -5,16 +5,31 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
 import { Badge } from '@/components/ui/badge';
-import { Clock, MapPin, Utensils, Music, Plane, Calendar as CalendarIcon, CreditCard } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Clock, MapPin, Utensils, Music, Plane, Calendar as CalendarIcon, CreditCard, Plus, Loader2 } from 'lucide-react';
 import { db, auth } from '@/lib/firebase';
-import { collection, query, where, onSnapshot, orderBy } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, orderBy, addDoc, serverTimestamp } from 'firebase/firestore';
 import { initiatePayment } from '@/lib/travel-tools';
 import { toast } from 'sonner';
+import { useI18n } from '@/lib/i18n';
 
 export function CalendarView() {
+  const { t } = useI18n();
   const [date, setDate] = useState<Date | undefined>(new Date());
   const [appointments, setAppointments] = useState<any[]>([]);
   const [filterType, setFilterType] = useState<string>('all');
+  const [isAdding, setIsAdding] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Quick Add Form State
+  const [newAppt, setNewAppt] = useState({
+    title: '',
+    type: 'other',
+    time: '12:00',
+    details: '',
+    price: ''
+  });
 
   useEffect(() => {
     if (!auth.currentUser) return;
@@ -79,27 +94,135 @@ export function CalendarView() {
     return matchesDate && matchesType;
   });
 
+  const handleQuickAdd = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!auth.currentUser || !date || !newAppt.title) return;
+
+    setIsSubmitting(true);
+    try {
+      const [hours, minutes] = newAppt.time.split(':');
+      const apptDate = new Date(date);
+      apptDate.setHours(parseInt(hours), parseInt(minutes));
+
+      await addDoc(collection(db, 'appointments'), {
+        userId: auth.currentUser.uid,
+        title: newAppt.title,
+        type: newAppt.type,
+        date: apptDate.toISOString(),
+        details: newAppt.details,
+        price: parseFloat(newAppt.price) || 0,
+        paymentStatus: parseFloat(newAppt.price) > 0 ? 'unpaid' : 'paid',
+        createdAt: serverTimestamp()
+      });
+
+      toast.success("Appointment added!");
+      setIsAdding(false);
+      setNewAppt({ title: '', type: 'other', time: '12:00', details: '', price: '' });
+    } catch (e) {
+      console.error(e);
+      toast.error("Failed to add appointment");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-white">Schedule</h1>
+          <h1 className="text-3xl font-bold tracking-tight text-white">{t('nav.trips')}</h1>
           <p className="text-zinc-400">Manage your bookings, restaurants, and events.</p>
         </div>
-        <div className="flex gap-2">
-          {['all', 'restaurant', 'flight', 'hotel', 'nightclub'].map(type => (
-            <Button
-              key={type}
-              variant={filterType === type ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setFilterType(type)}
-              className={filterType === type ? 'bg-green-500 text-black' : 'border-zinc-800 text-zinc-400'}
-            >
-              {type.charAt(0).toUpperCase() + type.slice(1)}
-            </Button>
-          ))}
+        <div className="flex items-center gap-4">
+          <Button 
+            onClick={() => setIsAdding(!isAdding)}
+            className="bg-green-600 hover:bg-green-700 text-white rounded-full gap-2"
+          >
+            <Plus className="h-4 w-4" /> {t('trips.quick_add')}
+          </Button>
+          <div className="flex gap-2">
+            {['all', 'restaurant', 'flight', 'hotel', 'nightclub'].map(type => (
+              <Button
+                key={type}
+                variant={filterType === type ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setFilterType(type)}
+                className={filterType === type ? 'bg-green-600 text-white' : 'border-zinc-800 text-zinc-400'}
+              >
+                {type.charAt(0).toUpperCase() + type.slice(1)}
+              </Button>
+            ))}
+          </div>
         </div>
       </div>
+
+      {isAdding && (
+        <Card className="border-green-500/30 bg-zinc-900/80 backdrop-blur-xl">
+          <CardContent className="p-6">
+            <form onSubmit={handleQuickAdd} className="grid grid-cols-1 md:grid-cols-5 gap-4 items-end">
+              <div className="md:col-span-2 space-y-2">
+                <label className="text-xs font-bold text-zinc-500 uppercase">{t('trips.title')}</label>
+                <Input 
+                  value={newAppt.title}
+                  onChange={e => setNewAppt({...newAppt, title: e.target.value})}
+                  placeholder="Dinner at Nobu"
+                  className="bg-zinc-950 border-zinc-800"
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-zinc-500 uppercase">{t('trips.type')}</label>
+                <Select value={newAppt.type} onValueChange={v => setNewAppt({...newAppt, type: v})}>
+                  <SelectTrigger className="bg-zinc-950 border-zinc-800">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="bg-zinc-900 border-zinc-800">
+                    <SelectItem value="restaurant">Restaurant</SelectItem>
+                    <SelectItem value="flight">Flight</SelectItem>
+                    <SelectItem value="hotel">Hotel</SelectItem>
+                    <SelectItem value="nightclub">Nightclub</SelectItem>
+                    <SelectItem value="other">Other</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-zinc-500 uppercase">{t('trips.time')}</label>
+                <Input 
+                  type="time"
+                  value={newAppt.time}
+                  onChange={e => setNewAppt({...newAppt, time: e.target.value})}
+                  className="bg-zinc-950 border-zinc-800"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-zinc-500 uppercase">{t('trips.price')}</label>
+                <Input 
+                  type="number"
+                  value={newAppt.price}
+                  onChange={e => setNewAppt({...newAppt, price: e.target.value})}
+                  placeholder="0.00"
+                  className="bg-zinc-950 border-zinc-800"
+                />
+              </div>
+              <div className="md:col-span-4 space-y-2">
+                <label className="text-xs font-bold text-zinc-500 uppercase">{t('trips.details')}</label>
+                <Input 
+                  value={newAppt.details}
+                  onChange={e => setNewAppt({...newAppt, details: e.target.value})}
+                  placeholder="Reservation under name..."
+                  className="bg-zinc-950 border-zinc-800"
+                />
+              </div>
+              <div className="flex gap-2">
+                <Button type="submit" disabled={isSubmitting} className="flex-1 bg-green-600 hover:bg-green-700 text-white">
+                  {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : t('trips.save')}
+                </Button>
+                <Button type="button" variant="ghost" onClick={() => setIsAdding(false)} className="text-zinc-500">Cancel</Button>
+              </div>
+            </form>
+          </CardContent>
+        </Card>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-1">

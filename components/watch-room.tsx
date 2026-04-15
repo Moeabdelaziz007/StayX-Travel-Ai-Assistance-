@@ -107,24 +107,24 @@ export function WatchRoom() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-4xl font-black tracking-tighter text-white flex items-center gap-3">
-            <Tv className="h-10 w-10 text-red-600" />
-            STAY<span className="text-red-600">TV</span>
+            <Tv className="h-10 w-10 text-emerald-500" />
+            STAY<span className="text-emerald-500">TV</span>
           </h1>
           <p className="text-zinc-500 font-medium">{language === 'ar' ? 'مركز الترفيه الخاص بالسفر.' : 'Your personal travel entertainment hub.'}</p>
         </div>
         <div className="flex items-center gap-4">
           <Button 
             onClick={createRoom}
-            className="bg-green-600 hover:bg-green-700 text-white rounded-full gap-2 shadow-lg shadow-green-600/20"
+            className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-full gap-2 shadow-lg shadow-emerald-600/20 transition-all hover:scale-105"
           >
             <Users className="h-4 w-4" /> {t('nav.watch')}
           </Button>
           <Button 
             variant="outline" 
-            className="border-zinc-800 bg-zinc-900/50 text-zinc-400 hover:text-white rounded-full gap-2"
+            className="border-zinc-800 bg-zinc-900/40 backdrop-blur-md text-zinc-400 hover:text-white rounded-full gap-2"
             onClick={handleYoutubeLogin}
           >
-            <Youtube className="h-4 w-4 text-red-500" /> Connect YouTube
+            <Youtube className="h-4 w-4 text-rose-500" /> Connect YouTube
           </Button>
           <div className="flex items-center gap-2 bg-zinc-900/80 p-1 rounded-full border border-zinc-800">
             <Button size="icon" variant="ghost" className="h-8 w-8 rounded-full text-zinc-500 hover:text-white">
@@ -209,19 +209,19 @@ export function WatchRoom() {
           </div>
 
           {/* Search Bar */}
-          <div className="flex gap-3 bg-zinc-900/50 p-2 rounded-2xl border border-zinc-800 backdrop-blur-md">
+          <div className="flex gap-3 bg-zinc-900/40 p-2 rounded-2xl border border-zinc-800/50 backdrop-blur-xl">
             <div className="relative flex-1">
               <Search className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-zinc-500" />
               <Input 
-                placeholder="Paste YouTube URL or search for travel vlogs..." 
+                placeholder={t('watch.search_placeholder')}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
                 className="pl-12 h-14 border-none bg-transparent text-white text-lg focus-visible:ring-0"
               />
             </div>
-            <Button onClick={handleSearch} className="h-14 px-8 bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl shadow-lg shadow-red-600/20">
-              SEARCH
+            <Button onClick={handleSearch} className="h-14 px-8 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl shadow-lg shadow-emerald-600/20 transition-all">
+              {t('watch.search')}
             </Button>
           </div>
         </div>
@@ -236,9 +236,9 @@ export function WatchRoom() {
           )}
 
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2 text-red-500">
+            <div className="flex items-center gap-2 text-emerald-500">
               <Sparkles className="h-5 w-5" />
-              <h3 className="font-bold uppercase tracking-widest text-sm">Up Next</h3>
+              <h3 className="font-bold uppercase tracking-widest text-sm">{t('watch.up_next')}</h3>
             </div>
             <Button variant="ghost" size="sm" className="text-zinc-500 hover:text-white text-xs">Refresh</Button>
           </div>
@@ -255,7 +255,7 @@ export function WatchRoom() {
                   setIsTvOn(true);
                 }}
               >
-                <Card className="border-zinc-800 bg-zinc-900/30 overflow-hidden hover:bg-zinc-900/60 transition-all rounded-2xl">
+                <Card className="border-zinc-800/50 bg-zinc-900/20 backdrop-blur-sm overflow-hidden hover:bg-zinc-900/40 transition-all rounded-2xl">
                   <CardContent className="p-0 flex flex-col">
                     <div className="relative aspect-video w-full overflow-hidden">
                       <Image 
@@ -273,7 +273,7 @@ export function WatchRoom() {
                       </div>
                     </div>
                     <div className="p-4 flex flex-col gap-2">
-                      <h4 className="text-sm font-bold text-white line-clamp-2 leading-tight group-hover:text-red-500 transition-colors">
+                      <h4 className="text-sm font-bold text-white line-clamp-2 leading-tight group-hover:text-emerald-500 transition-colors">
                         {video.title}
                       </h4>
                       <div className="flex items-center justify-between">
@@ -281,7 +281,7 @@ export function WatchRoom() {
                         <Button 
                           size="icon" 
                           variant="ghost" 
-                          className="h-7 w-7 rounded-full hover:bg-red-500/10 hover:text-red-500"
+                          className="h-7 w-7 rounded-full hover:bg-emerald-500/10 hover:text-emerald-500"
                           onClick={(e) => { e.stopPropagation(); handleFavorite(video); }}
                         >
                           <Heart className="h-3.5 w-3.5" />

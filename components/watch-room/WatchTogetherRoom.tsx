@@ -129,10 +129,10 @@ export function WatchTogetherRoom({ roomId }: { roomId: string }) {
       <header className="flex items-center justify-between p-4 border-b border-zinc-800 bg-zinc-900/50">
         <div className="flex items-center gap-4">
           <h1 className="text-xl font-bold text-white flex items-center gap-2">
-            <span className="text-red-500">STAY</span>TV {language === 'ar' ? 'حفلة مشاهدة' : 'Watch Party'}
+            <span className="text-emerald-500">STAY</span>TV {language === 'ar' ? 'حفلة مشاهدة' : 'Watch Party'}
           </h1>
           <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-zinc-800 text-xs font-medium">
-            <Users className="h-3 w-3 text-green-500" />
+            <Users className="h-3 w-3 text-emerald-500" />
             {activeParticipantsCount} {language === 'ar' ? 'مشاركين' : 'watching'}
           </div>
           {isHost && (
@@ -151,7 +151,7 @@ export function WatchTogetherRoom({ roomId }: { roomId: string }) {
                 onChange={(e) => setNewVideoId(e.target.value)}
                 className="h-8 w-48 bg-zinc-900 border-zinc-700 text-xs"
               />
-              <Button size="sm" onClick={handleVideoChange} className="h-8 bg-red-600 hover:bg-red-700">
+              <Button size="sm" onClick={handleVideoChange} className="h-8 bg-emerald-600 hover:bg-emerald-700 text-white">
                 {language === 'ar' ? 'تغيير الفيديو' : 'Change Video'}
               </Button>
             </div>
