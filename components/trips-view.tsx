@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Plane, MapPin, Calendar as CalendarIcon, Plus, CreditCard } from 'lucide-react';
 import { db, auth } from '@/lib/firebase';

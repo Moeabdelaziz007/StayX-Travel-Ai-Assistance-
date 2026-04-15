@@ -2,17 +2,14 @@
 
 import { motion } from 'motion/react';
 import { WeatherWidget } from './weather-widget';
-import { Music, Users, Compass, ArrowUpRight, Sparkles, Zap, Globe, Heart, Calendar, Youtube, Tv, Mic, Link as LinkIcon, Plus, Play } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Compass, ArrowUpRight, Calendar, Mic } from 'lucide-react';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import Image from 'next/image';
 import { useState } from 'react';
 import { createVoiceRoom } from '@/lib/travel-tools';
 import { toast } from 'sonner';
-
-import { loginWithYoutube } from '@/lib/firebase';
 
 export function HomeView({ onNavigate }: { onNavigate: (tab: string) => void }) {
   const [roomTitle, setRoomTitle] = useState('');
@@ -29,16 +26,6 @@ export function HomeView({ onNavigate }: { onNavigate: (tab: string) => void }) 
       toast.success("Voice room created!");
     } catch (e) {
       toast.error("Failed to create room");
-    }
-  };
-
-  const handleYoutubeLogin = async () => {
-    try {
-      await loginWithYoutube();
-      toast.success("Logged in with YouTube!");
-      onNavigate('watch');
-    } catch (e) {
-      toast.error("Failed to login with YouTube");
     }
   };
 

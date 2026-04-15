@@ -2,11 +2,9 @@
 
 import { useState } from 'react';
 import { motion } from 'motion/react';
-import { Search, Plane, Hotel, ArrowRight, ExternalLink, Star, Loader2, Sparkles, Filter } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Search, Plane, ExternalLink, Star, Loader2, Sparkles, Filter } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { searchGroundingCompare } from '@/lib/travel-tools';
 import { toast } from 'sonner';
 
@@ -14,7 +12,6 @@ export function SearchCompareView() {
   const [query, setQuery] = useState('');
   const [isSearching, setIsSearching] = useState(false);
   const [results, setResults] = useState<any[]>([]);
-  const [type, setType] = useState<'all' | 'flight' | 'hotel'>('all');
 
   const handleSearch = async () => {
     if (!query.trim()) return;
@@ -137,21 +134,5 @@ export function SearchCompareView() {
         ))}
       </div>
     </div>
-  );
-}
-
-function FilterButton({ active, onClick, icon: Icon, label }: { active: boolean, onClick: () => void, icon: any, label: string }) {
-  return (
-    <button
-      onClick={onClick}
-      className={`flex items-center gap-2 px-6 py-2 rounded-full text-sm font-bold transition-all border ${
-        active 
-          ? 'bg-green-500 border-green-500 text-black' 
-          : 'bg-zinc-900 border-zinc-800 text-zinc-400 hover:border-zinc-700'
-      }`}
-    >
-      <Icon className="h-4 w-4" />
-      {label}
-    </button>
   );
 }

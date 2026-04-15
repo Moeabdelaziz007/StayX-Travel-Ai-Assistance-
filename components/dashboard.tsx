@@ -4,15 +4,11 @@ import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/lib/auth-context';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Plane, Calendar, Youtube, Music, Map, LogOut, Mic, ShoppingBag, Users, Compass, Bell, LayoutDashboard } from 'lucide-react';
+import { Plane, Youtube, LogOut, Mic, Compass, Bell, LayoutDashboard } from 'lucide-react';
 import { VoiceAssistant } from './voice-assistant';
 import { HomeView } from './home-view';
 import { TripsView } from './trips-view';
-import { CalendarView } from './calendar-view';
 import { WatchRoom } from './watch-room';
-import { ExploreView } from './explore-view';
-import { SocialView } from './social-view';
 import { NotificationsView } from './notifications-view';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { toast } from 'sonner';
@@ -110,8 +106,6 @@ export function Dashboard() {
           {activeTab === 'trips' && <TripsView />}
           {activeTab === 'search' && <SearchCompareView />}
           {activeTab === 'watch' && <WatchRoom />}
-          {activeTab === 'explore' && <ExploreView />}
-          {activeTab === 'social' && <SocialView />}
           {activeTab === 'notifications' && <NotificationsView />}
         </main>
 
