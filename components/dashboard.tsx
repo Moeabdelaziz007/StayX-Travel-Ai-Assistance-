@@ -139,7 +139,7 @@ export function Dashboard() {
                 className="w-full justify-start border-zinc-800 bg-zinc-900/50 text-zinc-400 hover:text-white hover:bg-zinc-800 rounded-xl gap-2"
                 onClick={() => window.dispatchEvent(new Event('start-voice-agent'))}
               >
-                <Mic className="h-4 w-4 text-rose-500" /> Voice Assistant
+                <Mic className="h-4 w-4 text-rose-500" /> Voice Assistant <span className="text-[10px] bg-zinc-800 px-1.5 py-0.5 rounded text-zinc-500">⌘K</span>
               </Button>
             </div>
           </div>
@@ -166,7 +166,7 @@ export function Dashboard() {
       {/* Main Content */}
       <div className="flex-1 flex flex-col relative overflow-hidden">
         <main className="flex-1 overflow-y-auto p-6">
-          {activeTab === 'home' && <HomeView onNavigate={setActiveTab} />}
+          {activeTab === 'home' && <HomeView onNavigate={setActiveTab} tripsCount={tripsCount} />}
           {activeTab === 'trips' && <TripsView />}
           {activeTab === 'search' && <SearchCompareView />}
           {activeTab === 'watch' && <WatchRoom />}

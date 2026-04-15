@@ -56,21 +56,21 @@ export function SearchCompareView() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {[
           { 
-            icon: TrendingUp, 
-            label: results.length > 0 ? t('stats.deals_found') : t('stats.trending'), 
-            value: results.length > 0 ? results.length : t('stats.dubai_price'), 
+            icon: Search, 
+            label: results.length > 0 ? t('stats.deals_found') : 'DEALS FOUND', 
+            value: results.length > 0 ? results.length : 'Search to find deals', 
             color: 'text-emerald-500' 
           },
           { 
-            icon: Tag, 
-            label: results.length > 0 ? t('stats.avg_price') : t('stats.best_deal'), 
-            value: results.length > 0 ? `$${avgPrice}` : '$299', 
+            icon: Plane, 
+            label: results.length > 0 ? t('stats.avg_price') : 'AVG PRICE', 
+            value: results.length > 0 ? `$${avgPrice}` : 'Dubai from $299', 
             color: 'text-blue-500' 
           },
           { 
-            icon: UserCheck, 
-            label: results.length > 0 ? t('stats.best_platform') : t('stats.ai_recommend'), 
-            value: results.length > 0 ? results[0].source : t('stats.profile_based'), 
+            icon: Mic, 
+            label: results.length > 0 ? t('stats.best_platform') : 'BEST PLATFORM', 
+            value: results.length > 0 ? results[0].source : 'Try voice search!', 
             color: 'text-purple-500' 
           }
         ].map((stat, i) => (

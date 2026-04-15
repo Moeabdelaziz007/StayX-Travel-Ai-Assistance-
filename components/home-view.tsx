@@ -13,7 +13,7 @@ import { toast } from 'sonner';
 import { useI18n } from '@/lib/i18n';
 import { useAuth } from '@/lib/auth-context';
 
-export function HomeView({ onNavigate }: { onNavigate: (tab: string) => void }) {
+export function HomeView({ onNavigate, tripsCount }: { onNavigate: (tab: string) => void, tripsCount: number }) {
   const { t, language } = useI18n();
   const { user } = useAuth();
   const [roomTitle, setRoomTitle] = useState('');
@@ -26,18 +26,11 @@ export function HomeView({ onNavigate }: { onNavigate: (tab: string) => void }) 
     { name: t('home.dest.bangkok'), id: 'bangkok', color: 'bg-green-500/20 text-green-500' },
   ];
 
-  const handleCreateRoom = async () => {
-    if (!roomTitle) {
-      toast.error("Please enter a room title");
-      return;
-    }
-    try {
-      const res = await createVoiceRoom({ title: roomTitle });
-      setMagicLink(res.magicLink);
-      toast.success("Voice room created!");
-    } catch (e) {
-      toast.error("Failed to create room");
-    }
+  const handleDestinationClick = (id: string) => {
+    // This is a bit tricky as we need to trigger search in SearchCompareView.
+    // For now, navigate to search and let user know.
+    onNavigate('search');
+    toast.info(`Searching for ${id}...`);
   };
 
   return (
@@ -60,26 +53,30 @@ export function HomeView({ onNavigate }: { onNavigate: (tab: string) => void }) 
             {t('home.where_to')}
           </motion.p>
         </div>
-
-        <motion.div 
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-          className="flex flex-wrap gap-3"
-        >
-          {destinations.map((dest) => (
-            <Button
-              key={dest.id}
-              variant="outline"
-              className={`rounded-full border-zinc-800 bg-zinc-900/50 hover:bg-zinc-800 transition-all gap-2 px-6 h-12`}
-              onClick={() => onNavigate('search')}
-            >
-              <MapPin className={`h-4 w-4 ${dest.color.split(' ')[1]}`} />
-              {dest.name}
-            </Button>
-          ))}
-        </motion.div>
       </header>
+
+      {tripsCount === 0 && (
+        <motion.div 
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-zinc-900 border border-emerald-500/30 rounded-3xl p-8 flex flex-col gap-6"
+        >
+          <h2 className="text-3xl font-bold text-white">Welcome to StayX! Where are you heading?</h2>
+          <div className="flex flex-wrap gap-3">
+            {destinations.map((dest) => (
+              <Button
+                key={dest.id}
+                variant="outline"
+                className={`rounded-full border-zinc-800 bg-zinc-950 hover:bg-zinc-800 transition-all gap-2 px-6 h-12`}
+                onClick={() => handleDestinationClick(dest.id)}
+              >
+                <MapPin className={`h-4 w-4 ${dest.color.split(' ')[1]}`} />
+                {dest.name}
+              </Button>
+            ))}
+          </div>
+        </motion.div>
+      )}
 
       <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
         {/* Weather - Large Span */}

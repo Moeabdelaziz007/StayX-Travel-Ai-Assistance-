@@ -21,36 +21,22 @@ export function WatchRoom() {
   const { t, language } = useI18n();
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState('');
-  const [videoId, setVideoId] = useState('dQw4w9WgXcQ');
-  const [currentVideoTitle, setCurrentVideoTitle] = useState('World Travel Guide');
+  const [videoId, setVideoId] = useState('Y4MyaPFOh8c'); // A nice travel video
+  const [currentVideoTitle, setCurrentVideoTitle] = useState('Top Travel Destinations');
   const [suggestions, setSuggestions] = useState<any[]>([]);
   const [isTvOn, setIsTvOn] = useState(true);
 
   useEffect(() => {
-    const fetchSuggestions = async () => {
-      if (!auth.currentUser) return;
+    const fetchTrendingVideos = async () => {
       try {
-        const q = query(collection(db, 'trips'), where('userId', '==', auth.currentUser.uid), limit(1));
-        const snap = await getDocs(q);
-        if (!snap.empty) {
-          const trip = snap.docs[0].data();
-          setSuggestions([
-            { id: 'v1', title: `Top 10 Things to do in ${trip.destination}`, videoId: 'dQw4w9WgXcQ', thumbnail: `https://picsum.photos/seed/${trip.destination}1/400/225` },
-            { id: 'v2', title: `${trip.destination} Travel Guide 2026`, videoId: 'dQw4w9WgXcQ', thumbnail: `https://picsum.photos/seed/${trip.destination}2/400/225` },
-            { id: 'v3', title: `Hidden Gems in ${trip.destination}`, videoId: 'dQw4w9WgXcQ', thumbnail: `https://picsum.photos/seed/${trip.destination}3/400/225` },
-            { id: 'v4', title: `Best Street Food in ${trip.destination}`, videoId: 'dQw4w9WgXcQ', thumbnail: `https://picsum.photos/seed/${trip.destination}4/400/225` },
-          ]);
-        } else {
-          setSuggestions([
-            { id: 'v1', title: "World's Most Beautiful Places", videoId: 'dQw4w9WgXcQ', thumbnail: 'https://picsum.photos/seed/travel1/400/225' },
-            { id: 'v2', title: "Luxury Travel on a Budget", videoId: 'dQw4w9WgXcQ', thumbnail: 'https://picsum.photos/seed/travel2/400/225' },
-          ]);
-        }
+        const res = await fetch(`/api/youtube/search?destination=trending`);
+        const data = await res.json();
+        setSuggestions(data.slice(0, 6));
       } catch (e) {
         console.error(e);
       }
     };
-    fetchSuggestions();
+    fetchTrendingVideos();
   }, []);
 
   const handleSearch = () => {
