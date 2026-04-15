@@ -106,6 +106,15 @@ service cloud.firestore {
              data.createdAt is string;
     }
 
+    function isValidWishlistItem(data) {
+      return hasOnlyAllowedFields(['userId', 'destination', 'videoTitle', 'type', 'addedAt']) &&
+             data.userId is string && data.userId == request.auth.uid &&
+             data.destination is string && data.destination.size() > 0 && data.destination.size() < 200 &&
+             data.videoTitle is string && data.videoTitle.size() > 0 && data.videoTitle.size() < 500 &&
+             data.type is string &&
+             data.addedAt is string;
+    }
+
     // ===============================================================
     // Rules
     // ===============================================================
@@ -116,6 +125,12 @@ service cloud.firestore {
                     request.resource.data.uid == resource.data.uid &&
                     request.resource.data.createdAt == resource.data.createdAt;
       allow delete: if isOwner(userId);
+
+      match /wishlist/{wishlistItemId} {
+        allow read: if isOwner(userId);
+        allow create: if isOwner(userId) && isValidWishlistItem(request.resource.data);
+        allow delete: if isOwner(userId);
+      }
     }
     
     match /trips/{tripId} {

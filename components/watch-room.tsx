@@ -1,20 +1,22 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Search, Play, Heart, Sparkles, Tv, Volume2, Settings, Maximize2, Youtube } from 'lucide-react';
+import { Search, Play, Heart, Sparkles, Tv, Volume2, Settings, Youtube } from 'lucide-react';
 import { db, auth, loginWithYoutube } from '@/lib/firebase';
 import { collection, query, where, getDocs, limit } from 'firebase/firestore';
 import { toggleFavorite } from '@/lib/travel-tools';
 import { toast } from 'sonner';
 import Image from 'next/image';
 import { motion, AnimatePresence } from 'motion/react';
+import { WatchRoomSidebar } from './watch-room/WatchRoomSidebar';
 
 export function WatchRoom() {
   const [searchQuery, setSearchQuery] = useState('');
   const [videoId, setVideoId] = useState('dQw4w9WgXcQ');
+  const [currentVideoTitle, setCurrentVideoTitle] = useState('World Travel Guide');
   const [suggestions, setSuggestions] = useState<any[]>([]);
   const [isTvOn, setIsTvOn] = useState(true);
 
@@ -49,6 +51,7 @@ export function WatchRoom() {
     const match = searchQuery.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([^&?]+)/);
     if (match && match[1]) {
       setVideoId(match[1]);
+      setCurrentVideoTitle('Custom Travel Video');
       setIsTvOn(true);
     } else if (searchQuery.trim()) {
       // If not a URL, we could potentially search, but for now just show a placeholder or toast
@@ -197,8 +200,15 @@ export function WatchRoom() {
           </div>
         </div>
 
-        {/* Sidebar Suggestions */}
+        {/* Sidebar Suggestions & Insights */}
         <div className="lg:col-span-4 flex flex-col gap-6">
+          {/* AI Insights Sidebar */}
+          {isTvOn && (
+            <div className="h-[400px] lg:h-auto lg:flex-1 min-h-[300px]">
+              <WatchRoomSidebar videoTitle={currentVideoTitle} />
+            </div>
+          )}
+
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2 text-red-500">
               <Sparkles className="h-5 w-5" />
@@ -207,7 +217,7 @@ export function WatchRoom() {
             <Button variant="ghost" size="sm" className="text-zinc-500 hover:text-white text-xs">Refresh</Button>
           </div>
 
-          <div className="space-y-4 overflow-y-auto pr-2 custom-scrollbar max-h-[600px]">
+          <div className="space-y-4 overflow-y-auto pr-2 custom-scrollbar max-h-[400px] lg:flex-1">
             {suggestions.map(video => (
               <motion.div
                 key={video.id}
@@ -215,6 +225,7 @@ export function WatchRoom() {
                 className="group cursor-pointer"
                 onClick={() => {
                   setVideoId(video.videoId);
+                  setCurrentVideoTitle(video.title);
                   setIsTvOn(true);
                 }}
               >

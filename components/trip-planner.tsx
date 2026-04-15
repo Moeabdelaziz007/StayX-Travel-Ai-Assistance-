@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { MapPin, Sparkles, Calendar } from 'lucide-react';
+import { Plane, Hotel, MapPin, Sparkles, Calendar } from 'lucide-react';
 import { toast } from 'sonner';
 
 export function TripPlanner() {
@@ -76,7 +76,7 @@ export function TripPlanner() {
         {/* Preferences Section */}
         <div className="space-y-3">
           <h3 className="text-sm font-medium text-zinc-400">Preferences</h3>
-          <Select onValueChange={setAirline}>
+          <Select onValueChange={(v: string | null) => v && setAirline(v)}>
             <SelectTrigger className="bg-zinc-950 border-zinc-800 text-white">
               <SelectValue placeholder="Preferred Airline" />
             </SelectTrigger>
@@ -86,7 +86,7 @@ export function TripPlanner() {
               <SelectItem value="emirates">Emirates</SelectItem>
             </SelectContent>
           </Select>
-          <Select onValueChange={setHotelChain}>
+          <Select onValueChange={(v: string | null) => v && setHotelChain(v)}>
             <SelectTrigger className="bg-zinc-950 border-zinc-800 text-white">
               <SelectValue placeholder="Preferred Hotel Chain" />
             </SelectTrigger>

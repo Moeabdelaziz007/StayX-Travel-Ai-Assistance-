@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { X, Mic, MicOff, Volume2, Loader2 } from 'lucide-react';
+import { X, Mic, MicOff, Volume2, Settings2, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { GoogleGenAI, LiveServerMessage, Modality, Type, FunctionDeclaration } from '@google/genai';
@@ -346,22 +346,9 @@ You have access to Google Search for real-time information.`;
       
       sessionRef.current = sessionPromise;
       
-    } catch (e: any) {
+    } catch (e) {
       console.error("Error setting up audio:", e);
       setIsConnecting(false);
-      
-      let errorMessage = "Failed to access microphone. Please check your permissions.";
-      if (e.name === 'NotAllowedError' || e.name === 'PermissionDeniedError') {
-        errorMessage = "Microphone access was denied. Please allow microphone access in your browser settings (click the lock icon in the address bar).";
-      } else if (e.name === 'NotFoundError' || e.name === 'DevicesNotFoundError') {
-        errorMessage = "No microphone found. Please connect a microphone and try again.";
-      } else if (e.name === 'NotReadableError' || e.name === 'TrackStartError') {
-        errorMessage = "Microphone is already in use by another application or tab.";
-      }
-      
-      setMessages(prev => [...prev, { role: 'assistant', content: errorMessage }]);
-      toast.error(errorMessage);
-      throw e;
     }
   };
 
@@ -377,12 +364,10 @@ You have access to Google Search for real-time information.`;
         const profile = await ensureUserProfile();
         setUserProfile(profile);
         await connectLiveAPI(profile);
-      } catch (e: any) {
+      } catch (e) {
         console.error("Failed to init:", e);
+        setMessages(prev => [...prev, { role: 'assistant', content: "Failed to connect to Live API. Please check your microphone permissions." }]);
         setIsConnecting(false);
-        if (!e.name?.includes('Error')) {
-          setMessages(prev => [...prev, { role: 'assistant', content: "Failed to initialize the assistant. Please try again." }]);
-        }
       }
     };
     init();
@@ -410,7 +395,7 @@ You have access to Google Search for real-time information.`;
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <Select value={voiceTone} onValueChange={(v) => v && setVoiceTone(v)}>
+          <Select value={voiceTone} onValueChange={(v: string | null) => v && setVoiceTone(v)}>
             <SelectTrigger className="w-[100px] h-8 text-[10px] font-mono bg-zinc-900 border-zinc-800 text-zinc-400">
               <SelectValue placeholder="Voice" />
             </SelectTrigger>

@@ -104,12 +104,29 @@
         "createdAt": { "type": "string", "format": "date-time" }
       },
       "required": ["userId", "title", "message", "read", "createdAt"]
+    },
+    "WishlistItem": {
+      "title": "WishlistItem",
+      "description": "An item in the user's wishlist",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "destination": { "type": "string" },
+        "videoTitle": { "type": "string" },
+        "type": { "type": "string" },
+        "addedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "destination", "videoTitle", "addedAt"]
     }
   },
   "firestore": {
     "/users/{userId}": {
       "schema": { "$ref": "#/entities/UserProfile" },
       "description": "User profiles"
+    },
+    "/users/{userId}/wishlist/{wishlistItemId}": {
+      "schema": { "$ref": "#/entities/WishlistItem" },
+      "description": "User wishlist items"
     },
     "/trips/{tripId}": {
       "schema": { "$ref": "#/entities/Trip" },
