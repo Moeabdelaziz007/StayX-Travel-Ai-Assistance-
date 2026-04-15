@@ -1,64 +1,59 @@
 'use client';
 
-import React, { useEffect, useRef, useState } from 'react';
-
-interface SyncedPlayerProps {
-  videoId: string;
-  isPlaying: boolean;
-  currentTime: number;
-  isHost: boolean;
-  onStateChange: (state: { isPlaying: boolean; currentTime: number }) => void;
-}
+import { useEffect, useRef, useState } from 'react';
+import { db } from '@/lib/firebase';
+import { doc, onSnapshot, updateDoc } from 'firebase/firestore';
 
 declare global {
   interface Window {
-    onYouTubeIframeAPIReady: () => void;
     YT: any;
+    onYouTubeIframeAPIReady: () => void;
   }
 }
 
-export function SyncedPlayer({ videoId, isPlaying, currentTime, isHost, onStateChange }: SyncedPlayerProps) {
+interface SyncedPlayerProps {
+  roomId: string;
+  videoId: string;
+  isHost: boolean;
+}
+
+export function SyncedPlayer({ roomId, videoId, isHost }: SyncedPlayerProps) {
   const playerRef = useRef<any>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [isReady, setIsReady] = useState(false);
-  const lastUpdateRef = useRef<number>(0);
+  const lastSyncTime = useRef(0);
+  const isUpdatingFromRemote = useRef(false);
 
   useEffect(() => {
-    if (window.YT && window.YT.Player) {
+    // Load YouTube API
+    if (!window.YT) {
+      const tag = document.createElement('script');
+      tag.src = 'https://www.youtube.com/iframe_api';
+      const firstScriptTag = document.getElementsByTagName('script')[0];
+      firstScriptTag.parentNode?.insertBefore(tag, firstScriptTag);
+
+      window.onYouTubeIframeAPIReady = () => {
+        initPlayer();
+      };
+    } else if (window.YT && window.YT.Player) {
       initPlayer();
-      return;
     }
 
-    const tag = document.createElement('script');
-    tag.src = "https://www.youtube.com/iframe_api";
-    const firstScriptTag = document.getElementsByTagName('script')[0];
-    firstScriptTag.parentNode?.insertBefore(tag, firstScriptTag);
-
-    window.onYouTubeIframeAPIReady = () => {
-      initPlayer();
-    };
-
     function initPlayer() {
-      playerRef.current = new window.YT.Player('youtube-player', {
-        height: '100%',
-        width: '100%',
+      if (!containerRef.current) return;
+      
+      playerRef.current = new window.YT.Player(containerRef.current, {
         videoId: videoId,
         playerVars: {
-          autoplay: 0,
+          autoplay: 1,
+          controls: isHost ? 1 : 0, // Only host gets controls
+          disablekb: isHost ? 0 : 1,
           modestbranding: 1,
           rel: 0,
-          controls: isHost ? 1 : 0, // Only host has controls
         },
         events: {
           onReady: () => setIsReady(true),
-          onStateChange: (event: any) => {
-            if (isHost) {
-              const playerState = event.data;
-              const playing = playerState === window.YT.PlayerState.PLAYING;
-              const time = playerRef.current.getCurrentTime();
-              onStateChange({ isPlaying: playing, currentTime: time });
-            }
-          },
+          onStateChange: onPlayerStateChange,
         },
       });
     }
@@ -68,33 +63,89 @@ export function SyncedPlayer({ videoId, isPlaying, currentTime, isHost, onStateC
         playerRef.current.destroy();
       }
     };
-  }, [isHost, onStateChange, videoId]);
+  }, []);
 
+  // Handle videoId changes
   useEffect(() => {
-    if (!isReady || !playerRef.current) return;
+    if (isReady && playerRef.current && playerRef.current.loadVideoById) {
+      playerRef.current.loadVideoById(videoId);
+    }
+  }, [videoId, isReady]);
 
-    // Sync state from props (for non-hosts)
-    if (!isHost) {
-      const playerState = playerRef.current.getPlayerState();
-      const currentPlaying = playerState === window.YT.PlayerState.PLAYING;
-      const playerTime = playerRef.current.getCurrentTime();
+  // Sync logic
+  useEffect(() => {
+    if (!isReady) return;
 
-      if (isPlaying && !currentPlaying) {
+    const roomRef = doc(db, 'rooms', roomId);
+    
+    const unsubscribe = onSnapshot(roomRef, (docSnap) => {
+      if (!docSnap.exists() || isHost) return; // Host drives, doesn't listen to remote state (mostly)
+
+      const data = docSnap.data();
+      isUpdatingFromRemote.current = true;
+
+      const currentTime = playerRef.current.getCurrentTime();
+      const remoteTime = data.currentTime;
+      
+      // If time difference is > 2 seconds, seek
+      if (Math.abs(currentTime - remoteTime) > 2) {
+        playerRef.current.seekTo(remoteTime, true);
+      }
+
+      if (data.isPlaying && playerRef.current.getPlayerState() !== window.YT.PlayerState.PLAYING) {
         playerRef.current.playVideo();
-      } else if (!isPlaying && currentPlaying) {
+      } else if (!data.isPlaying && playerRef.current.getPlayerState() === window.YT.PlayerState.PLAYING) {
         playerRef.current.pauseVideo();
       }
 
-      // Drift tolerance: 2 seconds
-      if (Math.abs(playerTime - currentTime) > 2) {
-        playerRef.current.seekTo(currentTime, true);
+      setTimeout(() => {
+        isUpdatingFromRemote.current = false;
+      }, 500);
+    });
+
+    return () => unsubscribe();
+  }, [roomId, isReady, isHost]);
+
+  // Host sync loop
+  useEffect(() => {
+    if (!isHost || !isReady) return;
+
+    const syncInterval = setInterval(() => {
+      if (!playerRef.current || !playerRef.current.getCurrentTime) return;
+      
+      const currentTime = playerRef.current.getCurrentTime();
+      const isPlaying = playerRef.current.getPlayerState() === window.YT.PlayerState.PLAYING;
+      
+      // Only update if time changed significantly or state changed
+      if (Math.abs(currentTime - lastSyncTime.current) > 1 || isPlaying) {
+        updateDoc(doc(db, 'rooms', roomId), {
+          currentTime,
+          isPlaying
+        }).catch(console.error);
+        lastSyncTime.current = currentTime;
       }
-    }
-  }, [isReady, isPlaying, currentTime, isHost]);
+    }, 2000);
+
+    return () => clearInterval(syncInterval);
+  }, [isHost, isReady, roomId]);
+
+  const onPlayerStateChange = (event: any) => {
+    if (!isHost || isUpdatingFromRemote.current) return;
+
+    const isPlaying = event.data === window.YT.PlayerState.PLAYING;
+    const currentTime = playerRef.current.getCurrentTime();
+
+    updateDoc(doc(db, 'rooms', roomId), {
+      isPlaying,
+      currentTime
+    }).catch(console.error);
+  };
 
   return (
-    <div className="w-full aspect-video bg-black rounded-xl overflow-hidden shadow-2xl border border-zinc-800">
-      <div id="youtube-player" className="w-full h-full" />
+    <div className="w-full h-full relative pointer-events-none">
+      {/* Overlay to prevent non-hosts from clicking */}
+      {!isHost && <div className="absolute inset-0 z-10" />}
+      <div ref={containerRef} className="w-full h-full" />
     </div>
   );
 }

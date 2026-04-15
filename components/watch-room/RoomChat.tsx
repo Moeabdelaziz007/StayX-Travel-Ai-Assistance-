@@ -1,28 +1,27 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
-import { useAuth } from '@/lib/auth-context';
-import { rtdb } from '@/lib/firebase';
-import { ref, push, onValue, serverTimestamp } from 'firebase/database';
+import { useState, useEffect, useRef } from 'react';
+import { db, auth } from '@/lib/firebase';
+import { collection, addDoc, query, orderBy, onSnapshot, serverTimestamp, limit } from 'firebase/firestore';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Sparkles, Send } from 'lucide-react';
-import { GoogleGenAI } from '@google/genai';
+import { Send, Bot } from 'lucide-react';
 import { toast } from 'sonner';
-
+import { GoogleGenAI } from '@google/genai';
+import { generateWithGroq } from '@/lib/groq';
 import { useI18n } from '@/lib/i18n';
 
-const ai = new GoogleGenAI({ apiKey: process.env.NEXT_PUBLIC_GEMINI_API_KEY! });
+const ai = new GoogleGenAI({ apiKey: process.env.NEXT_PUBLIC_GEMINI_API_KEY });
 
 interface Message {
   id: string;
   uid: string;
   displayName: string;
   text: string;
-  isAI: boolean;
-  timestamp: number;
+  isAI?: boolean;
+  timestamp: any;
 }
 
 interface RoomChatProps {
@@ -31,72 +30,51 @@ interface RoomChatProps {
 
 export function RoomChat({ roomId }: RoomChatProps) {
   const { t, language } = useI18n();
-  const { user } = useAuth();
   const [messages, setMessages] = useState<Message[]>([]);
-  const [input, setInput] = useState('');
+  const [newMessage, setNewMessage] = useState('');
   const scrollRef = useRef<HTMLDivElement>(null);
-  const lastAIResponseRef = useRef<number>(0);
 
   useEffect(() => {
-    const messagesRef = ref(rtdb, `rooms/${roomId}/messages`);
-    const unsubscribe = onValue(messagesRef, (snapshot) => {
-      const data = snapshot.val();
-      if (data) {
-        const msgs = Object.entries(data).map(([id, val]: [string, any]) => ({
-          id,
-          ...val,
-        })).sort((a, b) => a.timestamp - b.timestamp);
-        setMessages(msgs);
-      }
+    const q = query(
+      collection(db, `rooms/${roomId}/messages`),
+      orderBy('timestamp', 'asc'),
+      limit(100)
+    );
+
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const msgs = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      })) as Message[];
+      setMessages(msgs);
+      
+      setTimeout(() => {
+        if (scrollRef.current) {
+          scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+        }
+      }, 100);
     });
 
     return () => unsubscribe();
   }, [roomId]);
 
-  useEffect(() => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-    }
-  }, [messages]);
-
-  const handleSendMessage = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!input.trim() || !user) return;
-
-    const text = input.trim();
-    setInput('');
-
-    const messagesRef = ref(rtdb, `rooms/${roomId}/messages`);
-    await push(messagesRef, {
-      uid: user.uid,
-      displayName: user.displayName || 'Traveler',
-      text,
-      isAI: false,
-      timestamp: serverTimestamp(),
-    });
-
-    if (text.startsWith('@AI')) {
-      const now = Date.now();
-      if (now - lastAIResponseRef.current < 10000) {
-        toast.error("AI is busy. Please wait 10 seconds.");
-        return;
-      }
-      lastAIResponseRef.current = now;
-      handleAIResponse(text.replace('@AI', '').trim());
-    }
-  };
-
   const handleAIResponse = async (query: string) => {
     try {
-      const model = ai.getGenerativeModel({ model: "gemini-2.0-flash" });
-      const result = await model.generateContent({
-        contents: [{ role: 'user', parts: [{ text: query }] }],
-        systemInstruction: `You are a friendly travel guide in a watch party. Users are watching travel content together. Answer travel questions concisely in 2-3 sentences. ${language === 'ar' ? 'Please respond in Arabic.' : 'Please respond in English.'}`,
-      });
+      const systemInstruction = `You are a friendly travel guide in a watch party. Users are watching travel content together. Answer travel questions concisely in 2-3 sentences. ${language === 'ar' ? 'Please respond in Arabic.' : 'Please respond in English.'}`;
+      let responseText = '';
 
-      const responseText = result.response.text();
-      const messagesRef = ref(rtdb, `rooms/${roomId}/messages`);
-      await push(messagesRef, {
+      if (process.env.GROQ_API_KEY) {
+        responseText = await generateWithGroq(query, systemInstruction, "llama3-8b-8192");
+      } else {
+        const model = ai.getGenerativeModel({ model: "gemini-2.0-flash" });
+        const result = await model.generateContent({
+          contents: [{ role: 'user', parts: [{ text: query }] }],
+          systemInstruction,
+        });
+        responseText = result.response.text();
+      }
+
+      await addDoc(collection(db, `rooms/${roomId}/messages`), {
         uid: 'ai-bot',
         displayName: 'StayX Guide',
         text: responseText,
@@ -105,42 +83,73 @@ export function RoomChat({ roomId }: RoomChatProps) {
       });
     } catch (error) {
       console.error("AI Error:", error);
+      toast.error("Failed to get AI response");
+    }
+  };
+
+  const handleSendMessage = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newMessage.trim() || !auth.currentUser) return;
+
+    const text = newMessage.trim();
+    setNewMessage('');
+
+    try {
+      await addDoc(collection(db, `rooms/${roomId}/messages`), {
+        uid: auth.currentUser.uid,
+        displayName: auth.currentUser.displayName || 'User',
+        text,
+        timestamp: serverTimestamp(),
+      });
+
+      if (text.toLowerCase().includes('@ai')) {
+        const aiQuery = text.replace(/@ai/gi, '').trim();
+        if (aiQuery) {
+          handleAIResponse(aiQuery);
+        }
+      }
+    } catch (error) {
+      console.error("Error sending message:", error);
+      toast.error("Failed to send message");
     }
   };
 
   return (
-    <div className="flex flex-col h-full bg-zinc-900/50 border border-zinc-800 rounded-xl overflow-hidden">
-      <div className="p-4 border-b border-zinc-800 bg-zinc-900/80 flex items-center justify-between">
-        <h3 className="font-bold text-sm uppercase tracking-widest flex items-center gap-2">
-          {language === 'ar' ? 'دردشة الغرفة' : 'Room Chat'}
+    <div className="flex flex-col h-full bg-zinc-900/50 border-l border-zinc-800">
+      <div className="p-4 border-b border-zinc-800 bg-zinc-900/80 backdrop-blur-md">
+        <h3 className="font-bold text-white flex items-center gap-2">
+          {language === 'ar' ? 'الدردشة المباشرة' : 'Live Chat'}
         </h3>
-        <span className="text-[10px] text-zinc-500 font-mono">{language === 'ar' ? 'مباشر' : 'LIVE'}</span>
+        <p className="text-xs text-zinc-400">
+          {language === 'ar' ? 'اكتب @ai لسؤال المرشد السياحي' : 'Type @ai to ask the travel guide'}
+        </p>
       </div>
 
       <ScrollArea className="flex-1 p-4" ref={scrollRef}>
         <div className="space-y-4">
           {messages.map((msg) => (
-            <div key={msg.id} className={`flex flex-col ${msg.isAI ? 'items-center' : ''}`}>
-              <div className={`flex gap-3 max-w-[90%] ${msg.isAI ? 'bg-purple-900/20 border border-purple-500/30 p-3 rounded-2xl' : ''}`}>
-                {!msg.isAI && (
-                  <Avatar className="h-8 w-8 border border-zinc-800">
-                    <AvatarFallback className="text-[10px]">{msg.displayName.charAt(0)}</AvatarFallback>
-                  </Avatar>
-                )}
-                <div className="flex flex-col gap-1">
-                  <div className="flex items-center gap-2">
-                    <span className={`text-[10px] font-bold ${msg.isAI ? 'text-purple-400' : 'text-zinc-400'}`}>
-                      {msg.displayName}
-                    </span>
-                    {msg.isAI && (
-                      <span className="bg-purple-600 text-[8px] px-1.5 py-0.5 rounded-full text-white font-bold flex items-center gap-1">
-                        <Sparkles className="h-2 w-2" /> AI
-                      </span>
-                    )}
+            <div key={msg.id} className={`flex gap-3 ${msg.uid === auth.currentUser?.uid ? 'flex-row-reverse' : ''}`}>
+              <Avatar className="h-8 w-8 border border-zinc-700">
+                {msg.isAI ? (
+                  <div className="bg-green-500/20 h-full w-full flex items-center justify-center text-green-500">
+                    <Bot className="h-4 w-4" />
                   </div>
-                  <p className={`text-xs ${msg.isAI ? 'text-zinc-200 italic' : 'text-zinc-300'}`}>
-                    {msg.text}
-                  </p>
+                ) : (
+                  <AvatarFallback className="bg-zinc-800 text-xs">
+                    {msg.displayName.charAt(0)}
+                  </AvatarFallback>
+                )}
+              </Avatar>
+              <div className={`flex flex-col ${msg.uid === auth.currentUser?.uid ? 'items-end' : 'items-start'}`}>
+                <span className="text-[10px] text-zinc-500 mb-1">{msg.displayName}</span>
+                <div className={`px-3 py-2 rounded-2xl max-w-[200px] sm:max-w-[250px] text-sm ${
+                  msg.isAI 
+                    ? 'bg-green-500/10 text-green-50 border border-green-500/20 rounded-tl-sm' 
+                    : msg.uid === auth.currentUser?.uid
+                      ? 'bg-red-600 text-white rounded-tr-sm'
+                      : 'bg-zinc-800 text-zinc-100 rounded-tl-sm'
+                }`}>
+                  {msg.text}
                 </div>
               </div>
             </div>
@@ -148,17 +157,19 @@ export function RoomChat({ roomId }: RoomChatProps) {
         </div>
       </ScrollArea>
 
-      <form onSubmit={handleSendMessage} className="p-4 bg-zinc-900/80 border-t border-zinc-800 flex gap-2">
-        <Input 
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          placeholder={language === 'ar' ? 'اكتب @AI لسؤال المرشد...' : 'Type @AI to ask the guide...'}
-          className="bg-zinc-950 border-zinc-800 text-xs h-10"
-        />
-        <Button type="submit" size="icon" className="h-10 w-10 bg-green-600 hover:bg-green-700">
-          <Send className="h-4 w-4" />
-        </Button>
-      </form>
+      <div className="p-4 bg-zinc-900/80 border-t border-zinc-800">
+        <form onSubmit={handleSendMessage} className="flex gap-2">
+          <Input 
+            value={newMessage}
+            onChange={(e) => setNewMessage(e.target.value)}
+            placeholder={language === 'ar' ? 'اكتب رسالة...' : 'Type a message...'}
+            className="bg-zinc-950 border-zinc-800 focus-visible:ring-red-500"
+          />
+          <Button type="submit" size="icon" className="bg-red-600 hover:bg-red-700 text-white shrink-0">
+            <Send className="h-4 w-4" />
+          </Button>
+        </form>
+      </div>
     </div>
   );
 }

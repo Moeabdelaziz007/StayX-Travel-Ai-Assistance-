@@ -1,16 +1,16 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { useAuth } from '@/lib/auth-context';
-import { rtdb } from '@/lib/firebase';
-import { ref, onValue, update, set, serverTimestamp } from 'firebase/database';
+import { useState, useEffect } from 'react';
+import { db, auth } from '@/lib/firebase';
+import { doc, getDoc, setDoc, onSnapshot, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { SyncedPlayer } from './SyncedPlayer';
 import { RoomChat } from './RoomChat';
+import { WatchRoomSidebar } from './WatchRoomSidebar';
 import { Button } from '@/components/ui/button';
-import { Share2, Users, ArrowLeft } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Users, Share2, Crown, LogOut } from 'lucide-react';
 import { toast } from 'sonner';
-import Link from 'next/link';
-
+import { useRouter } from 'next/navigation';
 import { useI18n } from '@/lib/i18n';
 
 interface RoomData {
@@ -18,136 +18,179 @@ interface RoomData {
   videoId: string;
   currentTime: number;
   isPlaying: boolean;
-  participants: { [uid: string]: boolean };
+  participants: Record<string, boolean>;
+  createdAt: any;
 }
 
-interface WatchTogetherRoomProps {
-  roomId: string;
-}
-
-export function WatchTogetherRoom({ roomId }: WatchTogetherRoomProps) {
+export function WatchTogetherRoom({ roomId }: { roomId: string }) {
   const { t, language } = useI18n();
-  const { user } = useAuth();
   const [roomData, setRoomData] = useState<RoomData | null>(null);
-  const [participantCount, setParticipantCount] = useState(0);
+  const [isHost, setIsHost] = useState(false);
+  const [newVideoId, setNewVideoId] = useState('');
+  const router = useRouter();
 
   useEffect(() => {
-    if (!user) return;
+    if (!auth.currentUser) {
+      toast.error("Please log in to join a room");
+      router.push('/');
+      return;
+    }
 
-    const roomRef = ref(rtdb, `rooms/${roomId}`);
-    const unsubscribe = onValue(roomRef, (snapshot) => {
-      const data = snapshot.val();
-      if (data) {
-        setRoomData(data);
-        setParticipantCount(Object.keys(data.participants || {}).length);
+    const roomRef = doc(db, 'rooms', roomId);
+
+    const initRoom = async () => {
+      const roomSnap = await getDoc(roomRef);
+      if (!roomSnap.exists()) {
+        // Create room if it doesn't exist
+        await setDoc(roomRef, {
+          hostUid: auth.currentUser!.uid,
+          videoId: 'dQw4w9WgXcQ', // Default video
+          currentTime: 0,
+          isPlaying: false,
+          participants: {
+            [auth.currentUser!.uid]: true
+          },
+          createdAt: serverTimestamp()
+        });
+        setIsHost(true);
+      } else {
+        const data = roomSnap.data() as RoomData;
+        setIsHost(data.hostUid === auth.currentUser!.uid);
+        // Add self to participants
+        await updateDoc(roomRef, {
+          [`participants.${auth.currentUser!.uid}`]: true
+        });
+      }
+    };
+
+    initRoom();
+
+    const unsubscribe = onSnapshot(roomRef, (doc) => {
+      if (doc.exists()) {
+        setRoomData(doc.data() as RoomData);
+      } else {
+        toast.error("Room closed by host");
+        router.push('/dashboard');
       }
     });
 
-    // Join room
-    const participantRef = ref(rtdb, `rooms/${roomId}/participants/${user.uid}`);
-    set(participantRef, true);
-
     return () => {
       unsubscribe();
-      // Leave room (optional, could use onDisconnect)
+      // Remove self from participants on unmount
+      if (auth.currentUser) {
+        updateDoc(roomRef, {
+          [`participants.${auth.currentUser.uid}`]: false
+        }).catch(console.error);
+      }
     };
-  }, [roomId, user]);
+  }, [roomId, router]);
 
-  const handleStateChange = (state: { isPlaying: boolean; currentTime: number }) => {
-    if (roomData?.hostUid === user?.uid) {
-      const roomRef = ref(rtdb, `rooms/${roomId}`);
-      update(roomRef, {
-        isPlaying: state.isPlaying,
-        currentTime: state.currentTime,
+  const handleVideoChange = async () => {
+    if (!isHost || !newVideoId) return;
+    
+    let finalVideoId = newVideoId;
+    const match = newVideoId.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([^&?]+)/);
+    if (match && match[1]) {
+      finalVideoId = match[1];
+    }
+
+    try {
+      await updateDoc(doc(db, 'rooms', roomId), {
+        videoId: finalVideoId,
+        currentTime: 0,
+        isPlaying: true
       });
+      setNewVideoId('');
+    } catch (error) {
+      console.error("Error changing video:", error);
+      toast.error("Failed to change video");
     }
   };
 
-  const handleShare = () => {
-    const url = `${window.location.origin}/room/${roomId}`;
-    navigator.clipboard.writeText(url);
-    toast.success("Room link copied to clipboard!");
+  const handleLeaveRoom = () => {
+    router.push('/dashboard');
+  };
+
+  const copyInviteLink = () => {
+    const link = `${window.location.origin}/room/${roomId}`;
+    navigator.clipboard.writeText(link);
+    toast.success("Invite link copied!");
   };
 
   if (!roomData) {
-    return (
-      <div className="flex items-center justify-center h-screen bg-zinc-950 text-white">
-        <div className="flex flex-col items-center gap-4">
-          <div className="h-12 w-12 border-4 border-green-500 border-t-transparent rounded-full animate-spin" />
-          <p className="text-zinc-500 font-mono text-sm uppercase tracking-widest">{t('common.loading')}</p>
-        </div>
-      </div>
-    );
+    return <div className="flex items-center justify-center h-full text-white">{language === 'ar' ? 'جاري الانضمام للغرفة...' : 'Joining room...'}</div>;
   }
 
-  const isHost = roomData.hostUid === user?.uid;
+  const activeParticipantsCount = Object.values(roomData.participants || {}).filter(Boolean).length;
 
   return (
-    <div className="flex flex-col h-screen bg-zinc-950 text-white overflow-hidden">
+    <div className="flex flex-col h-full bg-zinc-950 text-zinc-50">
       {/* Header */}
-      <header className="h-16 border-b border-zinc-800 bg-zinc-900/50 px-6 flex items-center justify-between backdrop-blur-md z-10">
+      <header className="flex items-center justify-between p-4 border-b border-zinc-800 bg-zinc-900/50">
         <div className="flex items-center gap-4">
-          <Link href="/dashboard">
-            <Button variant="ghost" size="icon" className="text-zinc-400 hover:text-white">
-              <ArrowLeft className="h-5 w-5" />
-            </Button>
-          </Link>
-          <div className="flex flex-col">
-            <h2 className="text-sm font-bold uppercase tracking-tighter">{language === 'ar' ? 'حفلة مشاهدة ستاي إكس' : 'StayX Watch Party'}</h2>
-            <p className="text-[10px] text-zinc-500 font-mono">{language === 'ar' ? 'معرف الغرفة' : 'ROOM ID'}: {roomId}</p>
+          <h1 className="text-xl font-bold text-white flex items-center gap-2">
+            <span className="text-red-500">STAY</span>TV {language === 'ar' ? 'حفلة مشاهدة' : 'Watch Party'}
+          </h1>
+          <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-zinc-800 text-xs font-medium">
+            <Users className="h-3 w-3 text-green-500" />
+            {activeParticipantsCount} {language === 'ar' ? 'مشاركين' : 'watching'}
           </div>
+          {isHost && (
+            <div className="flex items-center gap-1 px-2 py-1 rounded text-[10px] font-bold bg-yellow-500/20 text-yellow-500 uppercase tracking-wider">
+              <Crown className="h-3 w-3" /> {language === 'ar' ? 'المضيف' : 'Host'}
+            </div>
+          )}
         </div>
-
-        <div className="flex items-center gap-4">
-          <div className="flex items-center gap-2 bg-zinc-800/50 px-3 py-1.5 rounded-full border border-zinc-700">
-            <Users className="h-4 w-4 text-green-500" />
-            <span className="text-xs font-bold">{participantCount}</span>
-          </div>
-          <Button 
-            onClick={handleShare}
-            className="bg-zinc-800 hover:bg-zinc-700 text-white rounded-full gap-2 text-xs h-9"
-          >
+        
+        <div className="flex items-center gap-2">
+          {isHost && (
+            <div className="flex gap-2 mr-4">
+              <Input 
+                placeholder={language === 'ar' ? 'رابط يوتيوب...' : 'YouTube URL...'}
+                value={newVideoId}
+                onChange={(e) => setNewVideoId(e.target.value)}
+                className="h-8 w-48 bg-zinc-900 border-zinc-700 text-xs"
+              />
+              <Button size="sm" onClick={handleVideoChange} className="h-8 bg-red-600 hover:bg-red-700">
+                {language === 'ar' ? 'تغيير الفيديو' : 'Change Video'}
+              </Button>
+            </div>
+          )}
+          <Button size="sm" variant="outline" onClick={copyInviteLink} className="border-zinc-700 hover:bg-zinc-800 gap-2">
             <Share2 className="h-4 w-4" /> {language === 'ar' ? 'مشاركة' : 'Share'}
+          </Button>
+          <Button size="sm" variant="ghost" onClick={handleLeaveRoom} className="text-zinc-400 hover:text-white hover:bg-zinc-800 gap-2">
+            <LogOut className="h-4 w-4" /> {language === 'ar' ? 'مغادرة' : 'Leave'}
           </Button>
         </div>
       </header>
 
-      <main className="flex-1 flex min-h-0">
-        {/* Player Section */}
-        <div className="flex-1 p-8 flex flex-col items-center justify-center bg-black/40">
-          <div className="w-full max-w-5xl">
-            <SyncedPlayer 
-              videoId={roomData.videoId}
-              isPlaying={roomData.isPlaying}
-              currentTime={roomData.currentTime}
-              isHost={isHost}
-              onStateChange={handleStateChange}
-            />
-            <div className="mt-6 flex items-center justify-between">
-              <div>
-                <h1 className="text-xl font-bold text-white">{language === 'ar' ? 'مشاهدة فيديو سفر' : 'Watching Travel Vlog'}</h1>
-                <p className="text-sm text-zinc-500">{language === 'ar' ? 'المضيف' : 'Host'}: {isHost ? (language === 'ar' ? 'أنت' : 'You') : (language === 'ar' ? 'مسافر آخر' : 'Another Traveler')}</p>
-              </div>
-              {isHost && (
-                <Badge className="bg-green-600/20 text-green-500 border-green-500/30">{language === 'ar' ? 'عناصر تحكم المضيف نشطة' : 'Host Controls Active'}</Badge>
-              )}
+      {/* Main Content */}
+      <div className="flex-1 flex overflow-hidden">
+        {/* Left Side: Video & Insights */}
+        <div className="flex-1 flex flex-col overflow-y-auto custom-scrollbar">
+          <div className="p-4 lg:p-6 flex-1 flex flex-col gap-6">
+            {/* Video Player */}
+            <div className="w-full aspect-video bg-black rounded-2xl overflow-hidden border border-zinc-800 shadow-2xl">
+              <SyncedPlayer 
+                roomId={roomId} 
+                videoId={roomData.videoId} 
+                isHost={isHost} 
+              />
+            </div>
+            
+            {/* Insights Sidebar (below video on smaller screens, could be side-by-side on very large) */}
+            <div className="flex-1 min-h-[300px]">
+              <WatchRoomSidebar videoTitle="Current Watch Party Video" />
             </div>
           </div>
         </div>
 
-        {/* Chat Section */}
-        <div className="w-96 border-l border-zinc-800 p-4">
+        {/* Right Side: Chat */}
+        <div className="w-80 lg:w-96 shrink-0 border-l border-zinc-800 bg-zinc-900/30">
           <RoomChat roomId={roomId} />
         </div>
-      </main>
+      </div>
     </div>
-  );
-}
-
-function Badge({ children, className }: { children: React.ReactNode, className?: string }) {
-  return (
-    <span className={`px-2 py-1 rounded text-[10px] font-bold border ${className}`}>
-      {children}
-    </span>
   );
 }

@@ -5,40 +5,58 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 type Language = 'en' | 'ar';
 
 interface Translations {
-  [key: string]: {
-    en: string;
-    ar: string;
-  };
+  [key: string]: string;
 }
 
-const translations: Translations = {
-  'app.name': { en: 'StayX', ar: 'ستاي إكس' },
-  'nav.dashboard': { en: 'Dashboard', ar: 'لوحة التحكم' },
-  'nav.trips': { en: 'My Trips', ar: 'رحلاتي' },
-  'nav.planner': { en: 'Trip Planner', ar: 'مخطط الرحلات' },
-  'nav.buddies': { en: 'Travel Buddies', ar: 'رفقاء السفر' },
-  'nav.watch': { en: 'Watch Together', ar: 'شاهد معاً' },
-  'nav.documents': { en: 'Document AI', ar: 'ذكاء الوثائق' },
-  'nav.reviews': { en: 'Reviews', ar: 'المراجعات' },
-  'nav.notifications': { en: 'Notifications', ar: 'التنبيهات' },
-  'nav.smartget': { en: 'SmartGet', ar: 'سمارت جيت' },
-  'common.loading': { en: 'Loading...', ar: 'جاري التحميل...' },
-  'common.send': { en: 'Send', ar: 'إرسال' },
-  'common.connect': { en: 'Connect', ar: 'اتصال' },
-  'common.pass': { en: 'Pass', ar: 'تخطي' },
-  'common.save': { en: 'Save', ar: 'حفظ' },
-  'common.export': { en: 'Export', ar: 'تصدير' },
-  'voice.connecting': { en: 'Connecting to Live API...', ar: 'جاري الاتصال بـ Live API...' },
-  'voice.connected': { en: 'Connected! Speak now.', ar: 'متصل! تحدث الآن.' },
-  'voice.mic_active': { en: 'Microphone Active', ar: 'الميكروفون نشط' },
-  'voice.mic_inactive': { en: 'Microphone Inactive', ar: 'الميكروفون غير نشط' },
+const translations: Record<Language, Translations> = {
+  en: {
+    'nav.dashboard': 'Dashboard',
+    'nav.trips': 'My Trips',
+    'nav.search': 'SmartGet',
+    'nav.watch': 'Watch Room',
+    'nav.notifications': 'Notifications',
+    'nav.signout': 'Sign Out',
+    'home.welcome': 'Welcome back',
+    'home.traveler': 'Traveler',
+    'home.subtitle': 'Your AI-powered travel ecosystem is ready.',
+    'home.create_room': 'Create Voice Room',
+    'home.room_title': 'Room Title',
+    'home.create': 'Create',
+    'watch.title': 'STAYTV',
+    'watch.subtitle': 'Your personal travel entertainment hub.',
+    'watch.connect_youtube': 'Connect YouTube',
+    'watch.search_placeholder': 'Paste YouTube URL or search for travel vlogs...',
+    'watch.search': 'SEARCH',
+    'watch.up_next': 'Up Next',
+    'watch.refresh': 'Refresh',
+  },
+  ar: {
+    'nav.dashboard': 'لوحة القيادة',
+    'nav.trips': 'رحلاتي',
+    'nav.search': 'البحث الذكي',
+    'nav.watch': 'غرفة المشاهدة',
+    'nav.notifications': 'الإشعارات',
+    'nav.signout': 'تسجيل الخروج',
+    'home.welcome': 'مرحباً بعودتك',
+    'home.traveler': 'أيها المسافر',
+    'home.subtitle': 'نظام السفر الذكي الخاص بك جاهز.',
+    'home.create_room': 'إنشاء غرفة صوتية',
+    'home.room_title': 'عنوان الغرفة',
+    'home.create': 'إنشاء',
+    'watch.title': 'STAYTV',
+    'watch.subtitle': 'مركز الترفيه الخاص بالسفر.',
+    'watch.connect_youtube': 'ربط يوتيوب',
+    'watch.search_placeholder': 'الصق رابط يوتيوب أو ابحث عن مدونات السفر...',
+    'watch.search': 'بحث',
+    'watch.up_next': 'التالي',
+    'watch.refresh': 'تحديث',
+  }
 };
 
 interface I18nContextType {
   language: Language;
   setLanguage: (lang: Language) => void;
   t: (key: string) => string;
-  isRTL: boolean;
 }
 
 const I18nContext = createContext<I18nContextType | undefined>(undefined);
@@ -48,23 +66,24 @@ export function I18nProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     const savedLang = localStorage.getItem('language') as Language;
-    if (savedLang) setLanguage(savedLang);
+    if (savedLang && (savedLang === 'en' || savedLang === 'ar')) {
+      setLanguage(savedLang);
+    }
   }, []);
 
-  useEffect(() => {
-    localStorage.setItem('language', language);
-    document.documentElement.dir = language === 'ar' ? 'rtl' : 'ltr';
-    document.documentElement.lang = language;
-  }, [language]);
-
-  const t = (key: string) => {
-    return translations[key]?.[language] || key;
+  const handleSetLanguage = (lang: Language) => {
+    setLanguage(lang);
+    localStorage.setItem('language', lang);
+    document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
+    document.documentElement.lang = lang;
   };
 
-  const isRTL = language === 'ar';
+  const t = (key: string): string => {
+    return translations[language][key] || key;
+  };
 
   return (
-    <I18nContext.Provider value={{ language, setLanguage, t, isRTL }}>
+    <I18nContext.Provider value={{ language, setLanguage: handleSetLanguage, t }}>
       {children}
     </I18nContext.Provider>
   );

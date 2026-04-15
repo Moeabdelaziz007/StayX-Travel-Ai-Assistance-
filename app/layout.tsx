@@ -3,6 +3,7 @@ import './globals.css';
 import { Geist } from "next/font/google";
 import { cn } from "@/lib/utils";
 import { AuthProvider } from '@/lib/auth-context';
+import { I18nProvider } from '@/lib/i18n';
 import { Toaster } from '@/components/ui/sonner';
 
 const geist = Geist({subsets:['latin'],variable:'--font-sans'});
@@ -21,10 +22,12 @@ export default function RootLayout({children}: {children: React.ReactNode}) {
         <link rel="apple-touch-icon" href="/icon-192x192.png" />
       </head>
       <body suppressHydrationWarning className="bg-background text-foreground antialiased min-h-screen flex flex-col">
-        <AuthProvider>
-          {children}
-          <Toaster />
-        </AuthProvider>
+        <I18nProvider>
+          <AuthProvider>
+            {children}
+            <Toaster />
+          </AuthProvider>
+        </I18nProvider>
       </body>
     </html>
   );
