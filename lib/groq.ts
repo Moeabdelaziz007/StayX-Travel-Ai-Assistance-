@@ -1,36 +1,24 @@
-import Groq from 'groq-sdk';
-
-// Initialize Groq client
+// Groq API wrapper
 // Note: In a real app, you'd want to handle the case where the API key is missing more gracefully
-const groq = new Groq({
-  apiKey: process.env.GROQ_API_KEY || 'dummy-key',
-});
-
 export async function generateWithGroq(prompt: string, systemPrompt: string = "You are a helpful assistant.", model: string = "llama3-8b-8192") {
   try {
-    const chatCompletion = await groq.chat.completions.create({
-      messages: [
-        {
-          role: "system",
-          content: systemPrompt,
-        },
-        {
-          role: "user",
-          content: prompt,
-        },
-      ],
-      model: model,
-      temperature: 0.7,
-      max_tokens: 1024,
-      top_p: 1,
-      stream: false,
-      stop: null
+    const response = await fetch('/api/groq', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ prompt, systemPrompt, model }),
     });
 
-    return chatCompletion.choices[0]?.message?.content || "";
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || 'Failed to fetch from Groq API');
+    }
+
+    const data = await response.json();
+    return data.content;
   } catch (error) {
-    console.error("Error calling Groq API:", error);
-    // Fallback or throw
-    throw new Error("Failed to generate content with Groq");
+    console.error("Error calling Groq API wrapper:", error);
+    throw error;
   }
 }

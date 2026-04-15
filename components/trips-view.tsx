@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Plane, MapPin, Calendar as CalendarIcon, Plus, CreditCard, Sparkles, Loader2, Lightbulb } from 'lucide-react';
-import { db, auth } from '@/lib/firebase';
+import { db, auth, handleFirestoreError, OperationType } from '@/lib/firebase';
 import { collection, query, where, onSnapshot, orderBy } from 'firebase/firestore';
 import { initiatePayment } from '@/lib/travel-tools';
 import { toast } from 'sonner';
@@ -55,6 +55,8 @@ export function TripsView() {
         ...doc.data()
       }));
       setTrips(tripsData);
+    }, (error) => {
+      handleFirestoreError(error, OperationType.LIST, 'trips');
     });
 
     return () => unsubscribe();

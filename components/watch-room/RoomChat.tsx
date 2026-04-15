@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { db, auth } from '@/lib/firebase';
+import { db, auth, handleFirestoreError, OperationType } from '@/lib/firebase';
 import { collection, addDoc, query, orderBy, onSnapshot, serverTimestamp, limit } from 'firebase/firestore';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -53,6 +53,8 @@ export function RoomChat({ roomId }: RoomChatProps) {
           scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
         }
       }, 100);
+    }, (error) => {
+      handleFirestoreError(error, OperationType.GET, `rooms/${roomId}/messages`);
     });
 
     return () => unsubscribe();

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { GoogleGenAI, Type } from "@google/genai";
 import { ChatMessage, Itinerary } from '@/types/planner';
+import { generateWithGroq } from '@/lib/groq';
 
 const ai = new GoogleGenAI({ apiKey: process.env.NEXT_PUBLIC_GEMINI_API_KEY! });
 
@@ -17,17 +18,31 @@ export function useTripPlanner() {
     setMessages(newMessages);
 
     try {
-      const response = await ai.models.generateContent({
-        model: "gemini-3.1-pro-preview",
-        contents: [
-          ...newMessages.map(m => ({ role: m.role, parts: [{ text: m.content }] })),
-        ],
-        config: {
-          systemInstruction: "You are a travel planning assistant. Collect info: destination, dates, duration, budget, travelers, interests. If info is missing, ask follow-up questions (max 3). Once complete, output JSON itinerary.",
-        }
-      });
+      let aiResponse = "";
+      const systemInstruction = "You are a travel planning assistant. Collect info: destination, dates, duration, budget, travelers, interests. If info is missing, ask follow-up questions (max 3). Once complete, output JSON itinerary.";
+      const prompt = newMessages.map(m => `${m.role}: ${m.content}`).join("\n");
 
-      const aiResponse = response.text || "";
+      if (process.env.GROQ_API_KEY) {
+        try {
+          aiResponse = await generateWithGroq(prompt, systemInstruction, "llama3-70b-8192");
+        } catch (groqError) {
+          console.warn("Groq failed in planner, falling back to Gemini", groqError);
+        }
+      }
+
+      if (!aiResponse) {
+        const response = await ai.models.generateContent({
+          model: "gemini-1.5-flash",
+          contents: [
+            ...newMessages.map(m => ({ role: m.role, parts: [{ text: m.content }] })),
+          ],
+          config: {
+            systemInstruction,
+          }
+        });
+        aiResponse = response.text || "";
+      }
+
       setMessages(prev => [...prev, { role: 'assistant', content: aiResponse }]);
 
       // Check if it's JSON (the itinerary)

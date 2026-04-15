@@ -22,21 +22,27 @@ export async function generateAISummary(destination: string) {
 
   try {
     if (process.env.GROQ_API_KEY) {
+      // Use Groq (llama3-8b) for cost-effective summarization
       summary = await generateWithGroq(prompt, "You are an expert travel analyst.", "llama3-8b-8192");
     } else {
+      // Fallback to Gemini if Groq is not configured
       const response = await ai.models.generateContent({
         model: "gemini-2.0-flash",
         contents: prompt,
       });
       summary = response.text || summary;
     }
-  } catch (e) {
-    console.warn("Groq failed, falling back to Gemini", e);
-    const response = await ai.models.generateContent({
-      model: "gemini-2.0-flash",
-      contents: prompt,
-    });
-    summary = response.text || summary;
+  } catch (error) {
+    console.warn("Primary AI failed, falling back to Gemini", error);
+    try {
+      const response = await ai.models.generateContent({
+        model: "gemini-2.0-flash",
+        contents: prompt,
+      });
+      summary = response.text || summary;
+    } catch (geminiError) {
+      console.error("All AI models failed:", geminiError);
+    }
   }
   
   const avgRating = reviews.reduce((acc, r) => acc + r.rating, 0) / reviewCount;

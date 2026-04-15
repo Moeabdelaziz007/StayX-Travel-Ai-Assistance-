@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Clock, MapPin, Utensils, Music, Plane, Calendar as CalendarIcon, CreditCard, Plus, Loader2 } from 'lucide-react';
-import { db, auth } from '@/lib/firebase';
+import { db, auth, handleFirestoreError, OperationType } from '@/lib/firebase';
 import { collection, query, where, onSnapshot, orderBy, addDoc, serverTimestamp } from 'firebase/firestore';
 import { initiatePayment } from '@/lib/travel-tools';
 import { toast } from 'sonner';
@@ -46,6 +46,8 @@ export function CalendarView() {
         ...doc.data()
       }));
       setAppointments(apptsData);
+    }, (error) => {
+      handleFirestoreError(error, OperationType.LIST, 'appointments');
     });
 
     return () => unsubscribe();

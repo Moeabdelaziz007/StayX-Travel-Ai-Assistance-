@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { db, auth } from '@/lib/firebase';
+import { db, auth, handleFirestoreError, OperationType } from '@/lib/firebase';
 import { doc, getDoc, setDoc, onSnapshot, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { SyncedPlayer } from './SyncedPlayer';
 import { RoomChat } from './RoomChat';
@@ -72,6 +72,8 @@ export function WatchTogetherRoom({ roomId }: { roomId: string }) {
         toast.error("Room closed by host");
         router.push('/dashboard');
       }
+    }, (error) => {
+      handleFirestoreError(error, OperationType.GET, `rooms/${roomId}`);
     });
 
     return () => {

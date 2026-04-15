@@ -3,6 +3,8 @@ import { doc, setDoc, getDoc, collection, addDoc } from 'firebase/firestore';
 
 import { GoogleGenAI } from '@google/genai';
 
+import { generateWithGroq } from './groq';
+
 const ai = new GoogleGenAI({ apiKey: process.env.NEXT_PUBLIC_GEMINI_API_KEY! });
 
 export async function ensureUserProfile() {
@@ -128,13 +130,28 @@ export async function placeOrder(args: { itemName: string, price: number, curren
 
 export async function getWeather(args: { location: string, date?: string }) {
   try {
-    const geoRes = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(args.location)}&count=1&language=en&format=json`);
+    // 1. Geocoding using Nominatim (OpenStreetMap)
+    // Note: Nominatim requires a User-Agent header
+    const geoRes = await fetch(
+      `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(args.location)}&format=json&limit=1`,
+      {
+        headers: {
+          'User-Agent': 'StayX-Travel-Assistant'
+        }
+      }
+    );
     const geoData = await geoRes.json();
-    if (!geoData.results || geoData.results.length === 0) throw new Error("Location not found");
-    const { latitude, longitude, name } = geoData.results[0];
-    const weatherRes = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=temperature_2m,relative_humidity_2m,apparent_temperature,weather_code,wind_speed_10m&timezone=auto`);
+    if (!geoData || geoData.length === 0) throw new Error("Location not found");
+    
+    const { lat, lon, display_name } = geoData[0];
+    
+    // 2. Weather using Open-Meteo
+    const weatherRes = await fetch(
+      `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,apparent_temperature,weather_code,wind_speed_10m&timezone=auto`
+    );
     const weatherData = await weatherRes.json();
     const current = weatherData.current;
+    
     const getCondition = (code: number) => {
       if (code === 0) return 'Sunny';
       if (code <= 3) return 'Partly Cloudy';
@@ -145,8 +162,9 @@ export async function getWeather(args: { location: string, date?: string }) {
       if (code <= 99) return 'Thunderstorm';
       return 'Cloudy';
     };
+    
     return {
-      location: name,
+      location: display_name.split(',')[0],
       temperature: Math.round(current.temperature_2m),
       condition: getCondition(current.weather_code),
       forecast: `Currently ${getCondition(current.weather_code).toLowerCase()} with a temperature of ${Math.round(current.temperature_2m)}°C.`,
@@ -174,15 +192,30 @@ export async function convertCurrency(args: { amount: number, from: string, to: 
 }
 
 export async function translateText(args: { text: string, targetLanguage: string }) {
+  const prompt = `Translate the following text to ${args.targetLanguage}. Return ONLY the translated text: "${args.text}"`;
+  
   try {
-    const prompt = `Translate the following text to ${args.targetLanguage}. Return ONLY the translated text: "${args.text}"`;
+    if (process.env.GROQ_API_KEY) {
+      const translated = await generateWithGroq(prompt, "You are a professional translator.", "llama3-8b-8192");
+      return { original: args.text, translated, language: args.targetLanguage };
+    }
+    
     const result = await ai.models.generateContent({
-      model: "gemini-2.5-flash",
+      model: "gemini-2.0-flash",
       contents: prompt
     });
     return { original: args.text, translated: result.text, language: args.targetLanguage };
   } catch (e) {
-    return { original: args.text, translated: `[Translation Error]: ${args.text}`, language: args.targetLanguage };
+    console.warn("Translation AI failed, falling back to Gemini", e);
+    try {
+      const result = await ai.models.generateContent({
+        model: "gemini-2.0-flash",
+        contents: prompt
+      });
+      return { original: args.text, translated: result.text, language: args.targetLanguage };
+    } catch (err) {
+      return { original: args.text, translated: `[Translation Error]: ${args.text}`, language: args.targetLanguage };
+    }
   }
 }
 
