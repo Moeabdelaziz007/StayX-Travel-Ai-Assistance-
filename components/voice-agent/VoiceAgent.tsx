@@ -75,7 +75,11 @@ User said: "${text}"`;
         const endpoint = jsonResponse.intent === 'flight' ? '/api/amadeus/flights' : '/api/amadeus/hotels';
         const res = await fetch(`${endpoint}?origin=${jsonResponse.origin}&destination=${jsonResponse.destination}&date=${jsonResponse.date}`);
         const data = await res.json();
-        spokenResponse = `I found some options for you. ${data.slice(0, 3).map((item: any) => `${item.name} for ${item.price}`).join(', ')}.`;
+        if (Array.isArray(data)) {
+          spokenResponse = `I found some options for you. ${data.slice(0, 3).map((item: any) => `${item.name} for ${item.price}`).join(', ')}.`;
+        } else {
+          spokenResponse = "I couldn't find any options right now.";
+        }
       }
 
       const utterance = new SpeechSynthesisUtterance(spokenResponse);
