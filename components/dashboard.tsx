@@ -18,6 +18,7 @@ import { motion, AnimatePresence } from 'motion/react';
 
 import { SearchCompareView } from './search-compare-view';
 import { useI18n } from '@/lib/i18n';
+import { CommandMenu } from './CommandMenu';
 
 export function ThemeToggle() {
   const { theme, setTheme } = useTheme();
@@ -98,6 +99,7 @@ export function Dashboard() {
 
   return (
     <div className="grid grid-cols-[256px,1fr] h-screen w-full bg-background text-foreground overflow-hidden">
+      <CommandMenu onNavigate={setActiveTab} />
       {/* Sidebar */}
       <div className="w-64 border-r border-zinc-800 bg-zinc-900/50 p-4 flex flex-col">
         <div className="flex items-center gap-3 mb-8 px-2 justify-between">
