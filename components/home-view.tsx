@@ -10,8 +10,10 @@ import { Badge } from '@/components/ui/badge';
 import { useState } from 'react';
 import { createVoiceRoom } from '@/lib/travel-tools';
 import { toast } from 'sonner';
+import { useI18n } from '@/lib/i18n';
 
 export function HomeView({ onNavigate }: { onNavigate: (tab: string) => void }) {
+  const { t, language } = useI18n();
   const [roomTitle, setRoomTitle] = useState('');
   const [magicLink, setMagicLink] = useState<string | null>(null);
 
@@ -37,7 +39,7 @@ export function HomeView({ onNavigate }: { onNavigate: (tab: string) => void }) 
           animate={{ opacity: 1, x: 0 }}
           className="text-5xl font-bold tracking-tight text-white"
         >
-          Welcome back, <span className="text-green-500">Traveler</span>
+          {language === 'ar' ? 'مرحباً بعودتك، ' : 'Welcome back, '}<span className="text-green-500">{language === 'ar' ? 'أيها المسافر' : 'Traveler'}</span>
         </motion.h1>
         <motion.p 
           initial={{ opacity: 0, x: -20 }}
@@ -45,7 +47,7 @@ export function HomeView({ onNavigate }: { onNavigate: (tab: string) => void }) 
           transition={{ delay: 0.1 }}
           className="text-zinc-400 text-lg"
         >
-          Your AI-powered travel ecosystem is ready.
+          {language === 'ar' ? 'نظام السفر الذكي الخاص بك جاهز.' : 'Your AI-powered travel ecosystem is ready.'}
         </motion.p>
       </header>
 
@@ -63,16 +65,16 @@ export function HomeView({ onNavigate }: { onNavigate: (tab: string) => void }) 
           <div className="flex flex-col gap-4 h-full">
             <h3 className="text-xl font-bold text-white flex items-center gap-2">
               <Mic className="h-5 w-5 text-green-500" />
-              Create Voice Room
+              {language === 'ar' ? 'إنشاء غرفة صوتية' : 'Create Voice Room'}
             </h3>
             <div className="flex gap-2">
               <Input 
-                placeholder="Room Title" 
+                placeholder={language === 'ar' ? 'عنوان الغرفة' : 'Room Title'} 
                 value={roomTitle} 
                 onChange={(e) => setRoomTitle(e.target.value)}
                 className="bg-zinc-950 border-zinc-800"
               />
-              <Button onClick={handleCreateRoom} className="bg-green-600 hover:bg-green-700">Create</Button>
+              <Button onClick={handleCreateRoom} className="bg-green-600 hover:bg-green-700">{language === 'ar' ? 'إنشاء' : 'Create'}</Button>
             </div>
             {magicLink && (
               <motion.div 

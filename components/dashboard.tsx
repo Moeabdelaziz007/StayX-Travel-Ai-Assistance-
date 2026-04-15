@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/lib/auth-context';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Plane, Youtube, LogOut, Mic, Compass, Bell, LayoutDashboard, Languages } from 'lucide-react';
+import { Plane, Youtube, LogOut, Mic, Compass, Bell, LayoutDashboard } from 'lucide-react';
 import { VoiceAssistant } from './voice-assistant';
 import { HomeView } from './home-view';
 import { TripsView } from './trips-view';
@@ -14,13 +14,13 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { db } from '@/lib/firebase';
 import { doc, updateDoc } from 'firebase/firestore';
-import { useI18n } from '@/lib/i18n';
 
 import { SearchCompareView } from './search-compare-view';
+import { useI18n } from '@/lib/i18n';
 
 export function Dashboard() {
   const { user, logout } = useAuth();
-  const { language, setLanguage, t, isRTL } = useI18n();
+  const { t, language, setLanguage } = useI18n();
   const [activeTab, setActiveTab] = useState('home');
   const [isAssistantOpen, setIsAssistantOpen] = useState(false);
   const searchParams = useSearchParams();
@@ -68,30 +68,29 @@ export function Dashboard() {
     <div className="flex h-screen w-full bg-zinc-950 text-zinc-50 overflow-hidden">
       {/* Sidebar */}
       <div className="w-64 border-r border-zinc-800 bg-zinc-900/50 p-4 flex flex-col">
-        <div className="flex items-center gap-3 mb-8 px-2">
-          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-green-500/20 text-green-500">
-            <Plane className="h-5 w-5" />
+        <div className="flex items-center gap-3 mb-8 px-2 justify-between">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-green-500/20 text-green-500">
+              <Plane className="h-5 w-5" />
+            </div>
+            <span className="text-xl font-bold tracking-tight">StayX</span>
           </div>
-          <span className="text-xl font-bold tracking-tight">StayX</span>
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={() => setLanguage(language === 'en' ? 'ar' : 'en')}
+            className="text-xs font-mono"
+          >
+            {language === 'en' ? 'عربي' : 'EN'}
+          </Button>
         </div>
 
         <nav className="flex-1 space-y-1 overflow-y-auto pr-2">
           <SidebarButton icon={LayoutDashboard} label={t('nav.dashboard')} active={activeTab === 'home'} onClick={() => setActiveTab('home')} />
           <SidebarButton icon={Plane} label={t('nav.trips')} active={activeTab === 'trips'} onClick={() => setActiveTab('trips')} />
-          <SidebarButton icon={Compass} label={t('nav.smartget')} active={activeTab === 'search'} onClick={() => setActiveTab('search')} />
+          <SidebarButton icon={Compass} label={t('nav.search')} active={activeTab === 'search'} onClick={() => setActiveTab('search')} />
           <SidebarButton icon={Youtube} label={t('nav.watch')} active={activeTab === 'watch'} onClick={() => setActiveTab('watch')} />
           <SidebarButton icon={Bell} label={t('nav.notifications')} active={activeTab === 'notifications'} onClick={() => setActiveTab('notifications')} />
-          
-          <div className="pt-4 mt-4 border-t border-zinc-800">
-            <Button 
-              variant="ghost" 
-              className="w-full justify-start text-zinc-400 hover:text-white hover:bg-zinc-800"
-              onClick={() => setLanguage(language === 'en' ? 'ar' : 'en')}
-            >
-              <Languages className="mr-2 h-4 w-4 text-green-500" />
-              {language === 'en' ? 'العربية' : 'English'}
-            </Button>
-          </div>
         </nav>
 
         <div className="mt-auto pt-4 border-t border-zinc-800">

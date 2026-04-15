@@ -1,6 +1,7 @@
 import { GoogleGenAI } from "@google/genai";
 import { db } from "@/lib/firebase";
 import { collection, query, where, getDocs, limit, doc, setDoc, serverTimestamp } from "firebase/firestore";
+import { generateWithGroq } from '@/lib/groq';
 
 const ai = new GoogleGenAI({ apiKey: process.env.NEXT_PUBLIC_GEMINI_API_KEY! });
 
@@ -16,12 +17,27 @@ export async function generateAISummary(destination: string) {
 
   const reviewTexts = reviews.map(r => `Rating: ${r.rating}/5, Title: ${r.title}, Body: ${r.body}`).join("\n---\n");
 
-  const response = await ai.models.generateContent({
-    model: "gemini-2.0-flash",
-    contents: `Summarize these ${reviewCount} travel reviews for ${destination}. Create a balanced summary covering: overall sentiment, what travelers love most, common complaints, best time to visit based on reviews, who this destination is best for. Keep it under 150 words and sound like a knowledgeable local guide.\n\n${reviewTexts}`,
-  });
+  let summary = "No summary available.";
+  const prompt = `Summarize these ${reviewCount} travel reviews for ${destination}. Create a balanced summary covering: overall sentiment, what travelers love most, common complaints, best time to visit based on reviews, who this destination is best for. Keep it under 150 words and sound like a knowledgeable local guide.\n\n${reviewTexts}`;
 
-  const summary = response.text || "No summary available.";
+  try {
+    if (process.env.GROQ_API_KEY) {
+      summary = await generateWithGroq(prompt, "You are an expert travel analyst.", "llama3-8b-8192");
+    } else {
+      const response = await ai.models.generateContent({
+        model: "gemini-2.0-flash",
+        contents: prompt,
+      });
+      summary = response.text || summary;
+    }
+  } catch (e) {
+    console.warn("Groq failed, falling back to Gemini", e);
+    const response = await ai.models.generateContent({
+      model: "gemini-2.0-flash",
+      contents: prompt,
+    });
+    summary = response.text || summary;
+  }
   
   const avgRating = reviews.reduce((acc, r) => acc + r.rating, 0) / reviewCount;
 

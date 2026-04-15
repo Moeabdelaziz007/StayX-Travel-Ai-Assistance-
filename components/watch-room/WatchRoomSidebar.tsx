@@ -11,9 +11,9 @@ import { GoogleGenAI } from '@google/genai';
 import { db, auth } from '@/lib/firebase';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { toast } from 'sonner';
-import Markdown from 'react-markdown';
-
+import { generateWithGroq } from '@/lib/groq';
 import { useI18n } from '@/lib/i18n';
+import Markdown from 'react-markdown';
 
 const ai = new GoogleGenAI({ apiKey: process.env.NEXT_PUBLIC_GEMINI_API_KEY });
 
@@ -23,7 +23,7 @@ interface WatchRoomSidebarProps {
 }
 
 export function WatchRoomSidebar({ videoTitle, videoDescription }: WatchRoomSidebarProps) {
-  const { language } = useI18n();
+  const { t, language } = useI18n();
   const [content, setContent] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [destination, setDestination] = useState('Loading...');
@@ -39,27 +39,48 @@ export function WatchRoomSidebar({ videoTitle, videoDescription }: WatchRoomSide
       
       try {
         // First, quickly extract destination name
-        const destResponse = await ai.models.generateContent({
-          model: 'gemini-2.0-flash',
-          contents: `Extract the main travel destination (city or country) from this video title: "${videoTitle}". Just return the name, nothing else. If none, return "this destination".`
-        });
-        const dest = destResponse.text?.trim() || 'this destination';
+        let dest = 'this destination';
+        try {
+          if (process.env.GROQ_API_KEY) {
+             dest = await generateWithGroq(`Extract the main travel destination (city or country) from this video title: "${videoTitle}". Just return the name, nothing else. If none, return "this destination".`, "You are a helpful assistant.", "llama3-8b-8192");
+          } else {
+            const destResponse = await ai.models.generateContent({
+              model: 'gemini-2.0-flash',
+              contents: `Extract the main travel destination (city or country) from this video title: "${videoTitle}". Just return the name, nothing else. If none, return "this destination".`
+            });
+            dest = destResponse.text?.trim() || 'this destination';
+          }
+        } catch (e) {
+           console.warn("Failed to extract destination", e);
+        }
+        
         if (isMounted) setDestination(dest);
 
         const systemInstruction = `You are a travel expert. Based on the video content about ${dest}, provide: 1) Best time to visit, 2) Current average hotel prices, 3) Top 3 must-do activities, 4) Visa requirements for Egyptian travelers, 5) Estimated total trip budget for 7 days. Format the response nicely using Markdown. ${language === 'ar' ? 'Please provide the response in Arabic.' : 'Please provide the response in English.'}`;
 
-        const responseStream = await ai.models.generateContentStream({
-          model: 'gemini-2.0-flash',
-          contents: `Video Title: ${videoTitle}\nVideo Description: ${videoDescription || 'N/A'}\n\nPlease provide the travel insights.`,
-          config: {
-            systemInstruction,
-          }
-        });
+        try {
+           if (process.env.GROQ_API_KEY) {
+              const groqContent = await generateWithGroq(`Video Title: ${videoTitle}\nVideo Description: ${videoDescription || 'N/A'}\n\nPlease provide the travel insights.`, systemInstruction, "llama3-8b-8192");
+              if (isMounted) setContent(groqContent);
+           } else {
+              const responseStream = await ai.models.generateContentStream({
+                model: 'gemini-2.0-flash',
+                contents: `Video Title: ${videoTitle}\nVideo Description: ${videoDescription || 'N/A'}\n\nPlease provide the travel insights.`,
+                config: {
+                  systemInstruction,
+                }
+              });
 
-        for await (const chunk of responseStream) {
-          if (!isMounted) break;
-          setContent((prev) => prev + chunk.text);
+              for await (const chunk of responseStream) {
+                if (!isMounted) break;
+                setContent((prev) => prev + chunk.text);
+              }
+           }
+        } catch (e) {
+           console.warn("Failed to generate insights", e);
+           if (isMounted) setContent("Failed to load travel insights. Please check your API key or connection.");
         }
+        
       } catch (error) {
         console.error("Error fetching insights:", error);
         if (isMounted) setContent("Failed to load travel insights. Please check your API key or connection.");
@@ -74,7 +95,7 @@ export function WatchRoomSidebar({ videoTitle, videoDescription }: WatchRoomSide
     return () => {
       isMounted = false;
     };
-  }, [videoTitle, videoDescription]);
+  }, [videoTitle, videoDescription, language]);
 
   const handleAddToWishlist = async () => {
     if (!auth.currentUser) {
@@ -114,7 +135,7 @@ export function WatchRoomSidebar({ videoTitle, videoDescription }: WatchRoomSide
           className="bg-green-600 hover:bg-green-700 text-white gap-2"
         >
           <Heart className="h-4 w-4" />
-          <span className="hidden sm:inline">{language === 'ar' ? 'أضف إلى قائمة الأمنيات' : 'Add to Wishlist'}</span>
+          <span className="hidden sm:inline">Add to Wishlist</span>
         </Button>
       </div>
 
@@ -124,7 +145,7 @@ export function WatchRoomSidebar({ videoTitle, videoDescription }: WatchRoomSide
             <AccordionTrigger className="text-white hover:text-green-400 hover:no-underline">
               <div className="flex items-center gap-2">
                 <Sparkles className="h-4 w-4 text-green-500" />
-                {language === 'ar' ? 'رؤى السفر بالذكاء الاصطناعي' : 'AI Travel Insights'}
+                AI Travel Insights
               </div>
             </AccordionTrigger>
             <AccordionContent className="text-zinc-300">
