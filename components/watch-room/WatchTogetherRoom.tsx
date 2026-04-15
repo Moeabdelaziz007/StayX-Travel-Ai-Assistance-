@@ -12,6 +12,8 @@ import { Users, Share2, Crown, LogOut, MapPin, Plane, Cloud, Thermometer } from 
 import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
 import { useI18n } from '@/lib/i18n';
+import Image from 'next/image';
+import Image from 'next/image';
 import { GoogleGenAI } from '@google/genai';
 import { searchFlights, getWeather } from '@/lib/travel-tools';
 
@@ -30,7 +32,6 @@ export function WatchTogetherRoom({ roomId }: { roomId: string }) {
   const { t, language } = useI18n();
   const [roomData, setRoomData] = useState<RoomData | null>(null);
   const [isHost, setIsHost] = useState(false);
-  const [newVideoId, setNewVideoId] = useState('');
   const [destination, setDestination] = useState('');
   const [videos, setVideos] = useState<any[]>([]);
   const [isLoadingVideos, setIsLoadingVideos] = useState(false);
@@ -146,28 +147,6 @@ export function WatchTogetherRoom({ roomId }: { roomId: string }) {
     };
   }, [roomId, router]);
 
-  const handleVideoChange = async () => {
-    if (!isHost || !newVideoId) return;
-    
-    let finalVideoId = newVideoId;
-    const match = newVideoId.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([^&?]+)/);
-    if (match && match[1]) {
-      finalVideoId = match[1];
-    }
-
-    try {
-      await updateDoc(doc(db, 'rooms', roomId), {
-        videoId: finalVideoId,
-        currentTime: 0,
-        isPlaying: true
-      });
-      setNewVideoId('');
-    } catch (error) {
-      console.error("Error changing video:", error);
-      toast.error("Failed to change video");
-    }
-  };
-
   const handleLeaveRoom = () => {
     router.push('/dashboard');
   };
@@ -246,7 +225,9 @@ export function WatchTogetherRoom({ roomId }: { roomId: string }) {
               <div className="grid grid-cols-3 gap-4">
                 {videos.map((video) => (
                   <div key={video.videoId} className="cursor-pointer group" onClick={() => { handleVideoSelect(video.videoId); planTrip(video.title); }}>
-                    <img src={video.thumbnail} alt={video.title} className="w-full aspect-video rounded-xl object-cover" />
+                    <div className="relative w-full aspect-video rounded-xl overflow-hidden">
+                      <Image src={video.thumbnail} alt={video.title} fill className="object-cover" unoptimized />
+                    </div>
                     <h4 className="text-xs text-zinc-300 mt-2 truncate group-hover:text-emerald-400">{video.title}</h4>
                   </div>
                 ))}

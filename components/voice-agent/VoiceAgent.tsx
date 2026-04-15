@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { Mic, Square, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
@@ -34,7 +34,7 @@ export function VoiceAgent() {
     }
   }, [transcript]);
 
-  const toggleListening = () => {
+  const toggleListening = useCallback(() => {
     if (isListening) {
       recognitionRef.current?.stop();
     } else {
@@ -42,7 +42,17 @@ export function VoiceAgent() {
       recognitionRef.current?.start();
       setIsListening(true);
     }
-  };
+  }, [isListening]);
+
+  useEffect(() => {
+    const handleStartVoice = () => {
+      if (!isListening) {
+        toggleListening();
+      }
+    };
+    window.addEventListener('start-voice-agent', handleStartVoice);
+    return () => window.removeEventListener('start-voice-agent', handleStartVoice);
+  }, [isListening, toggleListening]);
 
   const handleProcessSpeech = async (text: string) => {
     setIsProcessing(true);

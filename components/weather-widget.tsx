@@ -112,11 +112,11 @@ export function WeatherWidget({ location: initialLocation = 'Paris, France' }: {
               <div className="mt-4 grid grid-cols-2 gap-4">
                 <div className="flex items-center gap-2 text-xs text-zinc-500">
                   <Wind className="h-3 w-3" />
-                  <span>{weather?.windSpeed} km/h</span>
+                  <span>{weather?.current?.wind_speed_10m} km/h</span>
                 </div>
                 <div className="flex items-center gap-2 text-xs text-zinc-500">
                   <Thermometer className="h-3 w-3" />
-                  <span>Feels like {weather?.feelsLike}°C</span>
+                  <span>Feels like {Math.round(weather?.current?.apparent_temperature)}°C</span>
                 </div>
               </div>
             </>

@@ -5,7 +5,6 @@ import { useAuth } from '@/lib/auth-context';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Plane, Youtube, LogOut, Mic, Compass, Bell, LayoutDashboard, Plus, Search as SearchIcon } from 'lucide-react';
-import { VoiceAssistant } from './voice-assistant';
 import { HomeView } from './home-view';
 import { TripsView } from './trips-view';
 import { WatchRoom } from './watch-room';
@@ -13,7 +12,7 @@ import { NotificationsView } from './notifications-view';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { db } from '@/lib/firebase';
-import { doc, updateDoc } from 'firebase/firestore';
+import { doc, updateDoc, collection, query, where, onSnapshot } from 'firebase/firestore';
 import { motion, AnimatePresence } from 'motion/react';
 
 import { SearchCompareView } from './search-compare-view';
@@ -23,9 +22,31 @@ export function Dashboard() {
   const { user, logout } = useAuth();
   const { t, language, setLanguage } = useI18n();
   const [activeTab, setActiveTab] = useState('home');
-  const [isAssistantOpen, setIsAssistantOpen] = useState(false);
+  const [tripsCount, setTripsCount] = useState(0);
+  const [notificationsCount, setNotificationsCount] = useState(0);
   const searchParams = useSearchParams();
   const router = useRouter();
+
+  useEffect(() => {
+    if (!user) return;
+    
+    // Listen to trips
+    const tripsQuery = query(collection(db, 'trips'), where('userId', '==', user.uid));
+    const unsubscribeTrips = onSnapshot(tripsQuery, (snapshot) => {
+      setTripsCount(snapshot.docs.length);
+    });
+
+    // Listen to notifications (invitations)
+    const notifsQuery = query(collection(db, 'invitations'), where('receiverEmail', '==', user.email), where('status', '==', 'pending'));
+    const unsubscribeNotifs = onSnapshot(notifsQuery, (snapshot) => {
+      setNotificationsCount(snapshot.docs.length);
+    });
+
+    return () => {
+      unsubscribeTrips();
+      unsubscribeNotifs();
+    };
+  }, [user]);
 
   const verifyPayment = useCallback(async (sessionId: string) => {
     try {
@@ -88,10 +109,10 @@ export function Dashboard() {
 
         <nav className="flex-1 space-y-1 overflow-y-auto pr-2">
           <SidebarButton icon={LayoutDashboard} label={t('nav.dashboard')} active={activeTab === 'home'} onClick={() => setActiveTab('home')} />
-          <SidebarButton icon={Plane} label={t('nav.trips')} active={activeTab === 'trips'} onClick={() => setActiveTab('trips')} badge="2" />
+          <SidebarButton icon={Plane} label={t('nav.trips')} active={activeTab === 'trips'} onClick={() => setActiveTab('trips')} badge={tripsCount > 0 ? tripsCount.toString() : undefined} />
           <SidebarButton icon={Compass} label={t('nav.search')} active={activeTab === 'search'} onClick={() => setActiveTab('search')} />
           <SidebarButton icon={Youtube} label={t('nav.watch')} active={activeTab === 'watch'} onClick={() => setActiveTab('watch')} badge="Live" />
-          <SidebarButton icon={Bell} label={t('nav.notifications')} active={activeTab === 'notifications'} onClick={() => setActiveTab('notifications')} badge="5" />
+          <SidebarButton icon={Bell} label={t('nav.notifications')} active={activeTab === 'notifications'} onClick={() => setActiveTab('notifications')} badge={notificationsCount > 0 ? notificationsCount.toString() : undefined} />
           
           <div className="pt-6 pb-2 px-3">
             <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-4">Quick Actions</p>
@@ -116,7 +137,7 @@ export function Dashboard() {
                 variant="outline" 
                 size="sm" 
                 className="w-full justify-start border-zinc-800 bg-zinc-900/50 text-zinc-400 hover:text-white hover:bg-zinc-800 rounded-xl gap-2"
-                onClick={() => setIsAssistantOpen(true)}
+                onClick={() => window.dispatchEvent(new Event('start-voice-agent'))}
               >
                 <Mic className="h-4 w-4 text-rose-500" /> Voice Assistant
               </Button>
@@ -151,23 +172,7 @@ export function Dashboard() {
           {activeTab === 'watch' && <WatchRoom />}
           {activeTab === 'notifications' && <NotificationsView />}
         </main>
-
-        {/* Floating Assistant Button */}
-        <div className="absolute bottom-6 right-6 z-50">
-          <Button 
-            size="icon" 
-            className="h-16 w-16 rounded-full bg-green-500 hover:bg-green-600 shadow-lg shadow-green-500/20"
-            onClick={() => setIsAssistantOpen(true)}
-          >
-            <Mic className="h-8 w-8 text-black" />
-          </Button>
-        </div>
       </div>
-
-      {/* Voice Assistant Overlay */}
-      {isAssistantOpen && (
-        <VoiceAssistant onClose={() => setIsAssistantOpen(false)} />
-      )}
     </div>
   );
 }
