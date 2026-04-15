@@ -4,7 +4,8 @@ import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/lib/auth-context';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Plane, Youtube, LogOut, Mic, Compass, Bell, LayoutDashboard, Plus, Search as SearchIcon } from 'lucide-react';
+import { useTheme } from "next-themes";
+import { Moon, Sun, Plane, Youtube, LogOut, Mic, Compass, Bell, LayoutDashboard, Plus, Search as SearchIcon } from 'lucide-react';
 import { HomeView } from './home-view';
 import { TripsView } from './trips-view';
 import { WatchRoom } from './watch-room';
@@ -17,6 +18,15 @@ import { motion, AnimatePresence } from 'motion/react';
 
 import { SearchCompareView } from './search-compare-view';
 import { useI18n } from '@/lib/i18n';
+
+export function ThemeToggle() {
+  const { theme, setTheme } = useTheme();
+  return (
+    <Button variant="ghost" size="sm" onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}>
+      {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+    </Button>
+  );
+}
 
 export function Dashboard() {
   const { user, logout } = useAuth();
@@ -87,7 +97,7 @@ export function Dashboard() {
   }, [searchParams, verifyPayment]);
 
   return (
-    <div className="flex h-screen w-full bg-zinc-950 text-zinc-50 overflow-hidden">
+    <div className="grid grid-cols-[256px,1fr] h-screen w-full bg-background text-foreground overflow-hidden">
       {/* Sidebar */}
       <div className="w-64 border-r border-zinc-800 bg-zinc-900/50 p-4 flex flex-col">
         <div className="flex items-center gap-3 mb-8 px-2 justify-between">
@@ -97,14 +107,17 @@ export function Dashboard() {
             </div>
             <span className="text-xl font-bold tracking-tight">StayX</span>
           </div>
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            onClick={() => setLanguage(language === 'en' ? 'ar' : 'en')}
-            className="text-xs font-mono"
-          >
-            {language === 'en' ? 'عربي' : 'EN'}
-          </Button>
+          <div className="flex gap-1">
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={() => setLanguage(language === 'en' ? 'ar' : 'en')}
+              className="text-xs font-mono"
+            >
+              {language === 'en' ? 'عربي' : 'EN'}
+            </Button>
+            <ThemeToggle />
+          </div>
         </div>
 
         <nav className="flex-1 space-y-1 overflow-y-auto pr-2">
@@ -165,7 +178,7 @@ export function Dashboard() {
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col relative overflow-hidden">
-        <main className="flex-1 overflow-y-auto p-6">
+        <main className="overflow-y-auto p-6">
           {activeTab === 'home' && <HomeView onNavigate={setActiveTab} tripsCount={tripsCount} />}
           {activeTab === 'trips' && <TripsView />}
           {activeTab === 'search' && <SearchCompareView />}

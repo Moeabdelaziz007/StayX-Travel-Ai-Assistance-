@@ -12,6 +12,8 @@ import { createVoiceRoom } from '@/lib/travel-tools';
 import { toast } from 'sonner';
 import { useI18n } from '@/lib/i18n';
 import { useAuth } from '@/lib/auth-context';
+import { MoodBoard } from './travel/MoodBoard';
+import { ArabicTravelers } from './travel/ArabicTravelers';
 
 export function HomeView({ onNavigate, tripsCount }: { onNavigate: (tab: string) => void, tripsCount: number }) {
   const { t, language } = useI18n();
@@ -208,6 +210,16 @@ export function HomeView({ onNavigate, tripsCount }: { onNavigate: (tab: string)
             </CardContent>
           </Card>
         </motion.div>
+      </div>
+
+      <div className="space-y-6">
+        <h2 className="text-2xl font-bold text-white">Travel Mood Board</h2>
+        <MoodBoard destination="Dubai" />
+      </div>
+
+      <div className="space-y-6">
+        <h2 className="text-2xl font-bold text-white">Arabic Travel Creators</h2>
+        <ArabicTravelers />
       </div>
     </div>
   );
