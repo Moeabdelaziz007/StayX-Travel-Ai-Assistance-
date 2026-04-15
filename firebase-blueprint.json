@@ -1,0 +1,139 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "User profile information and preferences",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "name": { "type": "string" },
+        "email": { "type": "string", "format": "email" },
+        "voiceTone": { "type": "string", "enum": ["professional", "friendly", "energetic", "calm"] },
+        "budgetPreference": { "type": "string", "enum": ["budget", "moderate", "luxury"] },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "name", "email", "createdAt"]
+    },
+    "Trip": {
+      "title": "Trip",
+      "description": "A planned trip",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "destination": { "type": "string" },
+        "startDate": { "type": "string", "format": "date-time" },
+        "endDate": { "type": "string", "format": "date-time" },
+        "budget": { "type": "number" },
+        "status": { "type": "string", "enum": ["planning", "booked", "completed", "cancelled"] },
+        "paymentStatus": { "type": "string", "enum": ["unpaid", "pending", "paid"] },
+        "stripeSessionId": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "destination", "status", "createdAt"]
+    },
+    "Appointment": {
+      "title": "Appointment",
+      "description": "An appointment or schedule item",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "title": { "type": "string" },
+        "date": { "type": "string", "format": "date-time" },
+        "type": { "type": "string", "enum": ["restaurant", "nightclub", "flight", "hotel", "cinema", "event", "other"] },
+        "details": { "type": "string" },
+        "paymentStatus": { "type": "string", "enum": ["unpaid", "pending", "paid"] },
+        "stripeSessionId": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "title", "date", "type", "createdAt"]
+    },
+    "Invitation": {
+      "title": "Invitation",
+      "description": "An invitation sent to a friend",
+      "type": "object",
+      "properties": {
+        "senderId": { "type": "string" },
+        "senderName": { "type": "string" },
+        "receiverEmail": { "type": "string", "format": "email" },
+        "bookingId": { "type": "string" },
+        "bookingType": { "type": "string", "enum": ["trip", "appointment"] },
+        "status": { "type": "string", "enum": ["pending", "accepted", "declined"] },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["senderId", "receiverEmail", "bookingId", "status", "createdAt"]
+    },
+    "Favorite": {
+      "title": "Favorite",
+      "description": "A favorite item (music or video)",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "itemId": { "type": "string" },
+        "type": { "type": "string", "enum": ["music", "video"] },
+        "title": { "type": "string" },
+        "thumbnail": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "itemId", "type", "title", "createdAt"]
+    },
+    "Order": {
+      "title": "Order",
+      "description": "A shopping order",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "itemName": { "type": "string" },
+        "price": { "type": "number" },
+        "currency": { "type": "string" },
+        "status": { "type": "string", "enum": ["processing", "shipped", "delivered"] },
+        "trackingNumber": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "itemName", "price", "status", "createdAt"]
+    },
+    "Notification": {
+      "title": "Notification",
+      "description": "A system notification",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "title": { "type": "string" },
+        "message": { "type": "string" },
+        "read": { "type": "boolean" },
+        "type": { "type": "string", "enum": ["invitation", "payment", "booking", "system"] },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "title", "message", "read", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/UserProfile" },
+      "description": "User profiles"
+    },
+    "/trips/{tripId}": {
+      "schema": { "$ref": "#/entities/Trip" },
+      "description": "User trips"
+    },
+    "/appointments/{appointmentId}": {
+      "schema": { "$ref": "#/entities/Appointment" },
+      "description": "User appointments"
+    },
+    "/invitations/{invitationId}": {
+      "schema": { "$ref": "#/entities/Invitation" },
+      "description": "Friend invitations"
+    },
+    "/favorites/{favoriteId}": {
+      "schema": { "$ref": "#/entities/Favorite" },
+      "description": "User favorites"
+    },
+    "/orders/{orderId}": {
+      "schema": { "$ref": "#/entities/Order" },
+      "description": "Shopping orders"
+    },
+    "/notifications/{notificationId}": {
+      "schema": { "$ref": "#/entities/Notification" },
+      "description": "User notifications"
+    }
+  }
+}

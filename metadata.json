@@ -1,0 +1,9 @@
+{
+  "name": "StayX - Travel AI",
+  "description": "An AI voice-based personal travel assistant for booking, scheduling, and entertainment.",
+  "requestFramePermissions": [
+    "microphone",
+    "geolocation"
+  ],
+  "majorCapabilities": []
+}
