@@ -1,9 +1,9 @@
 export interface ItineraryDay {
   dayNumber: number;
   theme: string;
-  morning: { activity: string; location: string; duration: string; cost: number; tips: string };
-  afternoon: { activity: string; location: string; duration: string; cost: number; tips: string };
-  evening: { activity: string; location: string; duration: string; cost: number; tips: string };
+  morning: { activity: string; location: string; duration: string; cost: number; tips: string; bookingLink?: string; notes?: string };
+  afternoon: { activity: string; location: string; duration: string; cost: number; tips: string; bookingLink?: string; notes?: string };
+  evening: { activity: string; location: string; duration: string; cost: number; tips: string; bookingLink?: string; notes?: string };
   meals: { name: string; cuisine: string; priceRange: string; mustTry: string }[];
 }
 
