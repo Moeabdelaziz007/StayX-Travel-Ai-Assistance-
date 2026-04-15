@@ -181,11 +181,20 @@ export function useVoiceAgent() {
                     result = { url: `/watch?q=${encodeURIComponent(call.args.destination)}`, message: "I've opened the travel feed for you." };
                   } else if (call.name === "addToCalendar") {
                     const { addToCalendar } = await import('@/lib/travel-tools');
-                    result = await addToCalendar(call.args);
-                    toast.success("Event added to calendar!");
+                    result = await addToCalendar({ ...call.args, accessToken: googleToken });
+                    toast.success(result.message);
                   } else if (call.name === "searchSimCards") {
                     const { searchSimCards } = await import('@/lib/travel-tools');
                     result = await searchSimCards(call.args);
+                  } else if (call.name === "searchHotels") {
+                    const { searchHotels } = await import('@/lib/travel-tools');
+                    result = await searchHotels(call.args);
+                  } else if (call.name === "generateDestinationImage") {
+                    const { generateDestinationImage } = await import('@/lib/travel-tools');
+                    result = await generateDestinationImage(call.args);
+                  } else if (call.name === "getCountryInfo") {
+                    const { getCountryInfo } = await import('@/lib/travel-tools');
+                    result = await getCountryInfo(call.args);
                   }
                 } catch (e) {
                   result = { error: "Failed to execute tool" };
@@ -287,6 +296,41 @@ export function useVoiceAgent() {
                       destination: { type: "STRING" }
                     },
                     required: ["destination"]
+                  }
+                },
+                {
+                  name: "searchHotels",
+                  description: "Search for hotels in a destination",
+                  parameters: {
+                    type: "OBJECT",
+                    properties: {
+                      destination: { type: "STRING" },
+                      checkIn: { type: "STRING", description: "ISO date string" },
+                      checkOut: { type: "STRING", description: "ISO date string" }
+                    },
+                    required: ["destination", "checkIn", "checkOut"]
+                  }
+                },
+                {
+                  name: "generateDestinationImage",
+                  description: "Generate an AI image of a travel destination or landmark",
+                  parameters: {
+                    type: "OBJECT",
+                    properties: {
+                      prompt: { type: "STRING", description: "Detailed description of the image to generate" }
+                    },
+                    required: ["prompt"]
+                  }
+                },
+                {
+                  name: "getCountryInfo",
+                  description: "Get detailed information about a country (population, capital, flag, etc.)",
+                  parameters: {
+                    type: "OBJECT",
+                    properties: {
+                      countryName: { type: "STRING" }
+                    },
+                    required: ["countryName"]
                   }
                 }
               ]

@@ -387,6 +387,37 @@ export async function searchHotels(args: { destination: string, checkIn: string,
   ];
 }
 
+export async function generateDestinationImage(args: { prompt: string }) {
+  const seed = Math.floor(Math.random() * 1000000);
+  const imageUrl = `https://pollinations.ai/p/${encodeURIComponent(args.prompt)}?width=1024&height=1024&seed=${seed}&model=flux`;
+  return { imageUrl, message: "Image generated successfully using Pollinations AI" };
+}
+
+export async function getCountryInfo(args: { countryName: string }) {
+  try {
+    const res = await fetch(`https://restcountries.com/v3.1/name/${encodeURIComponent(args.countryName)}?fullText=true`);
+    const data = await res.json();
+    if (!data || data.length === 0) throw new Error("Country not found");
+    
+    const country = data[0];
+    return {
+      name: country.name.common,
+      officialName: country.name.official,
+      capital: country.capital?.[0],
+      region: country.region,
+      subregion: country.subregion,
+      population: country.population,
+      currencies: Object.values(country.currencies || {}).map((c: any) => `${c.name} (${c.symbol})`).join(', '),
+      languages: Object.values(country.languages || {}).join(', '),
+      flag: country.flags.svg,
+      map: country.maps.googleMaps
+    };
+  } catch (error) {
+    console.error("RestCountries error:", error);
+    throw error;
+  }
+}
+
 export async function searchPlaces(args: { query: string, location?: string }) {
   const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
   if (!apiKey) throw new Error("Google Maps API Key not configured");

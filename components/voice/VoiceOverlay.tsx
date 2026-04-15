@@ -10,9 +10,11 @@ interface VoiceOverlayProps {
   state: 'idle' | 'connecting' | 'listening' | 'processing' | 'speaking';
   transcript: string;
   onClose: () => void;
+  onConnectCalendar?: () => void;
+  hasCalendar?: boolean;
 }
 
-export function VoiceOverlay({ isActive, state, transcript, onClose }: VoiceOverlayProps) {
+export function VoiceOverlay({ isActive, state, transcript, onClose, onConnectCalendar, hasCalendar }: VoiceOverlayProps) {
   return (
     <AnimatePresence>
       {isActive && (
@@ -48,6 +50,15 @@ export function VoiceOverlay({ isActive, state, transcript, onClose }: VoiceOver
                   {transcript || (state === 'listening' ? 'Say something like "Plan a trip to Tokyo"' : '')}
                 </p>
               </div>
+
+              {!hasCalendar && onConnectCalendar && (
+                <Button 
+                  onClick={onConnectCalendar}
+                  className="bg-blue-600 hover:bg-blue-700 text-white rounded-full px-8"
+                >
+                  Connect Google Calendar
+                </Button>
+              )}
             </div>
 
             <motion.p 
