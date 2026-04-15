@@ -56,7 +56,7 @@ export function VoiceOverlay({ isActive, state, transcript, onClose }: VoiceOver
               transition={{ delay: 1 }}
               className="text-sm text-zinc-500 uppercase tracking-[0.2em] font-bold"
             >
-              Tap anywhere to stop or say "Goodbye"
+              Tap anywhere to stop or say &quot;Goodbye&quot;
             </motion.p>
           </div>
 

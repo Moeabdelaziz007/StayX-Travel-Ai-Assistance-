@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { GoogleGenAI, Modality, LiveServerMessage } from "@google/genai";
 import { toast } from 'sonner';
 
-const MODEL = "gemini-3.1-flash-live-preview";
+const MODEL = "gemini-2.0-flash-exp";
 
 export type VoiceState = 'idle' | 'connecting' | 'listening' | 'processing' | 'speaking';
 
@@ -167,6 +167,13 @@ export function useVoiceAgent() {
                     result = await generateDetailedItinerary(call.args);
                   } else if (call.name === "searchYouTube") {
                     result = { url: `/watch?q=${encodeURIComponent(call.args.destination)}`, message: "I've opened the travel feed for you." };
+                  } else if (call.name === "addToCalendar") {
+                    const { addToCalendar } = await import('@/lib/travel-tools');
+                    result = await addToCalendar(call.args);
+                    toast.success("Event added to calendar!");
+                  } else if (call.name === "searchSimCards") {
+                    const { searchSimCards } = await import('@/lib/travel-tools');
+                    result = await searchSimCards(call.args);
                   }
                 } catch (e) {
                   result = { error: "Failed to execute tool" };
@@ -236,6 +243,32 @@ export function useVoiceAgent() {
                 {
                   name: "searchYouTube",
                   description: "Get travel videos for a destination",
+                  parameters: {
+                    type: "OBJECT",
+                    properties: {
+                      destination: { type: "STRING" }
+                    },
+                    required: ["destination"]
+                  }
+                },
+                {
+                  name: "addToCalendar",
+                  description: "Add a trip or booking to the user's calendar",
+                  parameters: {
+                    type: "OBJECT",
+                    properties: {
+                      title: { type: "STRING" },
+                      description: { type: "STRING" },
+                      startTime: { type: "STRING", description: "ISO date string" },
+                      endTime: { type: "STRING", description: "ISO date string" },
+                      location: { type: "STRING" }
+                    },
+                    required: ["title", "startTime", "endTime"]
+                  }
+                },
+                {
+                  name: "searchSimCards",
+                  description: "Search for travel SIM cards or eSIMs for a destination",
                   parameters: {
                     type: "OBJECT",
                     properties: {

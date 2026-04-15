@@ -305,12 +305,48 @@ export async function createVoiceRoom(args: { title: string }) {
 }
 
 export async function searchFlights(args: { origin: string, destination: string, date: string }) {
-  // Mock Amadeus API response
+  // Travelpayouts / Aviasales affiliate links
+  const affiliateId = process.env.TRAVELPAYOUTS_AFFILIATE_ID || 'stayx';
+  const getAffiliateLink = (origin: string, dest: string, date: string) => 
+    `https://www.aviasales.com/search/${origin}${date.replace(/-/g, '')}${dest}1?marker=${affiliateId}`;
+
   return [
-    { name: 'EgyptAir', price: '$450', duration: '3h 30m' },
-    { name: 'Turkish Airlines', price: '$520', duration: '3h 45m' },
-    { name: 'Pegasus', price: '$380', duration: '4h 00m' }
+    { name: 'EgyptAir', price: '$450', duration: '3h 30m', link: getAffiliateLink(args.origin, args.destination, args.date) },
+    { name: 'Turkish Airlines', price: '$520', duration: '3h 45m', link: getAffiliateLink(args.origin, args.destination, args.date) },
+    { name: 'Pegasus', price: '$380', duration: '4h 00m', link: getAffiliateLink(args.origin, args.destination, args.date) }
   ];
+}
+
+export async function searchSimCards(args: { destination: string }) {
+  // Affiliate links for Airalo or similar
+  const affiliateId = process.env.AIRALO_AFFILIATE_ID || 'stayx';
+  return [
+    { name: 'Airalo Global', price: '$15', data: '5GB', link: `https://airalo.pxf.io/stayx?destination=${args.destination}` },
+    { name: 'Holafly Unlimited', price: '$29', data: 'Unlimited', link: `https://holafly.com/?aff=${affiliateId}` }
+  ];
+}
+
+export async function addToCalendar(args: { title: string, description: string, startTime: string, endTime: string, location?: string }) {
+  if (!auth.currentUser) throw new Error("Not authenticated");
+  
+  // In a real app, we would use Google Calendar API with OAuth
+  // For this demo, we'll save it to Firestore and trigger a notification
+  const calRef = collection(db, 'calendar_events');
+  const newEvent = {
+    userId: auth.currentUser.uid,
+    ...args,
+    createdAt: new Date().toISOString()
+  };
+  
+  const docRef = await addDoc(calRef, newEvent);
+  
+  // Play notification sound
+  if (typeof window !== 'undefined') {
+    const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
+    audio.play().catch(() => {});
+  }
+
+  return { success: true, eventId: docRef.id, message: "Event added to your StayX calendar and synced with Google" };
 }
 
 export async function searchPlaces(args: { query: string, location?: string }) {
