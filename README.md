@@ -37,13 +37,14 @@
 
 ### 🤖 AI Intelligence
 - **Voice Assistant (StayX Live):** Real-time voice interaction for hands-free planning.
-- **Hybrid AI Engine:** Uses **Groq (Llama 3)** for fast, cost-effective tasks and **Gemini** for complex reasoning and search grounding.
-- **Smart Summaries:** AI-generated destination summaries based on real traveler reviews.
-- **Today's Travel Tips:** Daily personalized tips powered by Gemini.
+- **AI Planner Pro:** High-end visual itinerary generator with scenic AI images and PDF export.
+- **Hybrid AI Engine:** Uses **Groq (Llama 3)** for fast tasks and **Gemini 2.0** for complex reasoning.
+- **Google Search Grounding:** Powered by Gemini's real-time web search for the most current travel data (2026 ready).
 
 ### ✈️ Travel Planning
 - **Interactive Itineraries:** Detailed daily plans with activities, dining, and logistics.
 - **Search & Compare:** Real-time price comparison across major platforms (Airbnb, Booking, etc.).
+- **Google Maps Integration:** Integrated Places search and Directions for seamless navigation.
 - **Quick Add Calendar:** Easily manage appointments and bookings with a glassmorphism UI.
 
 ### 👥 Social & Collaboration
@@ -51,9 +52,10 @@
 - **Friend Invitations:** Invite friends to join your trips or watch rooms.
 
 ### 🛠️ Technical Excellence
+- **Firestore Offline Mode:** Powered by `enableIndexedDbPersistence` — access your trips even without internet.
 - **PWA Ready:** Installable on mobile/desktop with offline support.
-- **Internationalization (i18n):** Full English and Arabic support with RTL layout.
-- **Glassmorphism UI:** Modern, premium aesthetic with emerald green accents.
+- **Internationalization (i18n):** Full English and Arabic support with RTL layout and Arabic number formatting.
+- **Glassmorphism UI:** Modern, premium aesthetic with emerald green accents and responsive CSS Grid layout.
 
 ---
 

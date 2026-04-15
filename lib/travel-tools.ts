@@ -226,7 +226,7 @@ export async function searchGroundingCompare(args: { query: string }) {
     Return a JSON array of objects with fields: source, price, currency, description, link, rating.
     Return ONLY the JSON.`;
     const result = await ai.models.generateContent({
-      model: "gemini-2.5-flash",
+      model: "gemini-2.0-flash",
       contents: prompt,
       config: {
         tools: [{ googleSearch: {} }]
