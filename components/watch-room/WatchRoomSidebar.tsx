@@ -6,7 +6,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
-import { Heart, Sparkles, MapPin } from 'lucide-react';
+import { Heart, Sparkles, MapPin, ChevronLeft, ChevronRight } from 'lucide-react';
 import { GoogleGenAI } from '@google/genai';
 import { db, auth } from '@/lib/firebase';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
@@ -117,55 +117,68 @@ export function WatchRoomSidebar({ videoTitle, videoDescription }: WatchRoomSide
     }
   };
 
+  const [isOpen, setIsOpen] = useState(true);
+
   return (
-    <Card className="flex flex-col h-full border-zinc-800/50 bg-zinc-900/40 backdrop-blur-xl overflow-hidden">
+    <div className={`flex flex-col h-full border-zinc-800/50 bg-zinc-900/40 backdrop-blur-xl overflow-hidden transition-all duration-300 ${isOpen ? 'w-full' : 'w-16'}`}>
       <div className="sticky top-0 z-10 bg-zinc-900/90 backdrop-blur-md border-b border-zinc-800/50 p-4 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <MapPin className="h-5 w-5 text-emerald-500" />
-          <h3 className="font-bold text-white truncate max-w-[150px] sm:max-w-[200px]">{destination}</h3>
-          {!isLoading && destination !== 'Loading...' && destination !== 'Unknown Destination' && (
-            <Badge variant="outline" className="border-emerald-500/30 text-emerald-400 bg-emerald-500/10 ml-2 hidden sm:inline-flex">
-              AI Insight
-            </Badge>
+        <div className="flex items-center gap-2 overflow-hidden">
+          <Button variant="ghost" size="sm" onClick={() => setIsOpen(!isOpen)} className="p-1">
+            {isOpen ? <ChevronLeft className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+          </Button>
+          {isOpen && (
+            <>
+              <MapPin className="h-5 w-5 text-emerald-500 shrink-0" />
+              <h3 className="font-bold text-white truncate max-w-[150px] sm:max-w-[200px]">{destination}</h3>
+              {!isLoading && destination !== 'Loading...' && destination !== 'Unknown Destination' && (
+                <Badge variant="outline" className="border-emerald-500/30 text-emerald-400 bg-emerald-500/10 ml-2 hidden sm:inline-flex">
+                  AI Insight
+                </Badge>
+              )}
+            </>
           )}
         </div>
-        <Button 
-          size="sm" 
-          onClick={handleAddToWishlist}
-          className="bg-emerald-600 hover:bg-emerald-700 text-white gap-2 shadow-lg shadow-emerald-600/20 transition-all hover:scale-105"
-        >
-          <Heart className="h-4 w-4" />
-          <span className="hidden sm:inline">Add to Wishlist</span>
-        </Button>
+        {isOpen && (
+          <Button 
+            size="sm" 
+            onClick={handleAddToWishlist}
+            className="bg-emerald-600 hover:bg-emerald-700 text-white gap-2 shadow-lg shadow-emerald-600/20 transition-all hover:scale-105"
+          >
+            <Heart className="h-4 w-4" />
+            <span className="hidden sm:inline">Add to Wishlist</span>
+          </Button>
+        )}
       </div>
 
-      <CardContent className="p-4 overflow-y-auto custom-scrollbar flex-1">
-        <Accordion defaultValue={['insights']} className="w-full">
-          <AccordionItem value="insights" className="border-zinc-800/50">
-            <AccordionTrigger className="text-white hover:text-emerald-400 hover:no-underline">
-              <div className="flex items-center gap-2">
-                <Sparkles className="h-4 w-4 text-emerald-500" />
-                AI Travel Insights
-              </div>
-            </AccordionTrigger>
-            <AccordionContent className="text-zinc-300">
-              {isLoading && !content ? (
-                <div className="space-y-4 pt-2">
-                  <Skeleton className="h-4 w-3/4 bg-zinc-800" />
-                  <Skeleton className="h-4 w-full bg-zinc-800" />
-                  <Skeleton className="h-4 w-5/6 bg-zinc-800" />
-                  <Skeleton className="h-20 w-full bg-zinc-800 mt-4" />
-                  <Skeleton className="h-4 w-2/3 bg-zinc-800" />
+      {isOpen && (
+        <CardContent className="p-4 overflow-y-auto custom-scrollbar flex-1">
+          <Accordion defaultValue={['insights']} className="w-full">
+            <AccordionItem value="insights" className="border-zinc-800/50">
+              <AccordionTrigger className="text-white hover:text-emerald-400 hover:no-underline">
+                <div className="flex items-center gap-2">
+                  <Sparkles className="h-4 w-4 text-emerald-500" />
+                  AI Travel Insights
                 </div>
-              ) : (
-                <div className="prose prose-invert prose-sm max-w-none prose-p:leading-relaxed prose-pre:bg-zinc-900 prose-pre:border prose-pre:border-zinc-800">
-                  <Markdown>{content}</Markdown>
-                </div>
-              )}
-            </AccordionContent>
-          </AccordionItem>
-        </Accordion>
-      </CardContent>
-    </Card>
+              </AccordionTrigger>
+              <AccordionContent className="text-zinc-300">
+                {isLoading && !content ? (
+                  <div className="space-y-4 pt-2">
+                    <Skeleton className="h-4 w-3/4 bg-zinc-800" />
+                    <Skeleton className="h-4 w-full bg-zinc-800" />
+                    <Skeleton className="h-4 w-5/6 bg-zinc-800" />
+                    <Skeleton className="h-20 w-full bg-zinc-800 mt-4" />
+                    <Skeleton className="h-4 w-2/3 bg-zinc-800" />
+                  </div>
+                ) : (
+                  <div className="prose prose-invert prose-sm max-w-none prose-p:leading-relaxed prose-pre:bg-zinc-900 prose-pre:border prose-pre:border-zinc-800">
+                    <Markdown>{content}</Markdown>
+                  </div>
+                )}
+              </AccordionContent>
+            </AccordionItem>
+          </Accordion>
+        </CardContent>
+      )}
+    </div>
   );
 }

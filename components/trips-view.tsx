@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Plane, MapPin, Calendar as CalendarIcon, Plus, CreditCard, Sparkles, Loader2, Lightbulb } from 'lucide-react';
 import { db, auth, handleFirestoreError, OperationType } from '@/lib/firebase';
 import { collection, query, where, onSnapshot, orderBy } from 'firebase/firestore';
@@ -20,6 +21,7 @@ export function TripsView() {
   const [trips, setTrips] = useState<any[]>([]);
   const [tips, setTips] = useState<string>('');
   const [isLoadingTips, setIsLoadingTips] = useState(false);
+  const [weatherLocation, setWeatherLocation] = useState<string>('Paris, France');
 
   useEffect(() => {
     const fetchTips = async () => {
@@ -92,8 +94,17 @@ export function TripsView() {
         {/* Left Column: Trips & Weather */}
         <div className="lg:col-span-2 space-y-6">
           {/* Weather Widget */}
-          <div className="h-[200px] rounded-3xl overflow-hidden border border-zinc-800/50 shadow-2xl">
-            <WeatherWidget location={trips.length > 0 ? trips[0].destination : "Paris, France"} />
+          <div className="space-y-4">
+            <div className="flex gap-2">
+              <Input 
+                placeholder="Search city weather..." 
+                className="bg-zinc-900 border-zinc-800 text-white rounded-2xl"
+                onKeyDown={(e) => e.key === 'Enter' && setWeatherLocation(e.currentTarget.value)}
+              />
+            </div>
+            <div className="h-[300px] rounded-3xl overflow-hidden border border-zinc-800/50 shadow-2xl">
+              <WeatherWidget location={weatherLocation} />
+            </div>
           </div>
 
           {/* Today's Travel Tips */}

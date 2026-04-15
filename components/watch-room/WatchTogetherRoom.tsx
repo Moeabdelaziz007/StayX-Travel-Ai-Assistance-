@@ -8,10 +8,14 @@ import { RoomChat } from './RoomChat';
 import { WatchRoomSidebar } from './WatchRoomSidebar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Users, Share2, Crown, LogOut } from 'lucide-react';
+import { Users, Share2, Crown, LogOut, MapPin, Plane, Cloud, Thermometer } from 'lucide-react';
 import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
 import { useI18n } from '@/lib/i18n';
+import { GoogleGenAI } from '@google/genai';
+import { searchFlights, getWeather } from '@/lib/travel-tools';
+
+const ai = new GoogleGenAI({ apiKey: process.env.NEXT_PUBLIC_GEMINI_API_KEY! });
 
 interface RoomData {
   hostUid: string;
@@ -27,7 +31,62 @@ export function WatchTogetherRoom({ roomId }: { roomId: string }) {
   const [roomData, setRoomData] = useState<RoomData | null>(null);
   const [isHost, setIsHost] = useState(false);
   const [newVideoId, setNewVideoId] = useState('');
+  const [destination, setDestination] = useState('');
+  const [videos, setVideos] = useState<any[]>([]);
+  const [isLoadingVideos, setIsLoadingVideos] = useState(false);
+  const [tripPlan, setTripPlan] = useState<any>(null);
+  const [isLoadingPlan, setIsLoadingPlan] = useState(false);
   const router = useRouter();
+
+  const planTrip = async (title: string) => {
+    setIsLoadingPlan(true);
+    try {
+      // 1. Detect destination
+      const model = ai.getGenerativeModel({ model: 'gemini-2.0-flash' });
+      const destRes = await model.generateContent(`Extract destination from: "${title}". Return only the city name.`);
+      const dest = destRes.text?.trim() || 'Paris';
+      
+      // 2. Fetch data
+      const [flights, weather] = await Promise.all([
+        searchFlights({ origin: 'Cairo', destination: dest, date: '2025-05-01' }),
+        getWeather({ location: dest })
+      ]);
+      
+      setTripPlan({ destination: dest, flights, weather });
+    } catch (e) {
+      console.error(e);
+      toast.error("Failed to plan trip");
+    } finally {
+      setIsLoadingPlan(false);
+    }
+  };
+
+  const searchVideos = async (dest: string) => {
+    setIsLoadingVideos(true);
+    try {
+      const res = await fetch(`/api/youtube/search?destination=${encodeURIComponent(dest)}`);
+      const data = await res.json();
+      setVideos(data);
+    } catch (e) {
+      console.error(e);
+      toast.error("Failed to search videos");
+    } finally {
+      setIsLoadingVideos(false);
+    }
+  };
+
+  const handleVideoSelect = async (videoId: string) => {
+    try {
+      await updateDoc(doc(db, 'rooms', roomId), {
+        videoId: videoId,
+        currentTime: 0,
+        isPlaying: true
+      });
+    } catch (error) {
+      console.error("Error changing video:", error);
+      toast.error("Failed to change video");
+    }
+  };
 
   useEffect(() => {
     if (!auth.currentUser) {
@@ -148,13 +207,14 @@ export function WatchTogetherRoom({ roomId }: { roomId: string }) {
           {isHost && (
             <div className="flex gap-2 mr-4">
               <Input 
-                placeholder={language === 'ar' ? 'رابط يوتيوب...' : 'YouTube URL...'}
-                value={newVideoId}
-                onChange={(e) => setNewVideoId(e.target.value)}
+                placeholder={language === 'ar' ? 'وجهة السفر...' : 'Travel destination...'}
+                value={destination}
+                onChange={(e) => setDestination(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && searchVideos(destination)}
                 className="h-8 w-48 bg-zinc-900 border-zinc-700 text-xs"
               />
-              <Button size="sm" onClick={handleVideoChange} className="h-8 bg-emerald-600 hover:bg-emerald-700 text-white">
-                {language === 'ar' ? 'تغيير الفيديو' : 'Change Video'}
+              <Button size="sm" onClick={() => searchVideos(destination)} className="h-8 bg-emerald-600 hover:bg-emerald-700 text-white">
+                {language === 'ar' ? 'بحث' : 'Search'}
               </Button>
             </div>
           )}
@@ -180,6 +240,40 @@ export function WatchTogetherRoom({ roomId }: { roomId: string }) {
                 isHost={isHost} 
               />
             </div>
+
+            {/* Video Grid */}
+            {videos.length > 0 && (
+              <div className="grid grid-cols-3 gap-4">
+                {videos.map((video) => (
+                  <div key={video.videoId} className="cursor-pointer group" onClick={() => { handleVideoSelect(video.videoId); planTrip(video.title); }}>
+                    <img src={video.thumbnail} alt={video.title} className="w-full aspect-video rounded-xl object-cover" />
+                    <h4 className="text-xs text-zinc-300 mt-2 truncate group-hover:text-emerald-400">{video.title}</h4>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Plan This Trip Panel */}
+            {tripPlan && (
+              <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 mt-6">
+                <h3 className="text-lg font-bold text-white mb-4">Plan your trip to {tripPlan.destination}</h3>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="bg-zinc-950 p-4 rounded-xl">
+                    <p className="text-xs text-zinc-500">Weather</p>
+                    <div className="flex items-center gap-2 text-white font-bold">
+                      <Cloud className="h-4 w-4 text-blue-400" /> {tripPlan.weather.temperature}°C
+                    </div>
+                  </div>
+                  <div className="bg-zinc-950 p-4 rounded-xl">
+                    <p className="text-xs text-zinc-500">Cheapest Flight</p>
+                    <div className="flex items-center gap-2 text-white font-bold">
+                      <Plane className="h-4 w-4 text-emerald-400" /> {tripPlan.flights[0].price}
+                    </div>
+                  </div>
+                </div>
+                <Button className="w-full mt-4 bg-emerald-600 hover:bg-emerald-700 text-white">Create Full Itinerary</Button>
+              </div>
+            )}
             
             {/* Insights Sidebar (below video on smaller screens, could be side-by-side on very large) */}
             <div className="flex-1 min-h-[300px]">

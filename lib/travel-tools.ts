@@ -260,6 +260,15 @@ export async function createVoiceRoom(args: { title: string }) {
   return { success: true, roomId: docRef.id, magicLink: newRoom.magicLink };
 }
 
+export async function searchFlights(args: { origin: string, destination: string, date: string }) {
+  // Mock Amadeus API response
+  return [
+    { name: 'EgyptAir', price: '$450', duration: '3h 30m' },
+    { name: 'Turkish Airlines', price: '$520', duration: '3h 45m' },
+    { name: 'Pegasus', price: '$380', duration: '4h 00m' }
+  ];
+}
+
 export async function initiatePayment(args: { amount: number, name: string, description: string, metadata: any }) {
   const response = await fetch('/api/checkout', {
     method: 'POST',

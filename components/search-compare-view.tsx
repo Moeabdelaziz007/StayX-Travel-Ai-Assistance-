@@ -6,6 +6,7 @@ import { Search, Plane, ExternalLink, Star, Loader2, Sparkles, Filter, TrendingU
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { searchGroundingCompare } from '@/lib/travel-tools';
+import { WeatherWidget } from './weather-widget';
 import { toast } from 'sonner';
 import { useI18n } from '@/lib/i18n';
 
@@ -14,10 +15,12 @@ export function SearchCompareView() {
   const [query, setQuery] = useState('');
   const [isSearching, setIsSearching] = useState(false);
   const [results, setResults] = useState<any[]>([]);
+  const [weatherLocation, setWeatherLocation] = useState<string | null>(null);
 
   const handleSearch = async () => {
     if (!query.trim()) return;
     setIsSearching(true);
+    setWeatherLocation(query); // Auto-fetch weather
     try {
       const data = await searchGroundingCompare({ query });
       setResults(data);
@@ -105,6 +108,12 @@ export function SearchCompareView() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {weatherLocation && (
+          <div className="lg:col-span-2 h-[300px] rounded-3xl overflow-hidden border border-zinc-800/50 shadow-2xl">
+            <WeatherWidget location={weatherLocation} />
+          </div>
+        )}
+
         {isSearching && (
           <div className="lg:col-span-2 py-20 text-center space-y-4">
             <Loader2 className="h-12 w-12 animate-spin text-green-500 mx-auto" />
