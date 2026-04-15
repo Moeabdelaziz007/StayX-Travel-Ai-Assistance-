@@ -313,6 +313,26 @@ export async function searchFlights(args: { origin: string, destination: string,
   ];
 }
 
+export async function searchPlaces(args: { query: string, location?: string }) {
+  const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
+  if (!apiKey) throw new Error("Google Maps API Key not configured");
+
+  const url = `https://maps.googleapis.com/maps/api/place/textsearch/json?query=${encodeURIComponent(args.query)}&key=${apiKey}`;
+  const res = await fetch(url);
+  const data = await res.json();
+  return data.results;
+}
+
+export async function getDirections(args: { origin: string, destination: string, mode?: string }) {
+  const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
+  if (!apiKey) throw new Error("Google Maps API Key not configured");
+
+  const url = `https://maps.googleapis.com/maps/api/directions/json?origin=${encodeURIComponent(args.origin)}&destination=${encodeURIComponent(args.destination)}&mode=${args.mode || 'driving'}&key=${apiKey}`;
+  const res = await fetch(url);
+  const data = await res.json();
+  return data.routes;
+}
+
 export async function initiatePayment(args: { amount: number, name: string, description: string, metadata: any }) {
   const response = await fetch('/api/checkout', {
     method: 'POST',

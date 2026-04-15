@@ -6,7 +6,7 @@ import { AuthProvider } from '@/lib/auth-context';
 import { I18nProvider } from '@/lib/i18n';
 import { ThemeProvider } from "next-themes";
 import { Toaster } from '@/components/ui/sonner';
-import { VoiceAgent } from '@/components/voice-agent/VoiceAgent';
+import { VoiceTrigger } from '@/components/voice/VoiceTrigger';
 
 const geist = Geist({subsets:['latin'],variable:'--font-sans'});
 
@@ -29,7 +29,7 @@ export default function RootLayout({children}: {children: React.ReactNode}) {
             <AuthProvider>
               {children}
               <Toaster />
-              <VoiceAgent />
+              <VoiceTrigger />
             </AuthProvider>
           </I18nProvider>
         </ThemeProvider>
