@@ -2,7 +2,7 @@
 
 import { motion } from 'motion/react';
 import { WeatherWidget } from './weather-widget';
-import { Compass, ArrowUpRight, Calendar, Mic, MapPin } from 'lucide-react';
+import { Compass, ArrowUpRight, Calendar, Mic, MapPin, Sparkles } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -96,14 +96,34 @@ export function HomeView({ onNavigate, tripsCount }: { onNavigate: (tab: string)
 
       <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
         {/* Weather - Large Span */}
-        <div className="md:col-span-2 lg:col-span-2">
+        <div className="md:col-span-3 lg:col-span-2">
           <WeatherWidget location="Paris, France" />
         </div>
+
+        {/* AI Planner Pro Promo */}
+        <motion.div 
+          whileHover={{ scale: 1.01 }}
+          className="md:col-span-3 lg:col-span-2 group relative overflow-hidden rounded-3xl border border-emerald-500/30 bg-emerald-500/10 backdrop-blur-xl p-6 hover:bg-emerald-500/20 transition-all cursor-pointer"
+          onClick={() => onNavigate('planner-pro')}
+        >
+          <div className="flex flex-col justify-between h-full">
+            <div>
+              <div className="h-12 w-12 rounded-2xl bg-emerald-500/20 flex items-center justify-center text-emerald-500 mb-4">
+                <Sparkles className="h-6 w-6" />
+              </div>
+              <h3 className="text-2xl font-bold text-white mb-2">AI Planner Pro</h3>
+              <p className="text-zinc-400 text-sm">Generate detailed itineraries with AI images and PDF export.</p>
+            </div>
+            <div className="mt-4 flex items-center text-emerald-500 font-bold text-sm">
+              Try Now <ArrowUpRight className="ml-2 h-4 w-4" />
+            </div>
+          </div>
+        </motion.div>
 
         {/* Voice Room Creation */}
         <motion.div 
           whileHover={{ scale: 1.01 }}
-          className="md:col-span-1 lg:col-span-2 group relative overflow-hidden rounded-3xl border border-zinc-800/50 bg-zinc-900/40 backdrop-blur-xl p-6 hover:bg-zinc-900/60 transition-all"
+          className="md:col-span-3 lg:col-span-2 group relative overflow-hidden rounded-3xl border border-zinc-800/50 bg-zinc-900/40 backdrop-blur-xl p-6 hover:bg-zinc-900/60 transition-all"
         >
           <div className="flex flex-col gap-4 h-full">
             <h3 className="text-xl font-bold text-white flex items-center gap-2">
@@ -148,7 +168,7 @@ export function HomeView({ onNavigate, tripsCount }: { onNavigate: (tab: string)
         {/* Creative Calendar - Recipe 9 Style */}
         <motion.div 
           whileHover={{ scale: 1.01 }}
-          className="md:col-span-1 lg:col-span-2 group relative overflow-hidden rounded-3xl border border-zinc-800/50 bg-zinc-900/40 backdrop-blur-xl p-6 hover:bg-zinc-900/60 transition-all"
+          className="md:col-span-3 lg:col-span-2 group relative overflow-hidden rounded-3xl border border-zinc-800/50 bg-zinc-900/40 backdrop-blur-xl p-6 hover:bg-zinc-900/60 transition-all"
         >
           <div className="absolute top-0 right-0 p-4">
             <Calendar className="h-6 w-6 text-emerald-500 opacity-20" />

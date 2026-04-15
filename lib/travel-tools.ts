@@ -244,6 +244,50 @@ export async function searchGroundingCompare(args: { query: string }) {
   }
 }
 
+export async function generateDetailedItinerary(args: { destination: string, days: number, budget: string }) {
+  const prompt = `Develop a fully detailed travel itinerary for:
+  Destination: ${args.destination}
+  Duration: ${args.days} days
+  Budget: ${args.budget}
+  
+  Return ONLY a JSON object with this structure:
+  {
+    "trip_title": "string",
+    "summary": "string",
+    "currency": "string",
+    "total_estimated_cost": "string",
+    "daily_plan": [
+      {
+        "day": number,
+        "theme": "string",
+        "best_image_keyword": "string",
+        "activities": [
+          {"time": "string", "activity": "string", "description": "string", "location": "string", "cost": "string"}
+        ]
+      }
+    ],
+    "hotels": [
+      {"name": "string", "rating": "string", "price_per_night": "string", "description": "string", "image_keyword": "string"}
+    ]
+  }`;
+
+  try {
+    const result = await ai.models.generateContent({
+      model: "gemini-2.0-flash",
+      contents: prompt
+    });
+    const text = result.text || '';
+    const jsonMatch = text.match(/\{[\s\S]*\}/);
+    if (jsonMatch) {
+      return JSON.parse(jsonMatch[0]);
+    }
+    throw new Error("Invalid AI response");
+  } catch (e) {
+    console.error("Itinerary generation error:", e);
+    throw e;
+  }
+}
+
 export async function createVoiceRoom(args: { title: string }) {
   if (!auth.currentUser) throw new Error("Not authenticated");
   const roomRef = collection(db, 'voice_rooms');

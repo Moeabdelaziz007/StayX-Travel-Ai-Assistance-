@@ -19,6 +19,10 @@ import { motion, AnimatePresence } from 'motion/react';
 import { SearchCompareView } from './search-compare-view';
 import { useI18n } from '@/lib/i18n';
 import { CommandMenu } from './CommandMenu';
+import { TripPlannerPro } from './TripPlannerPro';
+import { DashboardSkeleton } from './DashboardSkeleton';
+import { Onboarding } from './Onboarding';
+import { Sparkles } from 'lucide-react';
 
 export function ThemeToggle() {
   const { theme, setTheme } = useTheme();
@@ -35,11 +39,26 @@ export function Dashboard() {
   const [activeTab, setActiveTab] = useState('home');
   const [tripsCount, setTripsCount] = useState(0);
   const [notificationsCount, setNotificationsCount] = useState(0);
+  const [isLoading, setIsLoading] = useState(true);
+  const [showOnboarding, setShowOnboarding] = useState(false);
   const searchParams = useSearchParams();
   const router = useRouter();
 
   useEffect(() => {
+    if (user) {
+      const hasSeenOnboarding = localStorage.getItem(`onboarding_${user.uid}`);
+      if (!hasSeenOnboarding) {
+        const t = setTimeout(() => setShowOnboarding(true), 100);
+        return () => clearTimeout(t);
+      }
+    }
+  }, [user]);
+
+  useEffect(() => {
     if (!user) return;
+    
+    // Simulate initial load for skeleton
+    const timer = setTimeout(() => setIsLoading(false), 1500);
     
     // Listen to trips
     const tripsQuery = query(collection(db, 'trips'), where('userId', '==', user.uid));
@@ -98,10 +117,14 @@ export function Dashboard() {
   }, [searchParams, verifyPayment]);
 
   return (
-    <div className="grid grid-cols-[256px,1fr] h-screen w-full bg-background text-foreground overflow-hidden">
+    <div className="grid grid-cols-1 md:grid-cols-[256px,1fr] h-screen w-full bg-background text-foreground overflow-hidden">
       <CommandMenu onNavigate={setActiveTab} />
+      {showOnboarding && <Onboarding onComplete={() => {
+        setShowOnboarding(false);
+        localStorage.setItem(`onboarding_${user?.uid}`, 'true');
+      }} />}
       {/* Sidebar */}
-      <div className="w-64 border-r border-zinc-800 bg-zinc-900/50 p-4 flex flex-col">
+      <div className="hidden md:flex border-r border-zinc-800 bg-zinc-900/50 p-4 flex-col">
         <div className="flex items-center gap-3 mb-8 px-2 justify-between">
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-full bg-green-500/20 text-green-500">
@@ -124,6 +147,7 @@ export function Dashboard() {
 
         <nav className="flex-1 space-y-1 overflow-y-auto pr-2">
           <SidebarButton icon={LayoutDashboard} label={t('nav.dashboard')} active={activeTab === 'home'} onClick={() => setActiveTab('home')} />
+          <SidebarButton icon={Sparkles} label="AI Planner Pro" active={activeTab === 'planner-pro'} onClick={() => setActiveTab('planner-pro')} />
           <SidebarButton icon={Plane} label={t('nav.trips')} active={activeTab === 'trips'} onClick={() => setActiveTab('trips')} badge={tripsCount > 0 ? tripsCount.toString() : undefined} />
           <SidebarButton icon={Compass} label={t('nav.search')} active={activeTab === 'search'} onClick={() => setActiveTab('search')} />
           <SidebarButton icon={Youtube} label={t('nav.watch')} active={activeTab === 'watch'} onClick={() => setActiveTab('watch')} badge="Live" />
@@ -180,12 +204,19 @@ export function Dashboard() {
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col relative overflow-hidden">
-        <main className="overflow-y-auto p-6">
-          {activeTab === 'home' && <HomeView onNavigate={setActiveTab} tripsCount={tripsCount} />}
-          {activeTab === 'trips' && <TripsView />}
-          {activeTab === 'search' && <SearchCompareView />}
-          {activeTab === 'watch' && <WatchRoom />}
-          {activeTab === 'notifications' && <NotificationsView />}
+        <main className="overflow-y-auto p-4 md:p-6">
+          {isLoading ? (
+            <DashboardSkeleton />
+          ) : (
+            <>
+              {activeTab === 'home' && <HomeView onNavigate={setActiveTab} tripsCount={tripsCount} />}
+              {activeTab === 'planner-pro' && <TripPlannerPro />}
+              {activeTab === 'trips' && <TripsView />}
+              {activeTab === 'search' && <SearchCompareView />}
+              {activeTab === 'watch' && <WatchRoom />}
+              {activeTab === 'notifications' && <NotificationsView />}
+            </>
+          )}
         </main>
       </div>
     </div>
