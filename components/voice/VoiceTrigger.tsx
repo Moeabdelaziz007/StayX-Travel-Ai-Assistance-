@@ -7,7 +7,7 @@ import { VoiceOverlay } from './VoiceOverlay';
 import { motion, AnimatePresence } from 'motion/react';
 
 export function VoiceTrigger() {
-  const { isActive, state, transcript, startSession, stopSession } = useVoiceAgent();
+  const { isActive, state, transcript, startSession, stopSession, connectCalendar, hasCalendar } = useVoiceAgent();
 
   return (
     <>
@@ -37,6 +37,8 @@ export function VoiceTrigger() {
         state={state} 
         transcript={transcript} 
         onClose={stopSession} 
+        onConnectCalendar={connectCalendar}
+        hasCalendar={hasCalendar}
       />
     </>
   );

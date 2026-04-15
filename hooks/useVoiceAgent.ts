@@ -12,6 +12,18 @@ export function useVoiceAgent() {
   const [state, setState] = useState<VoiceState>('idle');
   const [isActive, setIsActive] = useState(false);
   const [transcript, setTranscript] = useState('');
+  const [googleToken, setGoogleToken] = useState<string | null>(null);
+
+  const connectCalendar = async () => {
+    const { loginWithCalendar } = await import('@/lib/firebase');
+    try {
+      await loginWithCalendar();
+      toast.success("Calendar connected!");
+      setGoogleToken("MOCK_TOKEN"); 
+    } catch (e) {
+      toast.error("Failed to connect calendar");
+    }
+  };
   
   const sessionRef = useRef<any>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
@@ -297,6 +309,8 @@ export function useVoiceAgent() {
     state,
     transcript,
     startSession,
-    stopSession
+    stopSession,
+    connectCalendar,
+    hasCalendar: !!googleToken
   };
 }

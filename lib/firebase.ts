@@ -47,6 +47,18 @@ export const loginWithYoutube = async () => {
   }
 };
 
+export const loginWithCalendar = async () => {
+  try {
+    const calendarProvider = new GoogleAuthProvider();
+    calendarProvider.addScope('https://www.googleapis.com/auth/calendar.events');
+    const result = await signInWithPopup(auth, calendarProvider);
+    return result.user;
+  } catch (error) {
+    console.error("Error signing in with Google Calendar", error);
+    throw error;
+  }
+};
+
 export const logout = async () => {
   try {
     await signOut(auth);

@@ -13,7 +13,6 @@ import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
 import { useI18n } from '@/lib/i18n';
 import Image from 'next/image';
-import Image from 'next/image';
 import { GoogleGenAI } from '@google/genai';
 import { searchFlights, getWeather } from '@/lib/travel-tools';
 

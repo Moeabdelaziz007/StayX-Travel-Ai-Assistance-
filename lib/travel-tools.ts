@@ -326,15 +326,37 @@ export async function searchSimCards(args: { destination: string }) {
   ];
 }
 
-export async function addToCalendar(args: { title: string, description: string, startTime: string, endTime: string, location?: string }) {
+export async function addToCalendar(args: { title: string, description: string, startTime: string, endTime: string, location?: string, accessToken?: string }) {
   if (!auth.currentUser) throw new Error("Not authenticated");
   
-  // In a real app, we would use Google Calendar API with OAuth
-  // For this demo, we'll save it to Firestore and trigger a notification
+  let googleEvent = null;
+  if (args.accessToken) {
+    try {
+      const response = await fetch('https://www.googleapis.com/calendar/v3/calendars/primary/events', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${args.accessToken}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          summary: args.title,
+          description: args.description,
+          start: { dateTime: args.startTime },
+          end: { dateTime: args.endTime },
+          location: args.location
+        })
+      });
+      googleEvent = await response.json();
+    } catch (e) {
+      console.error("Failed to sync with Google Calendar", e);
+    }
+  }
+
   const calRef = collection(db, 'calendar_events');
   const newEvent = {
     userId: auth.currentUser.uid,
     ...args,
+    googleEventId: googleEvent?.id || null,
     createdAt: new Date().toISOString()
   };
   
@@ -346,7 +368,23 @@ export async function addToCalendar(args: { title: string, description: string, 
     audio.play().catch(() => {});
   }
 
-  return { success: true, eventId: docRef.id, message: "Event added to your StayX calendar and synced with Google" };
+  return { 
+    success: true, 
+    eventId: docRef.id, 
+    synced: !!googleEvent,
+    message: googleEvent ? "Event synced with Google Calendar!" : "Event saved to StayX calendar."
+  };
+}
+
+export async function searchHotels(args: { destination: string, checkIn: string, checkOut: string }) {
+  const affiliateId = process.env.TRAVELPAYOUTS_AFFILIATE_ID || 'stayx';
+  const link = `https://search.hotellook.com/?location=${encodeURIComponent(args.destination)}&checkIn=${args.checkIn}&checkOut=${args.checkOut}&marker=${affiliateId}`;
+  
+  return [
+    { name: 'Luxury Resort', price: '$250/night', rating: 4.8, link },
+    { name: 'City Center Hotel', price: '$120/night', rating: 4.2, link },
+    { name: 'Budget Hostel', price: '$45/night', rating: 3.9, link }
+  ];
 }
 
 export async function searchPlaces(args: { query: string, location?: string }) {
