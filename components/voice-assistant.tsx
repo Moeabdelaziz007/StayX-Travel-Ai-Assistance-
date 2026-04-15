@@ -289,6 +289,7 @@ You have access to Google Search for real-time information.`;
                   try {
                     if (call.name === 'updateUserPreferences') {
                       result = await updateUserPreferences(call.args as any);
+                      setUserProfile((prev: any) => ({ ...prev, ...call.args }));
                       toast.success("Preferences updated!");
                     } else if (call.name === 'bookTrip') {
                       result = await bookTrip(call.args as any);
@@ -391,7 +392,13 @@ You have access to Google Search for real-time information.`;
           </div>
           <div>
             <h3 className="font-mono text-xs font-bold text-white uppercase tracking-widest">StayX Live</h3>
-            <p className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest">Real-time Voice</p>
+            {userProfile ? (
+              <p className="text-[10px] font-mono text-zinc-400 tracking-widest capitalize">
+                {userProfile.name} • {userProfile.budgetPreference} budget • {userProfile.voiceTone} tone
+              </p>
+            ) : (
+              <p className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest">Real-time Voice</p>
+            )}
           </div>
         </div>
         <div className="flex items-center gap-2">
