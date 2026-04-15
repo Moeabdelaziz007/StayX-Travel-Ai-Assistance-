@@ -33,6 +33,20 @@ export function HomeView({ onNavigate, tripsCount }: { onNavigate: (tab: string)
     toast.info(`Searching for ${id}...`);
   };
 
+  const handleCreateRoom = async () => {
+    if (!roomTitle) {
+      toast.error("Please enter a room title");
+      return;
+    }
+    try {
+      const res = await createVoiceRoom({ title: roomTitle });
+      setMagicLink(res.magicLink);
+      toast.success("Voice room created!");
+    } catch (e) {
+      toast.error("Failed to create room");
+    }
+  };
+
   return (
     <div className="space-y-8 pb-12">
       <header className="flex flex-col gap-4">
