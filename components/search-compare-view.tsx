@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { motion } from 'motion/react';
-import { Search, Plane, ExternalLink, Star, Loader2, Sparkles, Filter, TrendingUp, Tag, UserCheck } from 'lucide-react';
+import { Search, Plane, ExternalLink, Star, Loader2, Sparkles, Filter, TrendingUp, Tag, UserCheck, Mic } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { searchGroundingCompare } from '@/lib/travel-tools';
