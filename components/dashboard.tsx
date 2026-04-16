@@ -20,9 +20,10 @@ import { SearchCompareView } from './search-compare-view';
 import { useI18n } from '@/lib/i18n';
 import { CommandMenu } from './CommandMenu';
 import { TripPlannerPro } from './TripPlannerPro';
+import { LiveTranslator } from './LiveTranslator';
 import { DashboardSkeleton } from './DashboardSkeleton';
 import { Onboarding } from './Onboarding';
-import { Sparkles } from 'lucide-react';
+import { Sparkles, Languages } from 'lucide-react';
 
 export function ThemeToggle() {
   const { theme, setTheme } = useTheme();
@@ -175,9 +176,10 @@ export function Dashboard() {
         </div>
       </div>
 
-      <nav className="flex-1 space-y-1 overflow-y-auto pr-2">
+      <nav className="flex-1 space-y-1 overflow-y-auto pr-2 custom-scrollbar">
         <SidebarButton icon={LayoutDashboard} label={t('nav.dashboard')} active={activeTab === 'home'} onClick={() => handleTabChange('home')} />
         <SidebarButton icon={Sparkles} label="AI Planner Pro" active={activeTab === 'planner-pro'} onClick={() => handleTabChange('planner-pro')} />
+        <SidebarButton icon={Languages} label="Live Translator" active={activeTab === 'translator'} onClick={() => handleTabChange('translator')} />
         <SidebarButton icon={Plane} label={t('nav.trips')} active={activeTab === 'trips'} onClick={() => handleTabChange('trips')} badge={tripsCount > 0 ? tripsCount.toString() : undefined} />
         <SidebarButton icon={Compass} label={t('nav.search')} active={activeTab === 'search'} onClick={() => handleTabChange('search')} />
         <SidebarButton icon={Youtube} label={t('nav.watch')} active={activeTab === 'watch'} onClick={() => handleTabChange('watch')} badge="Live" />
@@ -306,6 +308,7 @@ export function Dashboard() {
             <>
               {activeTab === 'home' && <HomeView onNavigate={setActiveTab} tripsCount={tripsCount} />}
               {activeTab === 'planner-pro' && <TripPlannerPro />}
+              {activeTab === 'translator' && <LiveTranslator />}
               {activeTab === 'trips' && <TripsView />}
               {activeTab === 'search' && <SearchCompareView />}
               {activeTab === 'watch' && <WatchRoom />}

@@ -34,6 +34,39 @@ export async function getVisaInfo(nationality: string, destination: string) {
   return JSON.parse(responseText);
 }
 
+export async function getCityGuide(city: string) {
+  try {
+    const res = await fetch(`https://en.wikivoyage.org/w/api.php?action=query&format=json&prop=extracts&exintro=1&explaintext=1&origin=*&titles=${encodeURIComponent(city)}`);
+    const data = await res.json();
+    const pages = data?.query?.pages;
+    if (!pages) return null;
+    const pageId = Object.keys(pages)[0];
+    if (pageId === "-1") return null;
+    return pages[pageId].extract;
+  } catch (error) {
+    console.error("Wikivoyage error:", error);
+    return null;
+  }
+}
+
+export async function getLiveHotelPrices(destination: string, dates: string) {
+  try {
+    const model = ai.getGenerativeModel({
+      model: 'gemini-2.5-pro',
+      tools: [{ googleSearch: {} }],
+    });
+    
+    const prompt = `Use Google Search to find current average nightly prices for Airbnb and Booking.com for ${destination} around ${dates}. Return a helpful short summary (max 3 sentences) of the expected price range per night in USD. Include explicit mentions of Booking and Airbnb findings if available. Keep formatting simple.`;
+    
+    const result = await model.generateContent(prompt);
+    return result.response.text();
+  } catch (error) {
+    console.error("Hotel Price Grounding error:", error);
+    return "Could not fetch live pricing at this time.";
+  }
+}
+
+
 
 export async function ensureUserProfile() {
   if (!auth.currentUser) return null;

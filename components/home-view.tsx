@@ -2,7 +2,7 @@
 
 import { motion } from 'motion/react';
 import { WeatherWidget } from './weather-widget';
-import { Compass, ArrowUpRight, Calendar, Mic, MapPin, Sparkles } from 'lucide-react';
+import { Compass, ArrowUpRight, Calendar, Mic, MapPin, Sparkles, Languages } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -175,6 +175,26 @@ export function HomeView({ onNavigate, tripsCount }: { onNavigate: (tab: string)
               <p className="text-zinc-400 text-sm">Generate detailed itineraries with AI images and PDF export.</p>
             </div>
             <div className="mt-4 flex items-center text-emerald-500 font-bold text-sm">
+              Try Now <ArrowUpRight className="ml-2 h-4 w-4" />
+            </div>
+          </div>
+        </motion.div>
+
+        {/* Live Translator Promo */}
+        <motion.div 
+          whileHover={{ scale: 1.01 }}
+          className="md:col-span-3 lg:col-span-2 group relative overflow-hidden rounded-3xl border border-blue-500/30 bg-blue-500/10 backdrop-blur-xl p-6 hover:bg-blue-500/20 transition-all cursor-pointer"
+          onClick={() => onNavigate('translator')}
+        >
+          <div className="flex flex-col justify-between h-full">
+            <div>
+              <div className="h-12 w-12 rounded-2xl bg-blue-500/20 flex items-center justify-center text-blue-500 mb-4">
+                <Languages className="h-6 w-6" />
+              </div>
+              <h3 className="text-2xl font-bold text-white mb-2">Live Translator</h3>
+              <p className="text-zinc-400 text-sm">Instant voice and text translation with locals using AI magic.</p>
+            </div>
+            <div className="mt-4 flex items-center text-blue-500 font-bold text-sm">
               Try Now <ArrowUpRight className="ml-2 h-4 w-4" />
             </div>
           </div>

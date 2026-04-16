@@ -24,7 +24,7 @@ import {
   SelectTrigger, 
   SelectValue 
 } from '@/components/ui/select';
-import { generateDetailedItinerary } from '@/lib/travel-tools';
+import { generateDetailedItinerary, getCityGuide, getLiveHotelPrices } from '@/lib/travel-tools';
 import { toast } from 'sonner';
 import Image from 'next/image';
 
@@ -34,6 +34,8 @@ export function TripPlannerPro() {
   const [budget, setBudget] = useState('moderate');
   const [loading, setLoading] = useState(false);
   const [tripData, setTripData] = useState<any>(null);
+  const [cityGuide, setCityGuide] = useState<string | null>(null);
+  const [livePrices, setLivePrices] = useState<string | null>(null);
   const [activeDay, setActiveDay] = useState(0);
   const pdfRef = useRef<HTMLDivElement>(null);
 
@@ -43,13 +45,18 @@ export function TripPlannerPro() {
       return;
     }
     setLoading(true);
+    setCityGuide(null);
+    setLivePrices(null);
     try {
-      const data = await generateDetailedItinerary({ 
-        destination, 
-        days: parseInt(days), 
-        budget 
-      });
+      const dates = new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+      const [data, guide, prices] = await Promise.all([
+        generateDetailedItinerary({ destination, days: parseInt(days), budget }),
+        getCityGuide(destination),
+        getLiveHotelPrices(destination, dates)
+      ]);
       setTripData(data);
+      if (guide) setCityGuide(guide.substring(0, 400) + '...');
+      setLivePrices(prices);
       setActiveDay(0);
       toast.success("Itinerary generated!");
     } catch (e) {
@@ -241,6 +248,22 @@ export function TripPlannerPro() {
                   <div className="space-y-4 max-w-2xl">
                     <h2 className="text-5xl font-bold text-white tracking-tight">{tripData.trip_title}</h2>
                     <p className="text-zinc-300 text-lg leading-relaxed">{tripData.summary}</p>
+                    
+                    {(cityGuide || livePrices) && (
+                      <div className="flex flex-col gap-3 mt-4">
+                        {cityGuide && (
+                          <div className="bg-black/40 backdrop-blur-md border border-white/10 p-4 rounded-2xl text-sm text-zinc-300">
+                            <strong>Wikivoyage Overview:</strong> {cityGuide}
+                          </div>
+                        )}
+                        {livePrices && (
+                          <div className="bg-emerald-500/20 backdrop-blur-md border border-emerald-500/30 p-4 rounded-2xl text-sm text-emerald-100 flex items-start gap-3">
+                            <CurrencyDollar className="w-5 h-5 mt-0.5 text-emerald-400 shrink-0" />
+                            <p><strong>Live Market Prices (Search Grounded):</strong> {livePrices}</p>
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
                   <div className="flex gap-4">
                     <div className="px-6 py-4 bg-white/10 backdrop-blur-xl border border-white/10 rounded-3xl text-center">

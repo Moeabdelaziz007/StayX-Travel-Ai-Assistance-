@@ -2,29 +2,39 @@
 
 import { useState } from 'react';
 import { motion } from 'motion/react';
-import { Search, Plane, ExternalLink, Star, Loader2, Sparkles, Filter, TrendingUp, Tag, UserCheck, Mic } from 'lucide-react';
+import { Search, Plane, ExternalLink, Star, Loader2, Sparkles, Filter, TrendingUp, Tag, UserCheck, Mic, MapPin } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { searchGroundingCompare } from '@/lib/travel-tools';
+import { searchPlacesFoursquare } from '@/lib/foursquare';
 import { WeatherWidget } from './weather-widget';
 import { toast } from 'sonner';
 import { useI18n } from '@/lib/i18n';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 export function SearchCompareView() {
   const { t } = useI18n();
   const [query, setQuery] = useState('');
   const [isSearching, setIsSearching] = useState(false);
   const [results, setResults] = useState<any[]>([]);
+  const [places, setPlaces] = useState<any[]>([]);
   const [weatherLocation, setWeatherLocation] = useState<string | null>(null);
+  const [category, setCategory] = useState('restaurants');
 
   const handleSearch = async () => {
     if (!query.trim()) return;
     setIsSearching(true);
     setWeatherLocation(query); // Auto-fetch weather
+    setResults([]);
+    setPlaces([]);
     try {
-      const data = await searchGroundingCompare({ query });
+      const [data, placesData] = await Promise.all([
+        searchGroundingCompare({ query }),
+        searchPlacesFoursquare({ query, categories: category === 'restaurants' ? '13000' : '10000', limit: 6 })
+      ]);
       setResults(data);
-      if (data.length === 0) {
+      setPlaces(placesData);
+      if (data.length === 0 && placesData.length === 0) {
         toast.info("No results found. Try a more specific query.");
       }
     } catch (e) {
@@ -88,15 +98,26 @@ export function SearchCompareView() {
 
       <div className="relative group max-w-3xl mx-auto">
         <div className="absolute -inset-1 bg-gradient-to-r from-emerald-500/20 to-blue-500/20 rounded-3xl blur opacity-25" />
-        <div className="relative flex gap-2 bg-zinc-900/60 backdrop-blur-xl p-2 rounded-3xl border border-zinc-800/50">
-          <Search className="absolute left-8 top-1/2 -translate-y-1/2 h-6 w-6 text-zinc-600" />
-          <Input 
-            placeholder="Where to next? (e.g. Flights to Tokyo)" 
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-            className="h-16 pl-16 bg-transparent border-none text-white text-lg focus-visible:ring-0"
-          />
+        <div className="relative flex flex-col md:flex-row gap-2 bg-zinc-900/60 backdrop-blur-xl p-2 rounded-3xl border border-zinc-800/50">
+          <div className="flex-1 relative">
+            <Search className="absolute left-6 top-1/2 -translate-y-1/2 h-6 w-6 text-zinc-600" />
+            <Input 
+              placeholder="Where to next? (e.g. Flights to Tokyo)" 
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+              className="h-16 pl-16 bg-transparent border-none text-white text-lg focus-visible:ring-0"
+            />
+          </div>
+          <Select value={category} onValueChange={setCategory}>
+            <SelectTrigger className="w-full md:w-40 h-16 bg-zinc-950 border-zinc-800 rounded-2xl text-zinc-400">
+              <SelectValue placeholder="Category" />
+            </SelectTrigger>
+            <SelectContent className="bg-zinc-900 border-zinc-800">
+              <SelectItem value="restaurants">Restaurants</SelectItem>
+              <SelectItem value="attractions">Attractions</SelectItem>
+            </SelectContent>
+          </Select>
           <Button 
             onClick={handleSearch} 
             disabled={isSearching}
@@ -121,6 +142,23 @@ export function SearchCompareView() {
           </div>
         )}
 
+        {!isSearching && places.length > 0 && (
+          <div className="lg:col-span-2 space-y-6">
+            <h3 className="text-2xl font-light text-white">Top Recommendations</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {places.map((place: any, i: number) => (
+                <div key={i} className="p-6 rounded-3xl bg-zinc-900/40 border border-zinc-800/50 hover:bg-zinc-900/60 transition-all space-y-2">
+                  <div className="flex items-start justify-between">
+                    <h4 className="text-lg font-bold text-white">{place.name}</h4>
+                    {place.rating && <div className="text-emerald-500 font-bold text-sm bg-emerald-500/10 px-2 py-0.5 rounded-lg">{place.rating}</div>}
+                  </div>
+                  <p className="text-zinc-500 text-sm flex items-center gap-2"><MapPin className="w-4 h-4" /> {place.location?.address || 'No address'}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+        
         {!isSearching && sortedResults.map((item, i) => (
           <motion.div
             key={i}

@@ -4,8 +4,8 @@ import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Passport, PlaneTakeoff, ShieldAlert, Sparkles, Loader2, Info } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { BookUser, PlaneTakeoff, ShieldAlert, Sparkles, Loader2, Info } from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
 import { toast } from 'sonner';
 import { getVisaInfo } from '@/lib/travel-tools';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -41,7 +41,7 @@ export function VisaWidget() {
         <div className="flex items-center justify-between">
           <CardTitle className="text-base font-bold flex items-center gap-2">
             <div className="bg-indigo-500/20 p-2 rounded-xl text-indigo-400">
-              <Passport className="w-5 h-5" />
+              <BookUser className="w-5 h-5" />
             </div>
             Smart Visa Helper
           </CardTitle>
@@ -66,7 +66,7 @@ export function VisaWidget() {
                   placeholder="e.g. Saudi Arabia"
                   className="bg-zinc-950/50 border-zinc-800 focus-visible:ring-indigo-500 rounded-xl pl-10 h-11"
                 />
-                <Passport className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
+                <BookUser className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
               </div>
             </div>
             
@@ -103,7 +103,7 @@ export function VisaWidget() {
             >
               <div className="flex items-start gap-4">
                 <div className={`p-3 rounded-2xl ${result.requiresVisa ? 'bg-amber-500/20 text-amber-500' : 'bg-emerald-500/20 text-emerald-500'}`}>
-                  {result.requiresVisa ? <ShieldAlert className="w-6 h-6" /> : <Passport className="w-6 h-6" />}
+                  {result.requiresVisa ? <ShieldAlert className="w-6 h-6" /> : <BookUser className="w-6 h-6" />}
                 </div>
                 <div>
                   <h4 className="text-lg font-bold text-white mb-1">
