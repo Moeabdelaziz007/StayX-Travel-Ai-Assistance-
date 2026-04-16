@@ -5,7 +5,7 @@ import { useAuth } from '@/lib/auth-context';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useTheme } from "next-themes";
-import { Moon, Sun, Plane, Youtube, LogOut, Mic, Compass, Bell, LayoutDashboard, Plus, Search as SearchIcon } from 'lucide-react';
+import { Moon, Sun, Plane, Youtube, LogOut, Mic, Compass, Bell, LayoutDashboard, Plus, Search as SearchIcon, Menu, X } from 'lucide-react';
 import { HomeView } from './home-view';
 import { TripsView } from './trips-view';
 import { WatchRoom } from './watch-room';
@@ -33,6 +33,38 @@ export function ThemeToggle() {
   );
 }
 
+function SidebarButton({ icon: Icon, label, active, onClick, badge }: { icon: any, label: string, active: boolean, onClick: () => void, badge?: string }) {
+  return (
+    <button
+      onClick={onClick}
+      className={`relative group flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-300 ${
+        active 
+          ? 'bg-zinc-800/80 text-white shadow-lg shadow-black/20' 
+          : 'text-zinc-400 hover:bg-zinc-800/40 hover:text-white'
+      }`}
+    >
+      {active && (
+        <motion.div 
+          layoutId="sidebar-active"
+          className="absolute left-0 w-1 h-6 bg-emerald-500 rounded-r-full"
+          transition={{ type: "spring", stiffness: 300, damping: 30 }}
+        />
+      )}
+      <Icon className={`h-5 w-5 transition-transform duration-300 group-hover:scale-110 ${active ? 'text-emerald-400' : 'text-zinc-500 group-hover:text-zinc-300'}`} />
+      <span className="flex-1 text-left">{label}</span>
+      {badge && (
+        <span className={`px-1.5 py-0.5 rounded-md text-[10px] font-bold ${
+          badge === 'Live' 
+            ? 'bg-rose-500/20 text-rose-500 animate-pulse' 
+            : 'bg-zinc-800 text-zinc-400'
+        }`}>
+          {badge}
+        </span>
+      )}
+    </button>
+  );
+}
+
 export function Dashboard() {
   const { user, logout } = useAuth();
   const { t, language, setLanguage } = useI18n();
@@ -41,6 +73,7 @@ export function Dashboard() {
   const [notificationsCount, setNotificationsCount] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [showOnboarding, setShowOnboarding] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const searchParams = useSearchParams();
   const router = useRouter();
 
@@ -100,7 +133,6 @@ export function Dashboard() {
           toast.success("Appointment payment confirmed!");
         }
         
-        // Clear the query params
         router.replace('/dashboard');
       }
     } catch (e) {
@@ -116,95 +148,158 @@ export function Dashboard() {
     }
   }, [searchParams, verifyPayment]);
 
+  const handleTabChange = (tab: string) => {
+    setActiveTab(tab);
+    setIsMobileMenuOpen(false);
+  };
+
+  const SidebarContent = () => (
+    <>
+      <div className="flex items-center gap-3 mb-8 px-2 justify-between">
+        <div className="flex items-center gap-3">
+          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-green-500/20 text-green-500">
+            <Plane className="h-5 w-5" />
+          </div>
+          <span className="text-xl font-bold tracking-tight">StayX</span>
+        </div>
+        <div className="flex gap-1">
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={() => setLanguage(language === 'en' ? 'ar' : 'en')}
+            className="text-xs font-mono"
+          >
+            {language === 'en' ? 'عربي' : 'EN'}
+          </Button>
+          <ThemeToggle />
+        </div>
+      </div>
+
+      <nav className="flex-1 space-y-1 overflow-y-auto pr-2">
+        <SidebarButton icon={LayoutDashboard} label={t('nav.dashboard')} active={activeTab === 'home'} onClick={() => handleTabChange('home')} />
+        <SidebarButton icon={Sparkles} label="AI Planner Pro" active={activeTab === 'planner-pro'} onClick={() => handleTabChange('planner-pro')} />
+        <SidebarButton icon={Plane} label={t('nav.trips')} active={activeTab === 'trips'} onClick={() => handleTabChange('trips')} badge={tripsCount > 0 ? tripsCount.toString() : undefined} />
+        <SidebarButton icon={Compass} label={t('nav.search')} active={activeTab === 'search'} onClick={() => handleTabChange('search')} />
+        <SidebarButton icon={Youtube} label={t('nav.watch')} active={activeTab === 'watch'} onClick={() => handleTabChange('watch')} badge="Live" />
+        <SidebarButton icon={Bell} label={t('nav.notifications')} active={activeTab === 'notifications'} onClick={() => handleTabChange('notifications')} badge={notificationsCount > 0 ? notificationsCount.toString() : undefined} />
+        
+        <div className="pt-6 pb-2 px-3">
+          <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-4">Quick Actions</p>
+          <div className="space-y-2">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="w-full justify-start border-zinc-800 bg-zinc-900/50 text-zinc-400 hover:text-white hover:bg-zinc-800 rounded-xl gap-2"
+              onClick={() => handleTabChange('trips')}
+            >
+              <Plus className="h-4 w-4 text-emerald-500" /> New Trip
+            </Button>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="w-full justify-start border-zinc-800 bg-zinc-900/50 text-zinc-400 hover:text-white hover:bg-zinc-800 rounded-xl gap-2"
+              onClick={() => handleTabChange('search')}
+            >
+              <SearchIcon className="h-4 w-4 text-blue-500" /> Search Deals
+            </Button>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="w-full justify-start border-zinc-800 bg-zinc-900/50 text-zinc-400 hover:text-white hover:bg-zinc-800 rounded-xl gap-2"
+              onClick={() => window.dispatchEvent(new Event('start-voice-agent'))}
+            >
+              <Mic className="h-4 w-4 text-rose-500" /> Voice Assistant <span className="text-[10px] bg-zinc-800 px-1.5 py-0.5 rounded text-zinc-500">⌘K</span>
+            </Button>
+          </div>
+        </div>
+      </nav>
+
+      <div className="mt-auto pt-4 border-t border-zinc-800">
+        <div className="flex items-center gap-3 px-2 mb-4">
+          <Avatar className="h-10 w-10 border border-zinc-700">
+            <AvatarImage src={user?.photoURL || ''} />
+            <AvatarFallback>{user?.displayName?.charAt(0) || 'U'}</AvatarFallback>
+          </Avatar>
+          <div className="flex flex-col overflow-hidden">
+            <span className="text-sm font-medium truncate">{user?.displayName}</span>
+            <span className="text-xs text-zinc-400 truncate">{user?.email}</span>
+          </div>
+        </div>
+        <Button variant="ghost" className="w-full justify-start text-zinc-400 hover:text-white hover:bg-zinc-800" onClick={logout}>
+          <LogOut className="mr-2 h-4 w-4" />
+          Sign Out
+        </Button>
+      </div>
+    </>
+  );
+
   return (
-    <div className="grid grid-cols-1 md:grid-cols-[256px,1fr] h-screen w-full bg-background text-foreground overflow-hidden">
+    <div className="flex h-screen w-full bg-background text-foreground overflow-hidden">
       <CommandMenu onNavigate={setActiveTab} />
       {showOnboarding && <Onboarding onComplete={() => {
         setShowOnboarding(false);
         localStorage.setItem(`onboarding_${user?.uid}`, 'true');
       }} />}
-      {/* Sidebar */}
-      <div className="hidden md:flex border-r border-zinc-800 bg-zinc-900/50 p-4 flex-col">
-        <div className="flex items-center gap-3 mb-8 px-2 justify-between">
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-green-500/20 text-green-500">
-              <Plane className="h-5 w-5" />
-            </div>
-            <span className="text-xl font-bold tracking-tight">StayX</span>
-          </div>
-          <div className="flex gap-1">
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              onClick={() => setLanguage(language === 'en' ? 'ar' : 'en')}
-              className="text-xs font-mono"
-            >
-              {language === 'en' ? 'عربي' : 'EN'}
-            </Button>
-            <ThemeToggle />
-          </div>
-        </div>
-
-        <nav className="flex-1 space-y-1 overflow-y-auto pr-2">
-          <SidebarButton icon={LayoutDashboard} label={t('nav.dashboard')} active={activeTab === 'home'} onClick={() => setActiveTab('home')} />
-          <SidebarButton icon={Sparkles} label="AI Planner Pro" active={activeTab === 'planner-pro'} onClick={() => setActiveTab('planner-pro')} />
-          <SidebarButton icon={Plane} label={t('nav.trips')} active={activeTab === 'trips'} onClick={() => setActiveTab('trips')} badge={tripsCount > 0 ? tripsCount.toString() : undefined} />
-          <SidebarButton icon={Compass} label={t('nav.search')} active={activeTab === 'search'} onClick={() => setActiveTab('search')} />
-          <SidebarButton icon={Youtube} label={t('nav.watch')} active={activeTab === 'watch'} onClick={() => setActiveTab('watch')} badge="Live" />
-          <SidebarButton icon={Bell} label={t('nav.notifications')} active={activeTab === 'notifications'} onClick={() => setActiveTab('notifications')} badge={notificationsCount > 0 ? notificationsCount.toString() : undefined} />
-          
-          <div className="pt-6 pb-2 px-3">
-            <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-4">Quick Actions</p>
-            <div className="space-y-2">
-              <Button 
-                variant="outline" 
-                size="sm" 
-                className="w-full justify-start border-zinc-800 bg-zinc-900/50 text-zinc-400 hover:text-white hover:bg-zinc-800 rounded-xl gap-2"
-                onClick={() => setActiveTab('trips')}
-              >
-                <Plus className="h-4 w-4 text-emerald-500" /> New Trip
-              </Button>
-              <Button 
-                variant="outline" 
-                size="sm" 
-                className="w-full justify-start border-zinc-800 bg-zinc-900/50 text-zinc-400 hover:text-white hover:bg-zinc-800 rounded-xl gap-2"
-                onClick={() => setActiveTab('search')}
-              >
-                <SearchIcon className="h-4 w-4 text-blue-500" /> Search Deals
-              </Button>
-              <Button 
-                variant="outline" 
-                size="sm" 
-                className="w-full justify-start border-zinc-800 bg-zinc-900/50 text-zinc-400 hover:text-white hover:bg-zinc-800 rounded-xl gap-2"
-                onClick={() => window.dispatchEvent(new Event('start-voice-agent'))}
-              >
-                <Mic className="h-4 w-4 text-rose-500" /> Voice Assistant <span className="text-[10px] bg-zinc-800 px-1.5 py-0.5 rounded text-zinc-500">⌘K</span>
-              </Button>
-            </div>
-          </div>
-        </nav>
-
-        <div className="mt-auto pt-4 border-t border-zinc-800">
-          <div className="flex items-center gap-3 px-2 mb-4">
-            <Avatar className="h-10 w-10 border border-zinc-700">
-              <AvatarImage src={user?.photoURL || ''} />
-              <AvatarFallback>{user?.displayName?.charAt(0) || 'U'}</AvatarFallback>
-            </Avatar>
-            <div className="flex flex-col overflow-hidden">
-              <span className="text-sm font-medium truncate">{user?.displayName}</span>
-              <span className="text-xs text-zinc-400 truncate">{user?.email}</span>
-            </div>
-          </div>
-          <Button variant="ghost" className="w-full justify-start text-zinc-400 hover:text-white hover:bg-zinc-800" onClick={logout}>
-            <LogOut className="mr-2 h-4 w-4" />
-            Sign Out
-          </Button>
-        </div>
+      
+      {/* Desktop Sidebar */}
+      <div className="hidden md:flex w-[256px] border-r border-zinc-800 bg-zinc-900/50 p-4 flex-col flex-shrink-0">
+        <SidebarContent />
       </div>
 
-      {/* Main Content */}
+      {/* Mobile Menu Overlay */}
+      <AnimatePresence>
+        {isMobileMenuOpen && (
+          <>
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="fixed inset-0 bg-black/60 z-40 md:hidden backdrop-blur-sm"
+              onClick={() => setIsMobileMenuOpen(false)}
+            />
+            <motion.div 
+              initial={{ x: '-100%' }}
+              animate={{ x: 0 }}
+              exit={{ x: '-100%' }}
+              transition={{ type: 'spring', bounce: 0, duration: 0.4 }}
+              className="fixed inset-y-0 left-0 w-[280px] bg-zinc-950 border-r border-zinc-800 p-4 flex flex-col z-50 md:hidden shadow-2xl"
+            >
+              <div className="absolute right-4 top-6">
+                <Button variant="ghost" size="icon" onClick={() => setIsMobileMenuOpen(false)} className="text-zinc-400 hover:text-white">
+                  <X className="h-6 w-6" />
+                </Button>
+              </div>
+              <SidebarContent />
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+
+      {/* Main Content Area */}
       <div className="flex-1 flex flex-col relative overflow-hidden">
-        <main className="overflow-y-auto p-4 md:p-6">
+        {/* Mobile Header */}
+        <div className="md:hidden flex items-center justify-between p-4 border-b border-zinc-800 bg-zinc-900/50 backdrop-blur-sm z-10">
+          <div className="flex items-center gap-2">
+            <Button variant="ghost" size="icon" onClick={() => setIsMobileMenuOpen(true)}>
+              <Menu className="h-6 w-6" />
+            </Button>
+            <div className="flex items-center gap-2">
+              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-green-500/20 text-green-500">
+                <Plane className="h-4 w-4" />
+              </div>
+              <span className="font-bold tracking-tight">StayX</span>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+             <Avatar className="h-8 w-8 border border-zinc-700">
+               <AvatarImage src={user?.photoURL || ''} />
+               <AvatarFallback>{user?.displayName?.charAt(0) || 'U'}</AvatarFallback>
+             </Avatar>
+          </div>
+        </div>
+
+        <main className="flex-1 overflow-y-auto p-4 md:p-6 pb-24 md:pb-6">
           {isLoading ? (
             <DashboardSkeleton />
           ) : (
@@ -220,37 +315,5 @@ export function Dashboard() {
         </main>
       </div>
     </div>
-  );
-}
-
-function SidebarButton({ icon: Icon, label, active, onClick, badge }: { icon: any, label: string, active: boolean, onClick: () => void, badge?: string }) {
-  return (
-    <button
-      onClick={onClick}
-      className={`relative group flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-300 ${
-        active 
-          ? 'bg-zinc-800/80 text-white shadow-lg shadow-black/20' 
-          : 'text-zinc-400 hover:bg-zinc-800/40 hover:text-white'
-      }`}
-    >
-      {active && (
-        <motion.div 
-          layoutId="sidebar-active"
-          className="absolute left-0 w-1 h-6 bg-emerald-500 rounded-r-full"
-          transition={{ type: "spring", stiffness: 300, damping: 30 }}
-        />
-      )}
-      <Icon className={`h-5 w-5 transition-transform duration-300 group-hover:scale-110 ${active ? 'text-emerald-400' : 'text-zinc-500 group-hover:text-zinc-300'}`} />
-      <span className="flex-1 text-left">{label}</span>
-      {badge && (
-        <span className={`px-1.5 py-0.5 rounded-md text-[10px] font-bold ${
-          badge === 'Live' 
-            ? 'bg-rose-500/20 text-rose-500 animate-pulse' 
-            : 'bg-zinc-800 text-zinc-400'
-        }`}>
-          {badge}
-        </span>
-      )}
-    </button>
   );
 }

@@ -12,6 +12,7 @@ import { createVoiceRoom } from '@/lib/travel-tools';
 import { toast } from 'sonner';
 import { useI18n } from '@/lib/i18n';
 import { useAuth } from '@/lib/auth-context';
+import { CurrencyWidget } from './CurrencyWidget';
 import { MoodBoard } from './travel/MoodBoard';
 import { ArabicTravelers } from './travel/ArabicTravelers';
 
@@ -96,9 +97,17 @@ export function HomeView({ onNavigate, tripsCount }: { onNavigate: (tab: string)
 
       <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
         {/* Weather - Large Span */}
-        <div className="md:col-span-3 lg:col-span-2">
+        <div className="md:col-span-3 lg:col-span-2 flex flex-col">
           <WeatherWidget location="Paris, France" />
         </div>
+
+        {/* Currency Widget */}
+        <motion.div 
+          whileHover={{ scale: 1.01 }}
+          className="md:col-span-3 lg:col-span-2 group relative h-full flex flex-col"
+        >
+          <CurrencyWidget defaultTarget="EUR" />
+        </motion.div>
 
         {/* AI Planner Pro Promo */}
         <motion.div 
