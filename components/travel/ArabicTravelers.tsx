@@ -26,7 +26,7 @@ export function ArabicTravelers() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: i * 0.05 }}
           whileHover={{ y: -5 }}
-          className="group relative bg-zinc-900/40 backdrop-blur-md border border-white/5 rounded-[2.5rem] p-5 hover:bg-zinc-900/60 transition-all cursor-pointer overflow-hidden"
+          className="group relative bg-zinc-900/40 backdrop-blur-md border border-white/5 rounded-2xl p-5 hover:bg-zinc-900/60 transition-all cursor-pointer overflow-hidden"
         >
           <div className="absolute top-0 right-0 p-4 opacity-0 group-hover:opacity-100 transition-opacity">
             <ExternalLink className="h-4 w-4 text-emerald-400" />

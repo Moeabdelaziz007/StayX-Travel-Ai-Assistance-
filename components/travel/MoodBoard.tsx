@@ -87,7 +87,7 @@ export function MoodBoard({ destination }: { destination: string }) {
               key={mood.id}
               onClick={() => setSelectedMood(mood.id)}
               variant="outline"
-              className={`h-12 rounded-2xl gap-2 border-zinc-800 transition-all duration-300 ${
+              className={`h-11 rounded-lg gap-2 border-zinc-800 transition-all duration-300 ${
                 isActive ? `${mood.bg} ${mood.color} border-${mood.id}-500/50 scale-105` : 'bg-zinc-900/50 text-zinc-400 hover:bg-zinc-800'
               }`}
             >
@@ -107,7 +107,7 @@ export function MoodBoard({ destination }: { destination: string }) {
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: i * 0.1 }}
-              className={`relative rounded-[2rem] overflow-hidden group border border-white/5 ${
+              className={`relative rounded-2xl overflow-hidden group border border-white/5 ${
                 i === 0 ? 'md:col-span-2 md:row-span-2' : ''
               }`}
             >
@@ -124,7 +124,7 @@ export function MoodBoard({ destination }: { destination: string }) {
         </div>
 
         {/* AI Insight Card */}
-        <Card className="bg-zinc-900/40 backdrop-blur-xl border-zinc-800 rounded-[2.5rem] overflow-hidden">
+        <Card className="bg-zinc-900/40 backdrop-blur-xl border-zinc-800 rounded-2xl overflow-hidden">
           <CardContent className="p-8 space-y-8">
             <div className="flex items-center gap-3">
               <div className="p-3 rounded-2xl bg-blue-500/10">
@@ -196,7 +196,7 @@ export function MoodBoard({ destination }: { destination: string }) {
                     <div className="space-y-2">
                       {insight?.playlist.map((song, i) => (
                         <div key={i} className="flex items-center gap-3 p-3 rounded-xl bg-white/5 border border-white/5 group hover:bg-white/10 transition-colors">
-                          <div className="h-6 w-6 rounded flex items-center justify-center bg-blue-500/20 text-blue-400 text-[10px] font-bold">
+                          <div className="h-6 w-6 rounded-lg flex items-center justify-center bg-blue-500/20 text-blue-400 text-[10px] font-bold">
                             {i+1}
                           </div>
                           <span className="text-sm text-zinc-300 group-hover:text-white transition-colors">{song}</span>
@@ -205,7 +205,7 @@ export function MoodBoard({ destination }: { destination: string }) {
                     </div>
                   </div>
 
-                  <Button className="w-full h-12 rounded-2xl bg-white text-black hover:bg-zinc-200 font-bold group">
+                  <Button className="w-full h-11 rounded-lg bg-white text-black hover:bg-zinc-200 font-bold group">
                     Start Planning
                     <Compass className="ml-2 h-4 w-4 group-hover:rotate-45 transition-transform" />
                   </Button>

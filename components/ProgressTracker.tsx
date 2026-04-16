@@ -11,7 +11,7 @@ export function ProgressTracker({ steps }: { steps: { label: string, completed: 
 
   return (
     <div className="w-full relative overflow-hidden group">
-      <div className="absolute inset-0 bg-zinc-900/40 backdrop-blur-xl border border-white/5 rounded-[2.5rem] shadow-2xl" />
+      <div className="absolute inset-0 bg-zinc-900/40 backdrop-blur-xl border border-white/5 rounded-2xl shadow-2xl" />
       
       <div className="relative p-6 px-8 space-y-8">
         <div className="flex justify-between items-end">
