@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
 import { Heart, Sparkles, MapPin, ChevronLeft, ChevronRight } from 'lucide-react';
-import { GoogleGenAI } from '@google/genai';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 import { db, auth } from '@/lib/firebase';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { toast } from 'sonner';
@@ -15,7 +15,7 @@ import { generateWithGroq } from '@/lib/groq';
 import { useI18n } from '@/lib/i18n';
 import Markdown from 'react-markdown';
 
-const ai = new GoogleGenAI({ apiKey: process.env.NEXT_PUBLIC_GEMINI_API_KEY });
+const ai = new GoogleGenerativeAI(process.env.NEXT_PUBLIC_GEMINI_API_KEY!);
 
 interface WatchRoomSidebarProps {
   videoTitle: string;

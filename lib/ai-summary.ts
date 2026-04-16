@@ -1,9 +1,9 @@
-import { GoogleGenAI } from "@google/genai";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 import { db } from "@/lib/firebase";
 import { collection, query, where, getDocs, limit, doc, setDoc, serverTimestamp } from "firebase/firestore";
 import { generateWithGroq } from '@/lib/groq';
 
-const ai = new GoogleGenAI({ apiKey: process.env.NEXT_PUBLIC_GEMINI_API_KEY! });
+const ai = new GoogleGenerativeAI(process.env.NEXT_PUBLIC_GEMINI_API_KEY!);
 
 export async function generateAISummary(destination: string) {
   const reviewsRef = collection(db, "reviews");

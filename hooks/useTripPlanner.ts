@@ -1,9 +1,9 @@
 import { useState } from 'react';
-import { GoogleGenAI, Type } from "@google/genai";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 import { ChatMessage, Itinerary } from '@/types/planner';
 import { generateWithGroq } from '@/lib/groq';
 
-const ai = new GoogleGenAI({ apiKey: process.env.NEXT_PUBLIC_GEMINI_API_KEY! });
+const ai = new GoogleGenerativeAI(process.env.NEXT_PUBLIC_GEMINI_API_KEY!);
 
 export function useTripPlanner() {
   const [messages, setMessages] = useState<ChatMessage[]>([

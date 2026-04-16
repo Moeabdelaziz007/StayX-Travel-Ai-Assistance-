@@ -13,10 +13,10 @@ import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
 import { useI18n } from '@/lib/i18n';
 import Image from 'next/image';
-import { GoogleGenAI } from '@google/genai';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 import { searchFlights, getWeather } from '@/lib/travel-tools';
 
-const ai = new GoogleGenAI({ apiKey: process.env.NEXT_PUBLIC_GEMINI_API_KEY! });
+const ai = new GoogleGenerativeAI(process.env.NEXT_PUBLIC_GEMINI_API_KEY!);
 
 interface RoomData {
   hostUid: string;

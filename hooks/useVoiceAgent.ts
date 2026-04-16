@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { GoogleGenAI, Modality, LiveServerMessage } from "@google/genai";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 import { toast } from 'sonner';
 
 const MODEL = "gemini-2.0-flash-exp";
@@ -13,6 +13,11 @@ export function useVoiceAgent() {
   const [isActive, setIsActive] = useState(false);
   const [transcript, setTranscript] = useState('');
   const [googleToken, setGoogleToken] = useState<string | null>(null);
+
+  // ... (the rest of the code)
+  
+  // Inside startSession:
+  // const ai = new GoogleGenerativeAI(process.env.NEXT_PUBLIC_GEMINI_API_KEY!);
 
   const connectCalendar = async () => {
     const { loginWithCalendar } = await import('@/lib/firebase');
@@ -104,7 +109,7 @@ export function useVoiceAgent() {
     setTranscript('');
 
     try {
-      const ai = new GoogleGenAI({ apiKey: process.env.NEXT_PUBLIC_GEMINI_API_KEY! });
+      const ai = new GoogleGenerativeAI(process.env.NEXT_PUBLIC_GEMINI_API_KEY!);
       
       const sessionPromise = ai.live.connect({
         model: MODEL,
@@ -214,7 +219,7 @@ export function useVoiceAgent() {
           }
         },
         config: {
-          responseModalities: [Modality.AUDIO],
+          responseModalities: ["AUDIO"],
           speechConfig: {
             voiceConfig: { prebuiltVoiceConfig: { voiceName: "Zephyr" } }
           },

@@ -1,11 +1,11 @@
 import { db, auth } from './firebase';
 import { doc, setDoc, getDoc, collection, addDoc } from 'firebase/firestore';
 
-import { GoogleGenAI } from '@google/genai';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 
 import { generateWithGroq } from './groq';
 
-const ai = new GoogleGenAI({ apiKey: process.env.NEXT_PUBLIC_GEMINI_API_KEY! });
+const ai = new GoogleGenerativeAI(process.env.NEXT_PUBLIC_GEMINI_API_KEY!);
 
 export async function ensureUserProfile() {
   if (!auth.currentUser) return null;

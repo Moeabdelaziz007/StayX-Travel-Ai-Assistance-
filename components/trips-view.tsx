@@ -13,7 +13,7 @@ import { CalendarView } from './calendar-view';
 import { WeatherWidget } from './weather-widget';
 import { TripPlanner } from './trip-planner';
 import { useI18n } from '@/lib/i18n';
-import { GoogleGenAI } from '@google/genai';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 import ReactMarkdown from 'react-markdown';
 
 export function TripsView() {
@@ -28,7 +28,7 @@ export function TripsView() {
       if (!process.env.NEXT_PUBLIC_GEMINI_API_KEY) return;
       setIsLoadingTips(true);
       try {
-        const genAI = new GoogleGenAI(process.env.NEXT_PUBLIC_GEMINI_API_KEY);
+        const genAI = new GoogleGenerativeAI(process.env.NEXT_PUBLIC_GEMINI_API_KEY);
         const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
         const prompt = `Give me 3 short, creative travel tips for today. Language: ${language === 'ar' ? 'Arabic' : 'English'}. Format as markdown list.`;
         const result = await model.generateContent(prompt);

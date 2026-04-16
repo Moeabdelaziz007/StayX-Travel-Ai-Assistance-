@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
-import { GoogleGenAI, Type } from '@google/genai';
+import { GoogleGenerativeAI, SchemaType } from '@google/generative-ai';
 
-const ai = new GoogleGenAI({ apiKey: process.env.NEXT_PUBLIC_GEMINI_API_KEY! });
+const ai = new GoogleGenerativeAI(process.env.NEXT_PUBLIC_GEMINI_API_KEY!);
 
 export async function POST(request: Request) {
   try {
@@ -20,12 +20,12 @@ export async function POST(request: Request) {
       config: {
         responseMimeType: 'application/json',
         responseSchema: {
-          type: Type.OBJECT,
+          type: SchemaType.OBJECT,
           properties: {
-            score: { type: Type.NUMBER },
-            reasons: { type: Type.ARRAY, items: { type: Type.STRING } },
-            commonInterests: { type: Type.ARRAY, items: { type: Type.STRING } },
-            potentialChallenges: { type: Type.ARRAY, items: { type: Type.STRING } }
+            score: { type: SchemaType.NUMBER },
+            reasons: { type: SchemaType.ARRAY, items: { type: SchemaType.STRING } },
+            commonInterests: { type: SchemaType.ARRAY, items: { type: SchemaType.STRING } },
+            potentialChallenges: { type: SchemaType.ARRAY, items: { type: SchemaType.STRING } }
           },
           required: ['score', 'reasons', 'commonInterests', 'potentialChallenges']
         }
