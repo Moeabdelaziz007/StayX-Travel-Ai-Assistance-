@@ -34,22 +34,28 @@ export function MoodBoard({ destination }: { destination: string }) {
   }, [destination]);
 
   return (
-    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 auto-rows-[200px]">
       {images.map((img, i) => (
         <motion.div 
           key={img.id}
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
           transition={{ delay: i * 0.1 }}
-          className="relative aspect-square rounded-2xl overflow-hidden"
+          className={`relative rounded-[2rem] overflow-hidden group border border-white/5 ${
+            i === 0 ? 'md:col-span-2 md:row-span-2' : ''
+          } ${i === 3 ? 'md:col-span-2' : ''}`}
         >
           <Image 
-            src={img.urls.regular} 
+            src={img.urls?.regular || img.urls?.small || img.urls} 
             alt={img.alt_description || destination} 
             fill 
-            className="object-cover hover:scale-110 transition-transform duration-500" 
+            className="object-cover transition-transform duration-700 group-hover:scale-110" 
             referrerPolicy="no-referrer"
           />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+          <div className="absolute bottom-4 left-4 right-4 translate-y-4 group-hover:translate-y-0 opacity-0 group-hover:opacity-100 transition-all duration-500">
+            <p className="text-white text-xs font-bold truncate">{img.alt_description || `View of ${destination}`}</p>
+          </div>
         </motion.div>
       ))}
     </div>

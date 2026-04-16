@@ -8,7 +8,6 @@ import { BookUser, PlaneTakeoff, ShieldAlert, Sparkles, Loader2, Info } from 'lu
 import { motion, AnimatePresence } from 'motion/react';
 import { toast } from 'sonner';
 import { getVisaInfo } from '@/lib/travel-tools';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 export function VisaWidget() {
   const [nationality, setNationality] = useState('');

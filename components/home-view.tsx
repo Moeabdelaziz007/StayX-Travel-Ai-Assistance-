@@ -52,273 +52,208 @@ export function HomeView({ onNavigate, tripsCount }: { onNavigate: (tab: string)
   };
 
   return (
-    <div className="space-y-8 pb-12">
-      {/* Hero Section with Video Background */}
-      <section className="relative -mt-4 -mx-4 md:-mt-6 md:-mx-6 mb-12 h-[500px] flex items-center justify-center overflow-hidden rounded-b-[3rem]">
+    <div className="space-y-12 pb-24">
+      {/* Hero Section with Intense Visuals */}
+      <section className="relative -mt-4 -mx-4 md:-mt-6 md:-mx-6 mb-12 h-[600px] flex items-center justify-center overflow-hidden rounded-b-[4rem] shadow-2xl">
         <div className="absolute inset-0 z-0">
           <video 
             autoPlay 
             muted 
             loop 
             playsInline
-            className="w-full h-full object-cover opacity-60"
+            className="w-full h-full object-cover"
             src="https://cdn.pixabay.com/video/2019/11/14/29169-373809075_large.mp4"
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-background via-background/40 to-black/60" />
+          <div className="absolute inset-0 bg-gradient-to-t from-zinc-950 via-zinc-950/40 to-black/20" />
         </div>
         
-        <div className="relative z-10 w-full max-w-4xl px-4 flex flex-col items-center gap-8">
+        <div className="relative z-10 w-full max-w-5xl px-6 flex flex-col items-center text-center">
           <motion.div 
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, ease: "easeOut" }}
-            className="text-center space-y-4"
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 1, ease: "circOut" }}
+            className="space-y-6"
           >
-            <h1 className="text-4xl md:text-6xl font-black text-white tracking-tight drop-shadow-xl">
-              {t('home.welcome_name').replace('{name}', user?.displayName?.split(' ')[0] || 'Traveler')}
+            <Badge className="bg-emerald-500/10 text-emerald-400 border-emerald-500/20 px-4 py-1.5 rounded-full text-xs font-black uppercase tracking-widest backdrop-blur-md">
+              <Sparkles className="w-3 h-3 mr-2" /> Next-Gen AI Travel
+            </Badge>
+            <h1 className="text-5xl md:text-8xl font-black text-white tracking-tighter leading-none drop-shadow-2xl">
+              {language === 'ar' ? 'رحلتك، بصوتك.' : 'Your Trip, Your Voice.'}
             </h1>
-            <p className="text-xl md:text-2xl text-zinc-200 font-medium drop-shadow-md">
-              Discover your next great adventure.
+            <p className="text-lg md:text-2xl text-zinc-300 font-medium max-w-2xl mx-auto opacity-80 leading-relaxed">
+              Experience the world with StayX – the first AI travel assistant built for the modern voyager.
             </p>
           </motion.div>
 
           <motion.div 
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: 0.3, duration: 0.5 }}
-            className="w-full relative group"
+            initial={{ opacity: 0, y: 40 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.5, duration: 0.8 }}
+            className="w-full max-w-3xl mt-12 relative group"
           >
-            <div className="absolute inset-0 bg-emerald-500/20 blur-xl rounded-full group-hover:bg-emerald-500/30 transition-all duration-500" />
-            <div className="relative flex items-center bg-zinc-900/80 backdrop-blur-md border border-white/10 rounded-full p-2 shadow-2xl">
+            <div className="absolute -inset-1 bg-gradient-to-r from-emerald-500 to-blue-500 rounded-full blur opacity-20 group-hover:opacity-40 transition duration-1000 group-hover:duration-200" />
+            <div className="relative flex items-center bg-zinc-900/60 backdrop-blur-2xl border border-white/10 rounded-full p-2 shadow-2xl">
               <MapPin className="ml-4 h-6 w-6 text-emerald-400" />
               <Input 
-                placeholder="Where to? (e.g., Paris, Tokyo, Dubai)"
-                className="flex-1 bg-transparent border-none text-lg text-white placeholder:text-zinc-400 h-14 focus-visible:ring-0 px-4"
+                placeholder={language === 'ar' ? 'إلى أين؟ (مثلاً: طوكيو، باريس)' : "Where to? (e.g., Paris, Tokyo, Dubai)"}
+                className="flex-1 bg-transparent border-none text-lg text-white placeholder:text-zinc-500 h-14 focus-visible:ring-0 px-4"
               />
-              <Button size="lg" className="rounded-full bg-emerald-500 hover:bg-emerald-600 text-white font-bold px-8 h-12 shadow-lg shadow-emerald-500/20">
-                Search
+              <Button size="lg" className="rounded-full bg-emerald-500 hover:bg-emerald-600 text-white font-black px-10 h-12 shadow-xl shadow-emerald-500/20 active:scale-95 transition-all">
+                {language === 'ar' ? 'اكتشف' : 'Explore'}
               </Button>
             </div>
           </motion.div>
         </div>
       </section>
 
-      {/* Trending Destinations with Parallax effect */}
-      <section className="mb-12">
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-2xl font-bold text-white flex items-center gap-2">
-            <Sparkles className="h-6 w-6 text-emerald-400" /> Trending Destinations
-          </h2>
+      {/* Bento Trending Destinations */}
+      <section>
+        <div className="flex items-center justify-between mb-8 px-2">
+          <div className="space-y-1">
+            <h2 className="text-3xl font-black text-white tracking-tight flex items-center gap-3">
+              <Compass className="h-8 w-8 text-emerald-500" /> {language === 'ar' ? 'وجهات رائجة' : 'Trending Now'}
+            </h2>
+            <p className="text-zinc-500 text-sm font-medium">Curated destinations based on your mood.</p>
+          </div>
+          <Button variant="ghost" className="text-emerald-500 font-bold gap-2">
+            View All <ArrowUpRight className="h-4 w-4" />
+          </Button>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 auto-rows-[250px]">
           {destinations.map((dest, i) => (
             <motion.div
               key={dest.id}
-              whileHover={{ y: -8, scale: 1.02 }}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: i * 0.1, duration: 0.5 }}
+              whileHover={{ y: -10 }}
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: i * 0.1, duration: 0.6 }}
               onClick={() => handleDestinationClick(dest.id)}
-              className="relative h-64 rounded-3xl overflow-hidden cursor-pointer group"
+              className={`relative rounded-[2.5rem] overflow-hidden cursor-pointer group shadow-2xl ${
+                i === 0 ? 'lg:col-span-2 lg:row-span-2' : ''
+              } ${i === 3 ? 'lg:col-span-2' : ''}`}
             >
+              <div className="absolute inset-0 z-10 bg-gradient-to-t from-black/90 via-black/20 to-transparent group-hover:from-emerald-950/90 transition-all duration-700" />
               <motion.img 
-                src={`https://image.pollinations.ai/prompt/${dest.id}%20beautiful%20landmark%20travel%20scenic?width=600&height=800&nologo=true`}
+                src={`https://image.pollinations.ai/prompt/${dest.id}%20high%20fashion%20travel%20landmark%20cinematic%20lighting?width=1000&height=1000&nologo=true`}
                 className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110"
                 alt={dest.name}
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent" />
-              <div className="absolute bottom-0 left-0 p-6">
-                <p className="text-white font-black text-2xl tracking-wide">{dest.name}</p>
-                <div className="flex items-center gap-2 mt-2">
-                  <span className="px-2 py-1 bg-white/20 backdrop-blur-md rounded-md text-[10px] font-bold text-white uppercase tracking-wider">Explore</span>
+              <div className="absolute top-6 right-6 z-20">
+                <div className="h-10 w-10 rounded-full bg-white/10 backdrop-blur-xl flex items-center justify-center text-white border border-white/20 opacity-0 group-hover:opacity-100 transition-all duration-500 rotate-45 group-hover:rotate-0">
+                  <ArrowUpRight className="h-5 w-5" />
                 </div>
+              </div>
+              <div className="absolute bottom-0 left-0 p-8 z-20 w-full translate-y-2 group-hover:translate-y-0 transition-transform duration-500">
+                <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-[0.2em] mb-3 inline-block ${dest.color} backdrop-blur-md`}>
+                  Top Rated
+                </span>
+                <p className="text-white font-black text-3xl tracking-tight leading-none mb-2">{dest.name}</p>
+                <p className="text-zinc-400 text-sm opacity-0 group-hover:opacity-100 transition-opacity duration-700 line-clamp-1">
+                  Discover the hidden gems of {dest.name}...
+                </p>
               </div>
             </motion.div>
           ))}
         </div>
       </section>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
+      {/* Main Feature Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
         {/* Weather - Large Span */}
-        <div className="md:col-span-3 lg:col-span-2 flex flex-col">
+        <div className="md:col-span-4 lg:col-span-2">
           <WeatherWidget location="Paris, France" />
         </div>
 
-        {/* Currency Widget */}
-        <motion.div 
-          whileHover={{ scale: 1.01 }}
-          className="md:col-span-3 lg:col-span-2 group relative h-full flex flex-col"
-        >
-          <CurrencyWidget defaultTarget="EUR" />
-        </motion.div>
+        {/* AI Services Bento */}
+        <div className="md:col-span-2 space-y-8">
+           <motion.div 
+            whileHover={{ y: -5 }}
+            className="group h-full relative overflow-hidden rounded-[3rem] border border-emerald-500/20 bg-zinc-900/40 backdrop-blur-2xl p-8 hover:bg-emerald-500/5 transition-all cursor-pointer"
+            onClick={() => onNavigate('planner-pro')}
+          >
+            <div className="flex flex-col justify-between h-full">
+              <div className="space-y-6">
+                <div className="h-16 w-16 rounded-[1.5rem] bg-emerald-500/20 flex items-center justify-center text-emerald-500 border border-emerald-500/30 group-hover:scale-110 transition-transform">
+                  <Sparkles className="h-8 w-8" />
+                </div>
+                <div className="space-y-2">
+                  <h3 className="text-3xl font-black text-white tracking-tight">Planner Pro</h3>
+                  <p className="text-zinc-500 text-sm font-medium leading-relaxed">Hyper-detailed itineraries with AI logic.</p>
+                </div>
+              </div>
+              <div className="mt-8 flex items-center justify-between text-emerald-500 font-black text-xs uppercase tracking-widest">
+                <span>Start Planning</span> <ArrowUpRight className="h-5 w-5" />
+              </div>
+            </div>
+          </motion.div>
+        </div>
 
-        {/* Visa Widget */}
-        <motion.div 
-          whileHover={{ scale: 1.01 }}
-          className="md:col-span-3 lg:col-span-2 group relative h-full flex flex-col"
-        >
+        <div className="md:col-span-2 space-y-8">
+           {/* Visa Widget */}
           <VisaWidget />
-        </motion.div>
+        </div>
 
-        {/* AI Planner Pro Promo */}
+        <div className="md:col-span-4 lg:col-span-2">
+           <CurrencyWidget defaultTarget="EUR" />
+        </div>
+
+        {/* SmartGet Hero Card */}
         <motion.div 
-          whileHover={{ scale: 1.01 }}
-          className="md:col-span-3 lg:col-span-2 group relative overflow-hidden rounded-3xl border border-emerald-500/30 bg-emerald-500/10 backdrop-blur-xl p-6 hover:bg-emerald-500/20 transition-all cursor-pointer"
-          onClick={() => onNavigate('planner-pro')}
+          whileHover={{ y: -5 }}
+          className="md:col-span-4 group relative rounded-[3.5rem] overflow-hidden border border-white/5 bg-zinc-900/40 backdrop-blur-3xl cursor-pointer"
+          onClick={() => onNavigate('search')}
         >
-          <div className="flex flex-col justify-between h-full">
-            <div>
-              <div className="h-12 w-12 rounded-2xl bg-emerald-500/20 flex items-center justify-center text-emerald-500 mb-4">
-                <Sparkles className="h-6 w-6" />
+          <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/10 via-transparent to-blue-500/10" />
+          <div className="relative p-10 md:p-16 flex flex-col md:flex-row items-center gap-12">
+            <div className="flex-1 space-y-8">
+              <div className="h-16 w-16 rounded-[1.5rem] bg-zinc-950 flex items-center justify-center text-emerald-500 border border-white/5 shadow-2xl">
+                <Compass className="h-8 w-8" />
               </div>
-              <h3 className="text-2xl font-bold text-white mb-2">AI Planner Pro</h3>
-              <p className="text-zinc-400 text-sm">Generate detailed itineraries with AI images and PDF export.</p>
-            </div>
-            <div className="mt-4 flex items-center text-emerald-500 font-bold text-sm">
-              Try Now <ArrowUpRight className="ml-2 h-4 w-4" />
-            </div>
-          </div>
-        </motion.div>
-
-        {/* Live Translator Promo */}
-        <motion.div 
-          whileHover={{ scale: 1.01 }}
-          className="md:col-span-3 lg:col-span-2 group relative overflow-hidden rounded-3xl border border-blue-500/30 bg-blue-500/10 backdrop-blur-xl p-6 hover:bg-blue-500/20 transition-all cursor-pointer"
-          onClick={() => onNavigate('translator')}
-        >
-          <div className="flex flex-col justify-between h-full">
-            <div>
-              <div className="h-12 w-12 rounded-2xl bg-blue-500/20 flex items-center justify-center text-blue-500 mb-4">
-                <Languages className="h-6 w-6" />
-              </div>
-              <h3 className="text-2xl font-bold text-white mb-2">Live Translator</h3>
-              <p className="text-zinc-400 text-sm">Instant voice and text translation with locals using AI magic.</p>
-            </div>
-            <div className="mt-4 flex items-center text-blue-500 font-bold text-sm">
-              Try Now <ArrowUpRight className="ml-2 h-4 w-4" />
-            </div>
-          </div>
-        </motion.div>
-
-        {/* Voice Room Creation */}
-        <motion.div 
-          whileHover={{ scale: 1.01 }}
-          className="md:col-span-3 lg:col-span-2 group relative overflow-hidden rounded-3xl border border-zinc-800/50 bg-zinc-900/40 backdrop-blur-xl p-6 hover:bg-zinc-900/60 transition-all"
-        >
-          <div className="flex flex-col gap-4 h-full">
-            <h3 className="text-xl font-bold text-white flex items-center gap-2">
-              <Mic className="h-5 w-5 text-emerald-500" />
-              {language === 'ar' ? 'إنشاء غرفة صوتية' : 'Create Voice Room'}
-            </h3>
-            <div className="flex gap-2">
-              <Input 
-                placeholder={language === 'ar' ? 'عنوان الغرفة' : 'Room Title'} 
-                value={roomTitle} 
-                onChange={(e) => setRoomTitle(e.target.value)}
-                className="bg-zinc-950 border-zinc-800"
-              />
-              <Button onClick={handleCreateRoom} className="bg-emerald-600 hover:bg-emerald-700 text-white">{language === 'ar' ? 'إنشاء' : 'Create'}</Button>
-            </div>
-            {magicLink && (
-              <motion.div 
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="mt-2 p-3 rounded-xl bg-zinc-950 border border-green-500/30 space-y-2"
-              >
-                <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Invite Magic Link</p>
-                <div className="flex items-center justify-between gap-2 bg-zinc-900 p-2 rounded-lg border border-zinc-800">
-                  <code className="text-xs text-green-400 truncate flex-1">{magicLink}</code>
-                  <Button 
-                    size="sm" 
-                    variant="outline" 
-                    className="h-7 text-xs border-zinc-700 hover:bg-zinc-800"
-                    onClick={() => {
-                      navigator.clipboard.writeText(magicLink);
-                      toast.success("Link copied!");
-                    }}
-                  >
-                    Copy
-                  </Button>
-                </div>
-              </motion.div>
-            )}
-          </div>
-        </motion.div>
-
-        {/* Creative Calendar - Recipe 9 Style */}
-        <motion.div 
-          whileHover={{ scale: 1.01 }}
-          className="md:col-span-3 lg:col-span-2 group relative overflow-hidden rounded-3xl border border-zinc-800/50 bg-zinc-900/40 backdrop-blur-xl p-6 hover:bg-zinc-900/60 transition-all"
-        >
-          <div className="absolute top-0 right-0 p-4">
-            <Calendar className="h-6 w-6 text-emerald-500 opacity-20" />
-          </div>
-          <div className="flex gap-6 h-full">
-            <div className="flex flex-col items-center justify-center border-r border-zinc-800 pr-6">
-              <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-[0.3em] [writing-mode:vertical-rl] rotate-180 mb-4">APRIL</span>
-              <span className="text-7xl font-black text-white leading-none">14</span>
-            </div>
-            <div className="flex-1 space-y-4">
-              <h3 className="text-xs font-bold text-green-500 uppercase tracking-widest">Upcoming Schedule</h3>
-              <div className="space-y-3">
-                <div className="flex items-center gap-3 p-2 rounded-xl bg-zinc-950/50 border border-zinc-800/50">
-                  <div className="h-2 w-2 rounded-full bg-blue-500" />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-xs font-bold text-white truncate">Flight to Tokyo</p>
-                    <p className="text-[10px] text-zinc-500">10:30 AM • Terminal 3</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-3 p-2 rounded-xl bg-zinc-950/50 border border-zinc-800/50">
-                  <div className="h-2 w-2 rounded-full bg-green-500" />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-xs font-bold text-white truncate">Hotel Check-in</p>
-                    <p className="text-[10px] text-zinc-500">02:00 PM • Park Hyatt</p>
-                  </div>
-                </div>
-              </div>
-              <Button variant="ghost" className="w-full text-[10px] uppercase tracking-widest font-bold text-zinc-500 hover:text-white" onClick={() => onNavigate('calendar')}>
-                View Full Calendar
-              </Button>
-            </div>
-          </div>
-        </motion.div>
-
-        {/* SmartGet Card */}
-        <motion.div 
-          whileHover={{ scale: 1.02 }}
-          className="md:col-span-3 lg:col-span-4 group relative"
-        >
-          <Card className="h-full border-zinc-800/50 bg-zinc-900/40 backdrop-blur-xl overflow-hidden rounded-[2rem] cursor-pointer hover:bg-zinc-900/60 transition-all" onClick={() => onNavigate('search')}>
-            <div className="absolute inset-0 bg-gradient-to-tr from-emerald-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-            <CardContent className="p-8 flex flex-col justify-between h-full">
-              <div>
-                <div className="h-12 w-12 rounded-2xl bg-emerald-500/20 flex items-center justify-center text-emerald-500 mb-6">
-                  <Compass className="h-6 w-6" />
-                </div>
-                <h3 className="text-3xl font-bold text-white mb-2">SmartGet</h3>
-                <p className="text-zinc-400 text-sm leading-relaxed">
-                  Real-time price comparison engine. Scan Airbnb, Booking.com, and airlines for the best deals.
+              <div className="space-y-4">
+                <h3 className="text-5xl font-black text-white tracking-tighter leading-none">SmartGet Search</h3>
+                <p className="text-zinc-400 text-xl font-medium max-w-xl">
+                  One search, all results. Compare prices from Airbnb, Booking.com and major airlines instantly.
                 </p>
               </div>
-              <div className="mt-8 flex items-center justify-between">
-                <div className="flex gap-2">
-                  <Badge className="bg-zinc-800 text-zinc-400 border-zinc-700">Airbnb</Badge>
-                  <Badge className="bg-zinc-800 text-zinc-400 border-zinc-700">Expedia</Badge>
-                </div>
-                <ArrowUpRight className="h-6 w-6 text-emerald-500 group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
+              <div className="flex gap-3">
+                <Badge className="bg-zinc-800/80 text-zinc-400 border-zinc-700/50 px-4 py-2 text-[10px] font-black uppercase tracking-widest">Global Coverage</Badge>
+                <Badge className="bg-emerald-500/20 text-emerald-400 border-emerald-500/30 px-4 py-2 text-[10px] font-black uppercase tracking-widest">Best Price Guarantee</Badge>
               </div>
-            </CardContent>
-          </Card>
+            </div>
+            <div className="relative w-full md:w-[400px] aspect-square rounded-[2rem] overflow-hidden border border-white/10 rotate-3 group-hover:rotate-0 transition-transform duration-700 shadow-2xl">
+               <Image 
+                src="https://picsum.photos/seed/travel-search/800/800"
+                alt="SmartGet"
+                fill
+                className="object-cover opacity-80"
+                referrerPolicy="no-referrer"
+               />
+               <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent" />
+               <div className="absolute bottom-6 left-6 right-6">
+                 <div className="p-4 rounded-2xl bg-white/10 backdrop-blur-md border border-white/20">
+                   <p className="text-white text-xs font-bold">Latest Discovery</p>
+                   <p className="text-zinc-400 text-[10px]">Flights to Bali starting at $450</p>
+                 </div>
+               </div>
+            </div>
+          </div>
         </motion.div>
       </div>
 
-      <div className="space-y-6">
-        <h2 className="text-2xl font-bold text-white">Travel Mood Board</h2>
+      <div className="space-y-8">
+        <div className="flex flex-col gap-2">
+          <h2 className="text-3xl font-black text-white tracking-tight">{language === 'ar' ? 'لوحة المزاج' : 'Travel Mood Board'}</h2>
+          <p className="text-zinc-500 text-sm font-medium">Visual inspiration for your wanderlust.</p>
+        </div>
         <MoodBoard destination="Dubai" />
       </div>
 
-      <div className="space-y-6">
-        <h2 className="text-2xl font-bold text-white">Arabic Travel Creators</h2>
+      <div className="space-y-8">
+        <div className="flex flex-col gap-2">
+          <h2 className="text-3xl font-black text-white tracking-tight">{language === 'ar' ? 'صناع المحتوى العرب' : 'Arabic Travel Creators'}</h2>
+          <p className="text-zinc-500 text-sm font-medium">Get insights from the best in the region.</p>
+        </div>
         <ArabicTravelers />
       </div>
     </div>

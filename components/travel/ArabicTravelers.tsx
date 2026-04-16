@@ -1,34 +1,69 @@
 'use client';
 
 import { Card, CardContent } from '@/components/ui/card';
-import { Youtube, User } from 'lucide-react';
+import { Youtube, User, ExternalLink } from 'lucide-react';
+import { motion } from 'motion/react';
+import Image from 'next/image';
 
 const travelers = [
-  { name: 'يوسف العربي', channel: 'Youssef Al-Arabi' },
-  { name: 'خليجي يسافر', channel: 'Khaleeji Travels' },
-  { name: 'مصري يسافر', channel: 'Masri Travels' },
-  { name: 'رحالة', channel: 'Rahala' },
-  { name: 'سفر وحلال', channel: 'Safar Halal' },
-  { name: 'Travel with Amira', channel: 'Travel with Amira' },
-  { name: 'الرحالة المصري', channel: 'The Egyptian Traveler' },
-  { name: 'Joe Hattab', channel: 'Joe Hattab' },
+  { name: 'Joe Hattab', channel: 'Joe Hattab', subscribers: '12M+', id: 'joehattab' },
+  { name: 'يوسف العربي', channel: 'Youssef Al-Arabi', subscribers: '2M+', id: 'youssef' },
+  { name: 'أحمد البدوي', channel: 'Ahmed Al-Badawi', subscribers: '1.5M+', id: 'ahmed' },
+  { name: 'هيفاء بسيسو', channel: 'Haifa Beseisso', subscribers: '1M+', id: 'haifa' },
+  { name: 'فطيم', channel: 'Futaim', subscribers: '800K+', id: 'futaim' },
+  { name: 'عمر فاروق', channel: 'Omar Farooq', subscribers: '7M+', id: 'omar' },
+  { name: 'جاسم', channel: 'Jassim', subscribers: '500K+', id: 'jassim' },
+  { name: 'سارة', channel: 'Sara Travels', subscribers: '300K+', id: 'sara' },
 ];
 
 export function ArabicTravelers() {
   return (
-    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+    <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
       {travelers.map((t, i) => (
-        <Card key={i} className="bg-zinc-900/50 border-zinc-800 hover:border-emerald-500/50 transition-all">
-          <CardContent className="p-4 flex items-center gap-3">
-            <div className="h-10 w-10 rounded-full bg-zinc-800 flex items-center justify-center text-emerald-500">
-              <User className="h-5 w-5" />
+        <motion.div
+          key={i}
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: i * 0.05 }}
+          whileHover={{ y: -5 }}
+          className="group relative bg-zinc-900/40 backdrop-blur-md border border-white/5 rounded-[2.5rem] p-5 hover:bg-zinc-900/60 transition-all cursor-pointer overflow-hidden"
+        >
+          <div className="absolute top-0 right-0 p-4 opacity-0 group-hover:opacity-100 transition-opacity">
+            <ExternalLink className="h-4 w-4 text-emerald-400" />
+          </div>
+          
+          <div className="flex flex-col items-center text-center gap-4">
+            <div className="relative h-20 w-20 rounded-full overflow-hidden border-2 border-emerald-500/20 group-hover:border-emerald-500 Transition-all duration-500">
+              <Image 
+                src={`https://picsum.photos/seed/${t.id}/200`}
+                alt={t.name}
+                fill
+                className="object-cover"
+                referrerPolicy="no-referrer"
+              />
             </div>
-            <div>
-              <p className="text-sm font-bold text-white">{t.name}</p>
-              <p className="text-[10px] text-zinc-500">{t.channel}</p>
+            
+            <div className="space-y-1">
+              <p className="font-black text-white text-lg leading-tight">{t.name}</p>
+              <div className="flex items-center justify-center gap-2">
+                <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-wider">{t.channel}</p>
+                <div className="h-1 w-1 rounded-full bg-zinc-700" />
+                <p className="text-[10px] text-emerald-500 font-bold tracking-wider">{t.subscribers}</p>
+              </div>
             </div>
-          </CardContent>
-        </Card>
+          </div>
+
+          <div className="mt-6">
+            <div className="h-1 w-full bg-zinc-800 rounded-full overflow-hidden">
+              <motion.div 
+                initial={{ width: 0 }}
+                animate={{ width: `${60 + Math.random() * 30}%` }}
+                className="h-full bg-gradient-to-r from-emerald-500 to-teal-400"
+              />
+            </div>
+            <p className="text-[8px] text-zinc-600 font-bold uppercase mt-2 tracking-widest text-center">Engagement Rate</p>
+          </div>
+        </motion.div>
       ))}
     </div>
   );
