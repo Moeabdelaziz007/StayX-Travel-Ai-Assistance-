@@ -590,7 +590,21 @@ export async function searchHotels(args: { destination: string, checkIn: string,
 
 export async function generateDestinationImage(args: { prompt: string }) {
   const seed = Math.floor(Math.random() * 1000000);
-  const imageUrl = `https://pollinations.ai/p/${encodeURIComponent(args.prompt)}?width=1024&height=1024&seed=${seed}&model=flux`;
+  const apiKey = process.env.NEXT_PUBLIC_POLLINATIONS_API_KEY;
+  const baseUrl = "https://pollinations.ai/p/";
+  const params = new URLSearchParams({
+    width: "1024",
+    height: "1024",
+    seed: seed.toString(),
+    model: "flux",
+    nologo: "true"
+  });
+  
+  if (apiKey) {
+    params.set("api_key", apiKey);
+  }
+
+  const imageUrl = `${baseUrl}${encodeURIComponent(args.prompt)}?${params.toString()}`;
   return { imageUrl, message: "Image generated successfully using Pollinations AI" };
 }
 
