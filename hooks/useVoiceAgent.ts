@@ -3,21 +3,74 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { toast } from 'sonner';
+import { useRouter } from 'next/navigation';
+import { useI18n } from '@/lib/i18n';
 
 const MODEL = "gemini-2.0-flash-exp";
 
 export type VoiceState = 'idle' | 'connecting' | 'listening' | 'processing' | 'speaking';
+
+interface Message {
+  role: 'user' | 'model';
+  text: string;
+}
 
 export function useVoiceAgent() {
   const [state, setState] = useState<VoiceState>('idle');
   const [isActive, setIsActive] = useState(false);
   const [transcript, setTranscript] = useState('');
   const [googleToken, setGoogleToken] = useState<string | null>(null);
-
-  // ... (the rest of the code)
+  const [history, setHistory] = useState<Message[]>([]);
   
-  // Inside startSession:
-  // const ai = new GoogleGenerativeAI(process.env.NEXT_PUBLIC_GEMINI_API_KEY!);
+  const router = useRouter();
+  const { setLanguage, language } = useI18n();
+
+  const playBeep = useCallback((freq: number, duration: number = 0.1) => {
+    if (typeof window === 'undefined') return;
+    try {
+      const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(freq, ctx.currentTime);
+      
+      gain.gain.setValueAtTime(0.05, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration);
+      
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      
+      osc.start();
+      osc.stop(ctx.currentTime + duration);
+    } catch (e) {
+      console.warn("Audio feedback failed", e);
+    }
+  }, []);
+
+  const handleQuickCommands = useCallback((text: string): boolean => {
+    const lower = text.toLowerCase();
+    
+    // Arabic commands
+    if (lower.includes('افتح الداشبورد') || lower.includes('الرئيسية') || lower.includes('dashboard')) {
+      router.push('/dashboard');
+      toast.success("Opening Dashboard");
+      return true;
+    }
+    if (lower.includes('شغل غرفة مشاهدة') || lower.includes('غرفة المشاهدة') || lower.includes('watch room')) {
+      router.push('/watch');
+      toast.success("Opening Watch Room");
+      return true;
+    }
+    if (lower.includes('غير اللغة') || lower.includes('تغيير اللغة') || lower.includes('change language')) {
+      const nextLang = language === 'ar' ? 'en' : 'ar';
+      setLanguage(nextLang);
+      toast.success(`Language changed to ${nextLang === 'ar' ? 'العربية' : 'English'}`);
+      return true;
+    }
+    
+    return false;
+  }, [router, language, setLanguage]);
 
   const connectCalendar = async () => {
     const { loginWithCalendar } = await import('@/lib/firebase');
@@ -54,10 +107,10 @@ export function useVoiceAgent() {
     }
     setIsActive(false);
     setState('idle');
-    setTranscript('');
+    playBeep(440, 0.15); // End beep
     isPlayingRef.current = false;
     audioQueueRef.current = [];
-  }, []);
+  }, [playBeep]);
 
   const playNextInQueue = useCallback(async () => {
     if (audioQueueRef.current.length === 0 || isPlayingRef.current || !audioContextRef.current) {
@@ -107,6 +160,7 @@ export function useVoiceAgent() {
     setIsActive(true);
     setState('connecting');
     setTranscript('');
+    playBeep(880, 0.1); // Start beep
 
     try {
       const ai = new GoogleGenerativeAI(process.env.NEXT_PUBLIC_GEMINI_API_KEY!);
@@ -145,10 +199,32 @@ export function useVoiceAgent() {
             
             source.connect(processor);
             processor.connect(ctx.destination);
+
+            // Send context/history if any
+            if (history.length > 0) {
+              const context = history.map(h => `${h.role}: ${h.text}`).join('\n');
+              sessionPromise.then(session => session.send({
+                text: `CONTEXT FROM PREVIOUS TURN:\n${context}\n\nPlease continue the conversation naturally based on this history.`
+              }));
+            }
           },
-          onmessage: async (message: LiveServerMessage) => {
+          onmessage: async (message: any) => {
+            // Transcription part
             if (message.serverContent?.modelTurn?.parts?.[0]?.text) {
-              setTranscript(prev => prev + ' ' + message.serverContent?.modelTurn?.parts[0].text);
+              const text = message.serverContent?.modelTurn?.parts[0].text;
+              setTranscript(prev => prev + ' ' + text);
+              
+              // Local command check on transcript
+              if (handleQuickCommands(text)) {
+                // Should we interrupt Gemini? Navigation will typically unload page anyway.
+                window.location.reload(); // Quick way to stop everything if needed, but router.push is better
+              }
+
+              // Update history
+              setHistory(prev => {
+                const newHistory = [...prev, { role: 'model', text }] as Message[];
+                return newHistory.slice(-20);
+              });
             }
 
             const base64Audio = message.serverContent?.modelTurn?.parts?.[0]?.inlineData?.data;
@@ -165,6 +241,7 @@ export function useVoiceAgent() {
               audioQueueRef.current = [];
               isPlayingRef.current = false;
               setState('listening');
+              playBeep(220, 0.05); // Interrupted feedback
             }
 
             if (message.toolCall) {
@@ -211,6 +288,7 @@ export function useVoiceAgent() {
           },
           onerror: (err) => {
             console.error("Live API Error:", err);
+            playBeep(110, 0.3); // Error beep
             toast.error("Voice connection error");
             stopSession();
           },
@@ -223,7 +301,14 @@ export function useVoiceAgent() {
           speechConfig: {
             voiceConfig: { prebuiltVoiceConfig: { voiceName: "Zephyr" } }
           },
-          systemInstruction: "You are StayX, an expert AI travel assistant. You speak naturally in Arabic and English. You help users plan trips, find flights, check weather, and answer travel questions. When users mention a destination, proactively suggest: 1) best time to visit, 2) must-do activities, 3) estimated budget. Keep responses under 30 seconds. Be warm and enthusiastic. Use the provided tools to get real-time information.",
+          systemInstruction: `You are StayX, a multilingual travel expert (Arabic, English, French, Spanish). 
+          - Automatically detect user language and respond in the same language.
+          - If the user context is missing, remember their last destination or request (Conversational Memory).
+          - Be PROACTIVE: After answering, suggest the logical next step (e.g., after flight search, suggest hotels or weather).
+          - Example: If user says "Dubai", then "5 days", you know it's 5 days in Dubai.
+          - Multi-turn Example: After flight results -> "Would you like me to find some top-rated hotels in Dubai for your dates as well?"
+          - Keep responses warm, enthusiastic, and under 30 seconds.
+          - Use tools for real-time data.`,
           inputAudioTranscription: {},
           outputAudioTranscription: {},
           tools: [
@@ -343,20 +428,22 @@ export function useVoiceAgent() {
           ]
         }
       });
-
+      
       sessionRef.current = await sessionPromise;
-
+      
     } catch (err) {
       console.error("Failed to start voice session:", err);
+      playBeep(110, 0.3);
       toast.error("Could not access microphone or connect to AI");
       stopSession();
     }
-  }, [isActive, stopSession, playNextInQueue, googleToken]);
+  }, [isActive, stopSession, playNextInQueue, googleToken, history, playBeep, handleQuickCommands]);
 
   return {
     isActive,
     state,
     transcript,
+    history,
     startSession,
     stopSession,
     connectCalendar,

@@ -36,6 +36,7 @@ export function VoiceTrigger() {
         isActive={isActive} 
         state={state} 
         transcript={transcript} 
+        history={history}
         onClose={stopSession} 
         onConnectCalendar={connectCalendar}
         hasCalendar={hasCalendar}
