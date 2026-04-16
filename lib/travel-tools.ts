@@ -1,11 +1,39 @@
 import { db, auth } from './firebase';
 import { doc, setDoc, getDoc, collection, addDoc } from 'firebase/firestore';
 
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import { GoogleGenerativeAI, SchemaType } from '@google/generative-ai';
 
 import { generateWithGroq } from './groq';
 
 const ai = new GoogleGenerativeAI(process.env.NEXT_PUBLIC_GEMINI_API_KEY!);
+
+export async function getVisaInfo(nationality: string, destination: string) {
+  const model = ai.getGenerativeModel({
+    model: 'gemini-2.5-flash',
+    generationConfig: {
+      responseMimeType: "application/json",
+      responseSchema: {
+        type: SchemaType.OBJECT,
+        properties: {
+          requiresVisa: { type: SchemaType.BOOLEAN, description: "True if a visa or e-Visa is required, false if visa-free." },
+          visaType: { type: SchemaType.STRING, description: "Type of visa (e.g., 'Visa Free', 'e-Visa', 'Visa on Arrival', 'Embassy Visa')" },
+          duration: { type: SchemaType.STRING, description: "Allowed duration of stay (e.g., '30 days', '90 days')" },
+          summary: { type: SchemaType.STRING, description: "A short, helpful summary." },
+          estimatedCost: { type: SchemaType.STRING, description: "Estimated cost if any." },
+          link: { type: SchemaType.STRING, description: "Relevant official link to apply or read more." },
+        },
+        required: ["requiresVisa", "visaType", "duration", "summary", "estimatedCost"]
+      }
+    }
+  });
+
+  const prompt = `Provide the current tourist visa requirements for a citizen of ${nationality} traveling to ${destination}. Provide accurate and up-to-date information.`;
+  
+  const result = await model.generateContent(prompt);
+  const responseText = result.response.text();
+  return JSON.parse(responseText);
+}
+
 
 export async function ensureUserProfile() {
   if (!auth.currentUser) return null;

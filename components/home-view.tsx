@@ -13,6 +13,7 @@ import { toast } from 'sonner';
 import { useI18n } from '@/lib/i18n';
 import { useAuth } from '@/lib/auth-context';
 import { CurrencyWidget } from './CurrencyWidget';
+import { VisaWidget } from './VisaWidget';
 import { MoodBoard } from './travel/MoodBoard';
 import { ArabicTravelers } from './travel/ArabicTravelers';
 
@@ -52,48 +53,90 @@ export function HomeView({ onNavigate, tripsCount }: { onNavigate: (tab: string)
 
   return (
     <div className="space-y-8 pb-12">
-      <header className="flex flex-col gap-4">
-        <div className="space-y-1">
-          <motion.h1 
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            className="text-5xl font-bold tracking-tight text-white"
-          >
-            {t('home.welcome_name').replace('{name}', user?.displayName?.split(' ')[0] || 'Traveler')}
-          </motion.h1>
-          <motion.p 
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.1 }}
-            className="text-zinc-400 text-lg"
-          >
-            {t('home.where_to')}
-          </motion.p>
+      {/* Hero Section with Video Background */}
+      <section className="relative -mt-4 -mx-4 md:-mt-6 md:-mx-6 mb-12 h-[500px] flex items-center justify-center overflow-hidden rounded-b-[3rem]">
+        <div className="absolute inset-0 z-0">
+          <video 
+            autoPlay 
+            muted 
+            loop 
+            playsInline
+            className="w-full h-full object-cover opacity-60"
+            src="https://cdn.pixabay.com/video/2019/11/14/29169-373809075_large.mp4"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-background via-background/40 to-black/60" />
         </div>
-      </header>
+        
+        <div className="relative z-10 w-full max-w-4xl px-4 flex flex-col items-center gap-8">
+          <motion.div 
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, ease: "easeOut" }}
+            className="text-center space-y-4"
+          >
+            <h1 className="text-4xl md:text-6xl font-black text-white tracking-tight drop-shadow-xl">
+              {t('home.welcome_name').replace('{name}', user?.displayName?.split(' ')[0] || 'Traveler')}
+            </h1>
+            <p className="text-xl md:text-2xl text-zinc-200 font-medium drop-shadow-md">
+              Discover your next great adventure.
+            </p>
+          </motion.div>
 
-      {tripsCount === 0 && (
-        <motion.div 
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="bg-zinc-900 border border-emerald-500/30 rounded-3xl p-8 flex flex-col gap-6"
-        >
-          <h2 className="text-3xl font-bold text-white">Welcome to StayX! Where are you heading?</h2>
-          <div className="flex flex-wrap gap-3">
-            {destinations.map((dest) => (
-              <Button
-                key={dest.id}
-                variant="outline"
-                className={`rounded-full border-zinc-800 bg-zinc-950 hover:bg-zinc-800 transition-all gap-2 px-6 h-12`}
-                onClick={() => handleDestinationClick(dest.id)}
-              >
-                <MapPin className={`h-4 w-4 ${dest.color.split(' ')[1]}`} />
-                {dest.name}
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: 0.3, duration: 0.5 }}
+            className="w-full relative group"
+          >
+            <div className="absolute inset-0 bg-emerald-500/20 blur-xl rounded-full group-hover:bg-emerald-500/30 transition-all duration-500" />
+            <div className="relative flex items-center bg-zinc-900/80 backdrop-blur-md border border-white/10 rounded-full p-2 shadow-2xl">
+              <MapPin className="ml-4 h-6 w-6 text-emerald-400" />
+              <Input 
+                placeholder="Where to? (e.g., Paris, Tokyo, Dubai)"
+                className="flex-1 bg-transparent border-none text-lg text-white placeholder:text-zinc-400 h-14 focus-visible:ring-0 px-4"
+              />
+              <Button size="lg" className="rounded-full bg-emerald-500 hover:bg-emerald-600 text-white font-bold px-8 h-12 shadow-lg shadow-emerald-500/20">
+                Search
               </Button>
-            ))}
-          </div>
-        </motion.div>
-      )}
+            </div>
+          </motion.div>
+        </div>
+      </section>
+
+      {/* Trending Destinations with Parallax effect */}
+      <section className="mb-12">
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-2xl font-bold text-white flex items-center gap-2">
+            <Sparkles className="h-6 w-6 text-emerald-400" /> Trending Destinations
+          </h2>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          {destinations.map((dest, i) => (
+            <motion.div
+              key={dest.id}
+              whileHover={{ y: -8, scale: 1.02 }}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: i * 0.1, duration: 0.5 }}
+              onClick={() => handleDestinationClick(dest.id)}
+              className="relative h-64 rounded-3xl overflow-hidden cursor-pointer group"
+            >
+              <motion.img 
+                src={`https://image.pollinations.ai/prompt/${dest.id}%20beautiful%20landmark%20travel%20scenic?width=600&height=800&nologo=true`}
+                className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110"
+                alt={dest.name}
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent" />
+              <div className="absolute bottom-0 left-0 p-6">
+                <p className="text-white font-black text-2xl tracking-wide">{dest.name}</p>
+                <div className="flex items-center gap-2 mt-2">
+                  <span className="px-2 py-1 bg-white/20 backdrop-blur-md rounded-md text-[10px] font-bold text-white uppercase tracking-wider">Explore</span>
+                </div>
+              </div>
+            </motion.div>
+          ))}
+        </div>
+      </section>
 
       <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
         {/* Weather - Large Span */}
@@ -107,6 +150,14 @@ export function HomeView({ onNavigate, tripsCount }: { onNavigate: (tab: string)
           className="md:col-span-3 lg:col-span-2 group relative h-full flex flex-col"
         >
           <CurrencyWidget defaultTarget="EUR" />
+        </motion.div>
+
+        {/* Visa Widget */}
+        <motion.div 
+          whileHover={{ scale: 1.01 }}
+          className="md:col-span-3 lg:col-span-2 group relative h-full flex flex-col"
+        >
+          <VisaWidget />
         </motion.div>
 
         {/* AI Planner Pro Promo */}

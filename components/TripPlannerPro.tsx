@@ -63,17 +63,28 @@ export function TripPlannerPro() {
     if (!pdfRef.current) return;
     const element = pdfRef.current;
     
-    // Dynamic import to avoid SSR issues
-    const html2pdf = (await import('html2pdf.js')).default;
-    
-    const opt = {
-      margin: 10,
-      filename: `${destination}_itinerary.pdf`,
-      image: { type: 'jpeg', quality: 0.98 },
-      html2canvas: { scale: 2, useCORS: true },
-      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-    };
-    html2pdf().set(opt).from(element).save();
+    // Temporarily turn off animations and show all days for PDF capture
+    const originalActive = activeDay;
+    setActiveDay(-1); // special state to show all
+
+    // Wait for react to render all days
+    setTimeout(async () => {
+      // Dynamic import
+      const html2pdf = (await import('html2pdf.js')).default;
+      
+      const opt = {
+        margin: [15, 15, 15, 15],
+        filename: `${destination}_StayX_Itinerary.pdf`,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2, useCORS: true, letterRendering: true, backgroundColor: '#09090b' },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+      };
+      
+      await html2pdf().set(opt).from(element).save();
+      
+      // Restore view
+      setActiveDay(originalActive);
+    }, 500);
   };
 
   const getImageUrl = (keyword: string) => {
@@ -249,73 +260,80 @@ export function TripPlannerPro() {
                 <div className="lg:col-span-2 space-y-8">
                   <div className="flex items-center justify-between">
                     <h3 className="text-3xl font-bold text-white">Daily Itinerary</h3>
-                    <Button 
-                      variant="outline" 
-                      onClick={downloadPDF}
-                      className="rounded-2xl border-zinc-800 bg-zinc-900/50 hover:bg-zinc-800 gap-2"
-                    >
-                      <Download className="h-5 w-5" /> Download PDF
-                    </Button>
+                    {activeDay !== -1 && (
+                      <Button 
+                        variant="outline" 
+                        onClick={downloadPDF}
+                        className="rounded-2xl border-zinc-800 bg-zinc-900/50 hover:bg-zinc-800 gap-2"
+                      >
+                        <Download className="h-5 w-5" /> Download PDF
+                      </Button>
+                    )}
                   </div>
 
                   {/* Day Tabs */}
-                  <div className="flex gap-2 overflow-x-auto pb-4 no-scrollbar">
-                    {tripData.daily_plan.map((day: any, i: number) => (
-                      <button
-                        key={i}
-                        onClick={() => setActiveDay(i)}
-                        className={`px-8 py-4 rounded-2xl font-bold transition-all whitespace-nowrap ${
-                          activeDay === i 
-                            ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/20' 
-                            : 'bg-zinc-900/50 text-zinc-500 hover:text-zinc-300'
-                        }`}
-                      >
-                        Day {day.day}
-                      </button>
-                    ))}
-                  </div>
-
-                  {/* Day Content */}
-                  <motion.div 
-                    key={activeDay}
-                    initial={{ opacity: 0, x: 20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    className="space-y-8"
-                  >
-                    <div className="relative h-[250px] rounded-3xl overflow-hidden">
-                      <Image 
-                        src={getImageUrl(tripData.daily_plan[activeDay].best_image_keyword)} 
-                        alt="Day theme" 
-                        fill 
-                        className="object-cover"
-                        referrerPolicy="no-referrer"
-                      />
-                      <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
-                        <h4 className="text-3xl font-bold text-white">{tripData.daily_plan[activeDay].theme}</h4>
-                      </div>
-                    </div>
-
-                    <div className="space-y-6 relative before:absolute before:left-4 before:top-2 before:bottom-2 before:w-0.5 before:bg-zinc-800">
-                      {tripData.daily_plan[activeDay].activities.map((act: any, i: number) => (
-                        <div key={i} className="relative pl-12 group">
-                          <div className="absolute left-3 top-2 w-2.5 h-2.5 rounded-full bg-indigo-500 ring-4 ring-zinc-950 group-hover:scale-125 transition-transform" />
-                          <div className="p-6 bg-zinc-900/40 border border-zinc-800/50 rounded-3xl hover:bg-zinc-900/60 transition-all">
-                            <div className="flex justify-between items-start mb-2">
-                              <div className="flex items-center gap-2 text-indigo-400 font-bold text-sm">
-                                <Clock className="h-4 w-4" /> {act.time}
-                              </div>
-                              <span className="text-xs font-bold text-emerald-500">{act.cost}</span>
-                            </div>
-                            <h5 className="text-xl font-bold text-white mb-2">{act.activity}</h5>
-                            <p className="text-zinc-400 text-sm leading-relaxed mb-4">{act.description}</p>
-                            <div className="flex items-center gap-2 text-xs text-zinc-500">
-                              <MapPin className="h-3 w-3" /> {act.location}
-                            </div>
-                          </div>
-                        </div>
+                  {activeDay !== -1 && (
+                    <div className="flex gap-2 overflow-x-auto pb-4 no-scrollbar">
+                      {tripData.daily_plan.map((day: any, i: number) => (
+                        <button
+                          key={i}
+                          onClick={() => setActiveDay(i)}
+                          className={`px-8 py-4 rounded-2xl font-bold transition-all whitespace-nowrap ${
+                            activeDay === i 
+                              ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/20' 
+                              : 'bg-zinc-900/50 text-zinc-500 hover:text-zinc-300'
+                          }`}
+                        >
+                          Day {day.day}
+                        </button>
                       ))}
                     </div>
-                  </motion.div>
+                  )}
+
+                  {/* Day Content */}
+                  {(activeDay === -1 ? tripData.daily_plan : [tripData.daily_plan[activeDay]]).map((dayPlan: any, dayIndex: number) => (
+                    <motion.div 
+                      key={activeDay === -1 ? dayIndex : activeDay}
+                      initial={{ opacity: 0, x: 20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      className="space-y-8 pb-12"
+                    >
+                      {activeDay === -1 && <h4 className="text-2xl font-bold text-white mb-2">Day {dayPlan.day}</h4>}
+                      <div className="relative h-[250px] rounded-3xl overflow-hidden">
+                        <Image 
+                          src={getImageUrl(dayPlan.best_image_keyword)} 
+                          alt="Day theme" 
+                          fill 
+                          className="object-cover"
+                          referrerPolicy="no-referrer"
+                        />
+                        <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+                          <h4 className="text-3xl font-bold text-white">{dayPlan.theme}</h4>
+                        </div>
+                      </div>
+
+                      <div className="space-y-6 relative before:absolute before:left-4 before:top-2 before:bottom-2 before:w-0.5 before:bg-zinc-800">
+                        {dayPlan.activities.map((act: any, i: number) => (
+                          <div key={i} className="relative pl-12 group">
+                            <div className="absolute left-3 top-2 w-2.5 h-2.5 rounded-full bg-indigo-500 ring-4 ring-zinc-950 group-hover:scale-125 transition-transform" />
+                            <div className="p-6 bg-zinc-900/40 border border-zinc-800/50 rounded-3xl hover:bg-zinc-900/60 transition-all">
+                              <div className="flex justify-between items-start mb-2">
+                                <div className="flex items-center gap-2 text-indigo-400 font-bold text-sm">
+                                  <Clock className="h-4 w-4" /> {act.time}
+                                </div>
+                                <span className="text-xs font-bold text-emerald-500">{act.cost}</span>
+                              </div>
+                              <h5 className="text-xl font-bold text-white mb-2">{act.activity}</h5>
+                              <p className="text-zinc-400 text-sm leading-relaxed mb-4">{act.description}</p>
+                              <div className="flex items-center gap-2 text-xs text-zinc-500">
+                                <MapPin className="h-3 w-3" /> {act.location}
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </motion.div>
+                  ))}
                 </div>
 
                 {/* Hotels & Map */}
