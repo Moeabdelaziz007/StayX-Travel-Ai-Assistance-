@@ -5,6 +5,7 @@ import { motion } from 'motion/react';
 import { Search, Plane, ExternalLink, Star, Loader2, Sparkles, Filter, TrendingUp, Tag, UserCheck, Mic, MapPin, Camera, Image as ImageIcon, X } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { searchGroundingCompare, getSmartAutocomplete, visualSearchDestination } from '@/lib/travel-tools';
 import { searchPlacesFoursquare } from '@/lib/foursquare';
 import { WeatherWidget } from './weather-widget';

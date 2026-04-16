@@ -8,7 +8,7 @@ import { RoomChat } from './RoomChat';
 import { WatchRoomSidebar } from './WatchRoomSidebar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Users, Share2, Crown, LogOut, MapPin, Plane, Cloud, Thermometer } from 'lucide-react';
+import { Users, Share2, Crown, LogOut, MapPin, Plane, Cloud, Thermometer, MonitorPlay } from 'lucide-react';
 import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
 import { useI18n } from '@/lib/i18n';
@@ -166,11 +166,6 @@ export function WatchTogetherRoom({ roomId }: { roomId: string }) {
   return (
     <div className="flex flex-col h-full bg-zinc-950 text-zinc-50">
       {/* Header */}
-import { Users, Share2, Crown, LogOut, MapPin, Plane, Cloud, Thermometer, MonitorPlay } from 'lucide-react';
-
-// ... (skipping some imports for brevity if they match context, but providing exact line replacement below)
-
-// Inside the component...
       <header className={`flex items-center justify-between p-4 border-b border-zinc-800 ${cinemaMode ? 'bg-black/80 backdrop-blur-md' : 'bg-zinc-900/50'} z-50 relative transition-all duration-700`}>
         <div className="flex items-center gap-4">
           <h1 className="text-xl font-bold text-white flex items-center gap-2">

@@ -351,7 +351,7 @@ export function useVoiceAgent() {
       toast.error("Could not access microphone or connect to AI");
       stopSession();
     }
-  }, [isActive, stopSession, playNextInQueue]);
+  }, [isActive, stopSession, playNextInQueue, googleToken]);
 
   return {
     isActive,
