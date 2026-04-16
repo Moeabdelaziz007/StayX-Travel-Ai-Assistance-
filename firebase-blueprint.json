@@ -154,6 +154,19 @@
         "createdAt": { "type": "string", "format": "date-time" }
       },
       "required": ["users", "compatibilityScore", "status", "createdAt"]
+    },
+    "Expense": {
+      "title": "Expense",
+      "description": "A travel expense",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "category": { "type": "string", "enum": ["food", "transport", "activities", "other"] },
+        "amount": { "type": "number" },
+        "description": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "category", "amount", "description", "createdAt"]
     }
   },
   "firestore": {
@@ -196,6 +209,10 @@
     "/notifications/{notificationId}": {
       "schema": { "$ref": "#/entities/Notification" },
       "description": "User notifications"
+    },
+    "/expenses/{expenseId}": {
+      "schema": { "$ref": "#/entities/Expense" },
+      "description": "User expenses"
     }
   }
 }

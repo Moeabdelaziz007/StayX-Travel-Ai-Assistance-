@@ -392,16 +392,34 @@ export async function createVoiceRoom(args: { title: string }) {
 }
 
 export async function searchFlights(args: { origin: string, destination: string, date: string }) {
-  // Travelpayouts / Aviasales affiliate links
-  const affiliateId = process.env.TRAVELPAYOUTS_AFFILIATE_ID || 'stayx';
-  const getAffiliateLink = (origin: string, dest: string, date: string) => 
-    `https://www.aviasales.com/search/${origin}${date.replace(/-/g, '')}${dest}1?marker=${affiliateId}`;
-
-  return [
-    { name: 'EgyptAir', price: '$450', duration: '3h 30m', link: getAffiliateLink(args.origin, args.destination, args.date) },
-    { name: 'Turkish Airlines', price: '$520', duration: '3h 45m', link: getAffiliateLink(args.origin, args.destination, args.date) },
-    { name: 'Pegasus', price: '$380', duration: '4h 00m', link: getAffiliateLink(args.origin, args.destination, args.date) }
-  ];
+  try {
+    const prompt = `Find current real-time flight options from ${args.origin} to ${args.destination} around ${args.date}. 
+    Return a JSON array of objects with fields: name (airline), price (in USD), duration, link (booking link). 
+    Ensure the links are real (e.g., Kayak, Expedia, Skyscanner or Direct).
+    Return ONLY the JSON array.`;
+    
+    const model = ai.getGenerativeModel({
+      model: "gemini-2.0-flash",
+      tools: [{ googleSearch: {} }] as any
+    });
+    
+    const result = await model.generateContent(prompt);
+    const text = result.response.text();
+    const jsonMatch = text.match(/\[[\s\S]*\]/);
+    if (jsonMatch) {
+      return JSON.parse(jsonMatch[0]);
+    }
+    
+    const affiliateId = process.env.TRAVELPAYOUTS_AFFILIATE_ID || 'stayx';
+    const link = `https://www.aviasales.com/search/${args.origin}${args.date.replace(/-/g, '')}${args.destination}1?marker=${affiliateId}`;
+    return [
+      { name: 'EgyptAir', price: '$450', duration: '3h 30m', link },
+      { name: 'Turkish Airlines', price: '$520', duration: '3h 45m', link },
+    ];
+  } catch (e) {
+    console.error("Flight search error:", e);
+    return [];
+  }
 }
 
 export async function searchSimCards(args: { destination: string }) {
@@ -464,14 +482,33 @@ export async function addToCalendar(args: { title: string, description: string, 
 }
 
 export async function searchHotels(args: { destination: string, checkIn: string, checkOut: string }) {
-  const affiliateId = process.env.TRAVELPAYOUTS_AFFILIATE_ID || 'stayx';
-  const link = `https://search.hotellook.com/?location=${encodeURIComponent(args.destination)}&checkIn=${args.checkIn}&checkOut=${args.checkOut}&marker=${affiliateId}`;
-  
-  return [
-    { name: 'Luxury Resort', price: '$250/night', rating: 4.8, link },
-    { name: 'City Center Hotel', price: '$120/night', rating: 4.2, link },
-    { name: 'Budget Hostel', price: '$45/night', rating: 3.9, link }
-  ];
+  try {
+    const prompt = `Find current real-time hotel options in ${args.destination} for dates ${args.checkIn} to ${args.checkOut}. 
+    Return a JSON array of objects with fields: name, price (per night in USD), rating (out of 5), link (Booking.com, Hotels.com or similar).
+    Return ONLY the JSON array.`;
+
+    const model = ai.getGenerativeModel({
+      model: "gemini-2.0-flash",
+      tools: [{ googleSearch: {} }] as any
+    });
+
+    const result = await model.generateContent(prompt);
+    const text = result.response.text();
+    const jsonMatch = text.match(/\[[\s\S]*\]/);
+    if (jsonMatch) {
+      return JSON.parse(jsonMatch[0]);
+    }
+
+    const affiliateId = process.env.TRAVELPAYOUTS_AFFILIATE_ID || 'stayx';
+    const link = `https://search.hotellook.com/?location=${encodeURIComponent(args.destination)}&checkIn=${args.checkIn}&checkOut=${args.checkOut}&marker=${affiliateId}`;
+    return [
+      { name: 'Luxury Resort', price: '$250/night', rating: 4.8, link },
+      { name: 'City Center Hotel', price: '$120/night', rating: 4.2, link }
+    ];
+  } catch (e) {
+    console.error("Hotel search error:", e);
+    return [];
+  }
 }
 
 export async function generateDestinationImage(args: { prompt: string }) {

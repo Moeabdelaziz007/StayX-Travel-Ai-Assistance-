@@ -6,14 +6,14 @@ import { motion } from 'motion/react';
 import NextImage from 'next/image';
 
 const travelers = [
-  { name: 'Joe Hattab', channel: 'Joe Hattab', subscribers: '12M+', id: 'joehattab' },
-  { name: 'يوسف العربي', channel: 'Youssef Al-Arabi', subscribers: '2M+', id: 'youssef' },
-  { name: 'أحمد البدوي', channel: 'Ahmed Al-Badawi', subscribers: '1.5M+', id: 'ahmed' },
-  { name: 'هيفاء بسيسو', channel: 'Haifa Beseisso', subscribers: '1M+', id: 'haifa' },
-  { name: 'فطيم', channel: 'Futaim', subscribers: '800K+', id: 'futaim' },
-  { name: 'عمر فاروق', channel: 'Omar Farooq', subscribers: '7M+', id: 'omar' },
-  { name: 'جاسم', channel: 'Jassim', subscribers: '500K+', id: 'jassim' },
-  { name: 'سارة', channel: 'Sara Travels', subscribers: '300K+', id: 'sara' },
+  { name: 'Joe Hattab', channel: 'Joe Hattab', subscribers: '12M+', id: 'joehattab', image: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&h=200&fit=crop' },
+  { name: 'يوسف العربي', channel: 'Youssef Al-Arabi', subscribers: '2M+', id: 'youssef', image: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=200&h=200&fit=crop' },
+  { name: 'أحمد البدوي', channel: 'Ahmed Al-Badawi', subscribers: '1.5M+', id: 'ahmed', image: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=200&h=200&fit=crop' },
+  { name: 'هيفاء بسيسو', channel: 'Haifa Beseisso', subscribers: '1M+', id: 'haifa', image: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=200&h=200&fit=crop' },
+  { name: 'فطيم', channel: 'Futaim', subscribers: '800K+', id: 'futaim', image: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=200&h=200&fit=crop' },
+  { name: 'عمر فاروق', channel: 'Omar Farooq', subscribers: '7M+', id: 'omar', image: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=200&h=200&fit=crop' },
+  { name: 'جاسم', channel: 'Jassim', subscribers: '500K+', id: 'jassim', image: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=200&h=200&fit=crop' },
+  { name: 'سارة', channel: 'Sara Travels', subscribers: '300K+', id: 'sara', image: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=200&h=200&fit=crop' },
 ];
 
 export function ArabicTravelers() {
@@ -35,7 +35,7 @@ export function ArabicTravelers() {
           <div className="flex flex-col items-center text-center gap-4">
             <div className="relative h-20 w-20 rounded-full overflow-hidden border-2 border-emerald-500/20 group-hover:border-emerald-500 Transition-all duration-500">
               <NextImage 
-                src={`https://picsum.photos/seed/${t.id}/200`}
+                src={t.image}
                 alt={t.name}
                 fill
                 className="object-cover"
