@@ -21,6 +21,8 @@ import { useI18n } from '@/lib/i18n';
 import { CommandMenu } from './CommandMenu';
 import { TripPlannerPro } from './TripPlannerPro';
 import { LiveTranslator } from './LiveTranslator';
+import { QuickActionBar } from './QuickActionBar';
+import { ProgressTracker } from './ProgressTracker';
 import { DashboardSkeleton } from './DashboardSkeleton';
 import { Onboarding } from './Onboarding';
 import { Sparkles, Languages } from 'lucide-react';
@@ -306,7 +308,17 @@ export function Dashboard() {
             <DashboardSkeleton />
           ) : (
             <>
-              {activeTab === 'home' && <HomeView onNavigate={setActiveTab} tripsCount={tripsCount} />}
+              {activeTab === 'home' && (
+                <div className="space-y-6">
+                  <ProgressTracker steps={[
+                    { label: 'Flights', completed: true },
+                    { label: 'Hotel', completed: true },
+                    { label: 'Visa', completed: false },
+                    { label: 'Insurance', completed: false },
+                  ]} />
+                  <HomeView onNavigate={setActiveTab} tripsCount={tripsCount} />
+                </div>
+              )}
               {activeTab === 'planner-pro' && <TripPlannerPro />}
               {activeTab === 'translator' && <LiveTranslator />}
               {activeTab === 'trips' && <TripsView />}
@@ -316,6 +328,8 @@ export function Dashboard() {
             </>
           )}
         </main>
+        
+        <QuickActionBar onNavigate={setActiveTab} />
       </div>
     </div>
   );
