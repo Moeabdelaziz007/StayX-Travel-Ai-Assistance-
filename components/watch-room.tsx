@@ -9,7 +9,7 @@ import { db, auth, loginWithYoutube } from '@/lib/firebase';
 import { collection, query, where, getDocs, limit } from 'firebase/firestore';
 import { toggleFavorite } from '@/lib/travel-tools';
 import { toast } from 'sonner';
-import Image from 'next/image';
+import NextImage from 'next/image';
 import { motion, AnimatePresence } from 'motion/react';
 import { WatchRoomSidebar } from './watch-room/WatchRoomSidebar';
 import { nanoid } from 'nanoid';
@@ -244,7 +244,7 @@ export function WatchRoom() {
                 <Card className="border-zinc-800/50 bg-zinc-900/20 backdrop-blur-sm overflow-hidden hover:bg-zinc-900/40 transition-all rounded-2xl">
                   <CardContent className="p-0 flex flex-col">
                     <div className="relative aspect-video w-full overflow-hidden">
-                      <Image 
+                      <NextImage 
                         src={video.thumbnail} 
                         alt={video.title} 
                         fill 

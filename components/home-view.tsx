@@ -7,7 +7,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import Image from 'next/image';
+import NextImage from 'next/image';
 import { useState } from 'react';
 import { createVoiceRoom } from '@/lib/travel-tools';
 import { toast } from 'sonner';
@@ -223,7 +223,7 @@ export function HomeView({ onNavigate, tripsCount }: { onNavigate: (tab: string)
               </div>
             </div>
             <div className="relative w-full md:w-[400px] aspect-square rounded-[2rem] overflow-hidden border border-white/10 rotate-3 group-hover:rotate-0 transition-transform duration-700 shadow-2xl">
-               <Image 
+               <NextImage 
                 src="https://picsum.photos/seed/travel-search/800/800"
                 alt="SmartGet"
                 fill

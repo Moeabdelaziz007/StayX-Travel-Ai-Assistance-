@@ -9,7 +9,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Upload, FileText, AlertTriangle, CheckCircle, Loader2 } from 'lucide-react';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { toast } from 'sonner';
-import Image from 'next/image';
+import NextImage from 'next/image';
 
 const ai = new GoogleGenerativeAI(process.env.NEXT_PUBLIC_GEMINI_API_KEY!);
 
@@ -92,7 +92,7 @@ export function DocumentAnalyzer() {
 
       {preview && (
         <div className="mt-4 relative h-48 w-full">
-          <Image 
+          <NextImage 
             src={preview} 
             alt="Preview" 
             fill 

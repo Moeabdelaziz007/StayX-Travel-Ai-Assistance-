@@ -3,7 +3,7 @@
 import { Card, CardContent } from '@/components/ui/card';
 import { Youtube, User, ExternalLink } from 'lucide-react';
 import { motion } from 'motion/react';
-import Image from 'next/image';
+import NextImage from 'next/image';
 
 const travelers = [
   { name: 'Joe Hattab', channel: 'Joe Hattab', subscribers: '12M+', id: 'joehattab' },
@@ -34,7 +34,7 @@ export function ArabicTravelers() {
           
           <div className="flex flex-col items-center text-center gap-4">
             <div className="relative h-20 w-20 rounded-full overflow-hidden border-2 border-emerald-500/20 group-hover:border-emerald-500 Transition-all duration-500">
-              <Image 
+              <NextImage 
                 src={`https://picsum.photos/seed/${t.id}/200`}
                 alt={t.name}
                 fill

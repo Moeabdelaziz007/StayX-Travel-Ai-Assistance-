@@ -12,7 +12,7 @@ import { WeatherWidget } from './weather-widget';
 import { toast } from 'sonner';
 import { useI18n } from '@/lib/i18n';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import Image from 'next/image';
+import NextImage from 'next/image';
 
 export function SearchCompareView() {
   const { t } = useI18n();
@@ -275,7 +275,7 @@ export function SearchCompareView() {
                     {place.rating && <div className="text-emerald-500 font-bold text-sm bg-emerald-500/10 px-3 py-1 rounded-xl border border-emerald-500/20">{place.rating}</div>}
                   </div>
                   <div className="relative h-32 rounded-2xl overflow-hidden border border-white/5">
-                    <Image 
+                    <NextImage 
                       src={`https://image.pollinations.ai/prompt/${place.name}%20${place.location?.city}%20landmark%20interior%20cinematic?width=400&height=300&nologo=true`}
                       alt={place.name}
                       fill
@@ -299,7 +299,7 @@ export function SearchCompareView() {
           >
             <div className={`group relative p-8 md:p-12 rounded-[3.5rem] border backdrop-blur-2xl transition-all flex flex-col md:flex-row gap-10 items-center ${i === 0 ? 'bg-zinc-900/80 border-emerald-500/30 shadow-2xl shadow-emerald-500/10' : 'bg-zinc-900/40 border-zinc-800/50 hover:bg-zinc-900/60'}`}>
               <div className="relative w-full md:w-[280px] aspect-[4/5] rounded-[2.5rem] overflow-hidden border border-white/10 group-hover:rotate-1 transition-transform duration-700 shadow-2xl shrink-0">
-                <Image 
+                <NextImage 
                   src={`https://image.pollinations.ai/prompt/${item.description}%20travel%20destination%20hq?width=600&height=800&nologo=true`}
                   alt={item.source}
                   fill

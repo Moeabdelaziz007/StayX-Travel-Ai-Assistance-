@@ -26,7 +26,7 @@ import {
 } from '@/components/ui/select';
 import { generateDetailedItinerary, getCityGuide, getLiveHotelPrices } from '@/lib/travel-tools';
 import { toast } from 'sonner';
-import Image from 'next/image';
+import NextImage from 'next/image';
 
 export function TripPlannerPro() {
   const [destination, setDestination] = useState('');
@@ -236,7 +236,7 @@ export function TripPlannerPro() {
             >
               {/* Trip Header */}
               <div className="relative h-[400px] rounded-[3rem] overflow-hidden group">
-                <Image 
+                <NextImage 
                   src={getImageUrl(destination)} 
                   alt={destination} 
                   fill 
@@ -323,7 +323,7 @@ export function TripPlannerPro() {
                     >
                       {activeDay === -1 && <h4 className="text-2xl font-bold text-white mb-2">Day {dayPlan.day}</h4>}
                       <div className="relative h-[250px] rounded-3xl overflow-hidden">
-                        <Image 
+                        <NextImage 
                           src={getImageUrl(dayPlan.best_image_keyword)} 
                           alt="Day theme" 
                           fill 
@@ -369,7 +369,7 @@ export function TripPlannerPro() {
                       {tripData.hotels.map((hotel: any, i: number) => (
                         <div key={i} className="group bg-zinc-900/40 border border-zinc-800/50 rounded-3xl overflow-hidden hover:bg-zinc-900/60 transition-all">
                           <div className="relative h-40">
-                            <Image 
+                            <NextImage 
                               src={getImageUrl(hotel.image_keyword)} 
                               alt={hotel.name} 
                               fill 

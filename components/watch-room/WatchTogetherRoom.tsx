@@ -12,7 +12,7 @@ import { Users, Share2, Crown, LogOut, MapPin, Plane, Cloud, Thermometer, Monito
 import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
 import { useI18n } from '@/lib/i18n';
-import Image from 'next/image';
+import NextImage from 'next/image';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { searchFlights, getWeather } from '@/lib/travel-tools';
 
@@ -243,7 +243,7 @@ export function WatchTogetherRoom({ roomId }: { roomId: string }) {
                   {videos.map((video) => (
                     <div key={video.videoId} className="cursor-pointer group" onClick={() => { handleVideoSelect(video.videoId); planTrip(video.title); }}>
                       <div className="relative w-full aspect-video rounded-xl overflow-hidden">
-                        <Image src={video.thumbnail} alt={video.title} fill className="object-cover" unoptimized />
+                        <NextImage src={video.thumbnail} alt={video.title} fill className="object-cover" unoptimized />
                       </div>
                       <h4 className="text-xs text-zinc-300 mt-2 truncate group-hover:text-emerald-400">{video.title}</h4>
                     </div>

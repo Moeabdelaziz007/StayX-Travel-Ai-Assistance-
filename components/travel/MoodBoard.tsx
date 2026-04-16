@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
-import Image from 'next/image';
+import NextImage from 'next/image';
 import { motion } from 'motion/react';
 
 export function MoodBoard({ destination }: { destination: string }) {
@@ -45,7 +45,7 @@ export function MoodBoard({ destination }: { destination: string }) {
             i === 0 ? 'md:col-span-2 md:row-span-2' : ''
           } ${i === 3 ? 'md:col-span-2' : ''}`}
         >
-          <Image 
+          <NextImage 
             src={img.urls?.regular || img.urls?.small || img.urls} 
             alt={img.alt_description || destination} 
             fill 
