@@ -1,13 +1,13 @@
 'use client';
 
 import { motion } from 'motion/react';
-import { Plane, Building2, Passport, CheckCircle2, ShieldCheck } from 'lucide-react';
+import { Plane, Building2, FileText, CheckCircle2, ShieldCheck } from 'lucide-react';
 
 export function ProgressTracker({ steps }: { steps: { label: string, completed: boolean }[] }) {
   const currentStep = steps.findIndex(s => !s.completed);
   const progress = currentStep === -1 ? 100 : (currentStep / steps.length) * 100;
 
-  const icons = [Plane, Building2, Passport, ShieldCheck];
+  const icons = [Plane, Building2, FileText, ShieldCheck];
 
   return (
     <div className="w-full relative overflow-hidden group">

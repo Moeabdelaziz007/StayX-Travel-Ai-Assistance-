@@ -8,30 +8,18 @@ import { generateWithGroq } from './groq';
 const ai = new GoogleGenerativeAI(process.env.NEXT_PUBLIC_GEMINI_API_KEY!);
 
 export async function getVisaInfo(nationality: string, destination: string) {
-  const model = ai.getGenerativeModel({
-    model: 'gemini-2.5-flash',
-    generationConfig: {
-      responseMimeType: "application/json",
-      responseSchema: {
-        type: SchemaType.OBJECT,
-        properties: {
-          requiresVisa: { type: SchemaType.BOOLEAN, description: "True if a visa or e-Visa is required, false if visa-free." },
-          visaType: { type: SchemaType.STRING, description: "Type of visa (e.g., 'Visa Free', 'e-Visa', 'Visa on Arrival', 'Embassy Visa')" },
-          duration: { type: SchemaType.STRING, description: "Allowed duration of stay (e.g., '30 days', '90 days')" },
-          summary: { type: SchemaType.STRING, description: "A short, helpful summary." },
-          estimatedCost: { type: SchemaType.STRING, description: "Estimated cost if any." },
-          link: { type: SchemaType.STRING, description: "Relevant official link to apply or read more." },
-        },
-        required: ["requiresVisa", "visaType", "duration", "summary", "estimatedCost"]
-      }
-    }
+  const response = await fetch('/api/gemini', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      messages: `Provide the current tourist visa requirements for a citizen of ${nationality} traveling to ${destination}. Provide accurate and up-to-date information.`,
+      tools: null // Add tools if needed
+    }),
   });
-
-  const prompt = `Provide the current tourist visa requirements for a citizen of ${nationality} traveling to ${destination}. Provide accurate and up-to-date information.`;
   
-  const result = await model.generateContent(prompt);
-  const responseText = result.response.text();
-  return JSON.parse(responseText);
+  if (!response.ok) throw new Error('Visa info fetch failed');
+  const data = await response.json();
+  return JSON.parse(data.response);
 }
 
 export async function getCityGuide(city: string) {
@@ -280,20 +268,58 @@ export async function translateText(args: { text: string, targetLanguage: string
   }
 }
 
+export async function getSmartAutocomplete(partial: string) {
+  if (!partial || partial.length < 2) return [];
+  const prompt = `Based on this partial travel search: "${partial}", suggest 3 highly specific and creative travel search queries. 
+  Example: "Bali" -> "Bali in January with 3 people on a medium budget". 
+  Return ONLY a JSON array of strings.`;
+  
+  try {
+    const model = ai.getGenerativeModel({ model: "gemini-2.0-flash" });
+    const result = await model.generateContent(prompt);
+    const text = result.response.text();
+    const jsonMatch = text.match(/\[.*\]/s);
+    return jsonMatch ? JSON.parse(jsonMatch[0]) : [];
+  } catch (e) {
+    return [];
+  }
+}
+
+export async function visualSearchDestination(base64Image: string) {
+  const model = ai.getGenerativeModel({ model: "gemini-2.0-flash" });
+  const prompt = "Identify this travel destination or landmark. If it's a generic scene (like a beach or mountain), name the most likely famous location it resembles. Return ONLY the name of the place.";
+  
+  try {
+    const result = await model.generateContent([
+      prompt,
+      {
+        inlineData: {
+          data: base64Image.split(',')[1],
+          mimeType: "image/jpeg"
+        }
+      }
+    ]);
+    return result.response.text().trim();
+  } catch (e) {
+    console.error("Visual search error:", e);
+    throw new Error("Could not identify image");
+  }
+}
+
 export async function searchGroundingCompare(args: { query: string }) {
   try {
-    const prompt = `Compare prices and availability for: ${args.query}. 
+    const prompt = `Act as a travel expert. Enhance this search intent: "${args.query}". 
+    Then, compare prices and availability for the resulting specific trip. 
     Search on Airbnb, Booking.com, Expedia, and major airlines. 
     Return a JSON array of objects with fields: source, price, currency, description, link, rating.
+    Ensure descriptions are catchy and helpful.
     Return ONLY the JSON.`;
-    const result = await ai.models.generateContent({
+    const model = ai.getGenerativeModel({
       model: "gemini-2.0-flash",
-      contents: prompt,
-      config: {
-        tools: [{ googleSearch: {} }]
-      }
+      tools: [{ googleSearch: {} }] as any
     });
-    const text = result.text || '';
+    const result = await model.generateContent(prompt);
+    const text = result.response.text() || '';
     const jsonMatch = text.match(/\[[\s\S]*\]/);
     if (jsonMatch) {
       return JSON.parse(jsonMatch[0]);
