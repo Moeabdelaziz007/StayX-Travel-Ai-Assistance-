@@ -1,25 +1,37 @@
 import { db, auth } from './firebase';
 import { doc, setDoc, getDoc, collection, addDoc } from 'firebase/firestore';
-
 import { GoogleGenerativeAI, SchemaType } from '@google/generative-ai';
-
 import { generateWithGroq } from './groq';
+import { getCache, setCache } from './cache';
+import { searchFlightOffers } from './amadeus';
 
 const ai = new GoogleGenerativeAI(process.env.NEXT_PUBLIC_GEMINI_API_KEY!);
 
+// Caching durations (hours)
+const TTL_FLIGHTS = 6;
+const TTL_HOTELS = 12;
+const TTL_WEATHER = 1;
+const TTL_SIM = 12;
+
 export async function getVisaInfo(nationality: string, destination: string) {
+  const cacheKey = `visa_${nationality}_${destination}`.toLowerCase();
+  const cached = await getCache<any>(cacheKey);
+  if (cached) return cached;
+
   const response = await fetch('/api/gemini', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       messages: `Provide the current tourist visa requirements for a citizen of ${nationality} traveling to ${destination}. Provide accurate and up-to-date information.`,
-      tools: null // Add tools if needed
+      tools: null
     }),
   });
   
   if (!response.ok) throw new Error('Visa info fetch failed');
   const data = await response.json();
-  return JSON.parse(data.response);
+  const result = JSON.parse(data.response);
+  await setCache(cacheKey, result, 24); 
+  return result;
 }
 
 export async function getCityGuide(city: string) {
@@ -178,9 +190,11 @@ export async function placeOrder(args: { itemName: string, price: number, curren
 }
 
 export async function getWeather(args: { location: string, date?: string }) {
+  const cacheKey = `weather_${args.location}`.toLowerCase();
+  const cached = await getCache<any>(cacheKey);
+  if (cached) return cached;
+
   try {
-    // 1. Geocoding using Nominatim (OpenStreetMap)
-    // Note: Nominatim requires a User-Agent header
     const geoRes = await fetch(
       `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(args.location)}&format=json&limit=1`,
       {
@@ -194,7 +208,6 @@ export async function getWeather(args: { location: string, date?: string }) {
     
     const { lat, lon, display_name } = geoData[0];
     
-    // 2. Weather using Open-Meteo
     const weatherRes = await fetch(
       `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,apparent_temperature,weather_code,wind_speed_10m&timezone=auto`
     );
@@ -212,7 +225,7 @@ export async function getWeather(args: { location: string, date?: string }) {
       return 'Cloudy';
     };
     
-    return {
+    const result = {
       location: display_name.split(',')[0],
       temperature: Math.round(current.temperature_2m),
       condition: getCondition(current.weather_code),
@@ -220,6 +233,9 @@ export async function getWeather(args: { location: string, date?: string }) {
       feelsLike: Math.round(current.apparent_temperature),
       windSpeed: current.wind_speed_10m
     };
+
+    await setCache(cacheKey, result, TTL_WEATHER);
+    return result;
   } catch (error) {
     console.error("Weather error:", error);
     return { location: args.location, temperature: 22, condition: 'Sunny', forecast: 'Clear skies.', feelsLike: 24, windSpeed: 10 };
@@ -392,30 +408,55 @@ export async function createVoiceRoom(args: { title: string }) {
 }
 
 export async function searchFlights(args: { origin: string, destination: string, date: string }) {
+  const cacheKey = `flights_${args.origin}_${args.destination}_${args.date}`.toLowerCase();
+  const cached = await getCache<any[]>(cacheKey);
+  if (cached) return cached;
+
   try {
-    const prompt = `Find current real-time flight options from ${args.origin} to ${args.destination} around ${args.date}. 
-    Return a JSON array of objects with fields: name (airline), price (in USD), duration, link (booking link). 
-    Ensure the links are real (e.g., Kayak, Expedia, Skyscanner or Direct).
-    Return ONLY the JSON array.`;
-    
-    const model = ai.getGenerativeModel({
-      model: "gemini-2.0-flash",
-      tools: [{ googleSearch: {} }] as any
-    });
-    
-    const result = await model.generateContent(prompt);
-    const text = result.response.text();
-    const jsonMatch = text.match(/\[[\s\S]*\]/);
-    if (jsonMatch) {
-      return JSON.parse(jsonMatch[0]);
-    }
-    
     const affiliateId = process.env.TRAVELPAYOUTS_AFFILIATE_ID || 'stayx';
-    const link = `https://www.aviasales.com/search/${args.origin}${args.date.replace(/-/g, '')}${args.destination}1?marker=${affiliateId}`;
-    return [
-      { name: 'EgyptAir', price: '$450', duration: '3h 30m', link },
-      { name: 'Turkish Airlines', price: '$520', duration: '3h 45m', link },
+    const tpToken = process.env.TRAVELPAYOUTS_TOKEN;
+
+    const tpSearch = async () => {
+      if (!tpToken) return [];
+      try {
+        const res = await fetch(`https://api.travelpayouts.com/v3/prices_for_dates?origin=${args.origin}&destination=${args.destination}&departure_at=${args.date}&unique=true&token=${tpToken}`);
+        const data = await res.json();
+        return (data.data || []).map((f: any) => ({
+          name: f.airline || 'Airline',
+          price: `$${f.price}`,
+          duration: 'Multiple stops',
+          link: `https://www.aviasales.com/search/${args.origin}${args.date.replace(/-/g, '')}${args.destination}1?marker=${affiliateId}`
+        }));
+      } catch (e) { return []; }
+    };
+
+    const amadeusSearch = async () => {
+      if (args.origin.length === 3 && args.destination.length === 3) {
+        return searchFlightOffers({
+          originLocationCode: args.origin.toUpperCase(),
+          destinationLocationCode: args.destination.toUpperCase(),
+          departureDate: args.date,
+          adults: 1
+        });
+      }
+      return [];
+    };
+
+    const results = await Promise.allSettled([tpSearch(), amadeusSearch()]);
+    const merged = results
+      .filter(r => r.status === 'fulfilled')
+      .flatMap(r => (r as PromiseFulfilledResult<any[]>).value);
+
+    if (merged.length > 0) {
+      await setCache(cacheKey, merged, TTL_FLIGHTS);
+      return merged;
+    }
+
+    const fallbackLink = `https://www.aviasales.com/search/${args.origin}${args.date.replace(/-/g, '')}${args.destination}1?marker=${affiliateId}`;
+    const fallback = [
+      { name: 'Flight Estimate', price: 'from $300', duration: 'Variable', link: fallbackLink }
     ];
+    return fallback;
   } catch (e) {
     console.error("Flight search error:", e);
     return [];
@@ -423,12 +464,32 @@ export async function searchFlights(args: { origin: string, destination: string,
 }
 
 export async function searchSimCards(args: { destination: string }) {
-  // Affiliate links for Airalo or similar
-  const affiliateId = process.env.AIRALO_AFFILIATE_ID || 'stayx';
-  return [
-    { name: 'Airalo Global', price: '$15', data: '5GB', link: `https://airalo.pxf.io/stayx?destination=${args.destination}` },
-    { name: 'Holafly Unlimited', price: '$29', data: 'Unlimited', link: `https://holafly.com/?aff=${affiliateId}` }
-  ];
+  const cacheKey = `sim_${args.destination}`.toLowerCase();
+  const cached = await getCache<any[]>(cacheKey);
+  if (cached) return cached;
+
+  try {
+    const prompt = `Find current real-time eSIM prices for ${args.destination}. Search on Airalo and Holafly. Return a JSON array of objects with fields: name, price (USD), data, link. Return ONLY JSON.`;
+    const model = ai.getGenerativeModel({
+      model: "gemini-2.0-flash",
+      tools: [{ googleSearch: {} }] as any
+    });
+    const result = await model.generateContent(prompt);
+    const match = result.response.text().match(/\[[\s\S]*\]/);
+    let sims = match ? JSON.parse(match[0]) : [];
+
+    if (sims.length === 0) {
+      const affiliateId = process.env.AIRALO_AFFILIATE_ID || 'stayx';
+      sims = [
+        { name: 'Airalo Global', price: '$15', data: '5GB', link: `https://airalo.pxf.io/stayx?destination=${args.destination}` },
+        { name: 'Holafly Unlimited', price: '$29', data: 'Unlimited', link: `https://holafly.com/?aff=${affiliateId}` }
+      ];
+    }
+    await setCache(cacheKey, sims, TTL_SIM);
+    return sims;
+  } catch (e) {
+    return [];
+  }
 }
 
 export async function addToCalendar(args: { title: string, description: string, startTime: string, endTime: string, location?: string, accessToken?: string }) {
@@ -482,29 +543,45 @@ export async function addToCalendar(args: { title: string, description: string, 
 }
 
 export async function searchHotels(args: { destination: string, checkIn: string, checkOut: string }) {
+  const cacheKey = `hotels_${args.destination}_${args.checkIn}`.toLowerCase();
+  const cached = await getCache<any[]>(cacheKey);
+  if (cached) return cached;
+
   try {
-    const prompt = `Find current real-time hotel options in ${args.destination} for dates ${args.checkIn} to ${args.checkOut}. 
-    Return a JSON array of objects with fields: name, price (per night in USD), rating (out of 5), link (Booking.com, Hotels.com or similar).
-    Return ONLY the JSON array.`;
-
-    const model = ai.getGenerativeModel({
-      model: "gemini-2.0-flash",
-      tools: [{ googleSearch: {} }] as any
-    });
-
-    const result = await model.generateContent(prompt);
-    const text = result.response.text();
-    const jsonMatch = text.match(/\[[\s\S]*\]/);
-    if (jsonMatch) {
-      return JSON.parse(jsonMatch[0]);
-    }
-
     const affiliateId = process.env.TRAVELPAYOUTS_AFFILIATE_ID || 'stayx';
-    const link = `https://search.hotellook.com/?location=${encodeURIComponent(args.destination)}&checkIn=${args.checkIn}&checkOut=${args.checkOut}&marker=${affiliateId}`;
-    return [
-      { name: 'Luxury Resort', price: '$250/night', rating: 4.8, link },
-      { name: 'City Center Hotel', price: '$120/night', rating: 4.2, link }
-    ];
+    
+    const hotelSearch = async () => {
+      try {
+        const res = await fetch(`https://engine.hotellook.com/api/v2/cache.json?location=${encodeURIComponent(args.destination)}&checkIn=${args.checkIn}&checkOut=${args.checkOut}&currency=usd&limit=5`);
+        const data = await res.json();
+        return (data || []).map((h: any) => ({
+          name: h.hotelName || 'Comfort Stay',
+          price: `$${h.priceAvg}/night`,
+          rating: h.stars || 4.0,
+          image: `https://photo.hotellook.com/image_v2/limit/${h.hotelId}/800/600.jpg`,
+          link: `https://search.hotellook.com/?location=${encodeURIComponent(args.destination)}&checkIn=${args.checkIn}&checkOut=${args.checkOut}&marker=${affiliateId}`
+        }));
+      } catch (e) { return []; }
+    };
+
+    const groundingSearch = async () => {
+      try {
+        const prompt = `Find 2 luxury hotels in ${args.destination} for ${args.checkIn} to ${args.checkOut}. Return JSON array: name, price, rating, link.`;
+        const model = ai.getGenerativeModel({ model: "gemini-2.0-flash", tools: [{ googleSearch: {} }] as any });
+        const res = await model.generateContent(prompt);
+        const match = res.response.text().match(/\[[\s\S]*\]/);
+        return match ? JSON.parse(match[0]) : [];
+      } catch (e) { return []; }
+    };
+
+    const results = await Promise.allSettled([hotelSearch(), groundingSearch()]);
+    const merged = results
+      .filter(r => r.status === 'fulfilled')
+      .flatMap(r => (r as PromiseFulfilledResult<any[]>).value)
+      .slice(0, 6);
+
+    await setCache(cacheKey, merged, TTL_HOTELS);
+    return merged;
   } catch (e) {
     console.error("Hotel search error:", e);
     return [];

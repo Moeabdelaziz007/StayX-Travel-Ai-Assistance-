@@ -162,7 +162,7 @@ export function MoodBoard({ destination }: { destination: string }) {
                       <span className="text-xs font-bold uppercase tracking-wider">The Vibe Search</span>
                     </div>
                     <p className="text-zinc-200 leading-relaxed italic text-sm">
-                      "{insight?.itinerary || 'Select a mood to generate a unique trip vibe...'}"
+                      &quot;{insight?.itinerary || 'Select a mood to generate a unique trip vibe...'}&quot;
                     </p>
                   </div>
 

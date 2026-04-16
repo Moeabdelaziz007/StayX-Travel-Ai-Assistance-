@@ -30,8 +30,18 @@ export async function searchFlightOffers(params: {
   if (!client) return [];
 
   try {
-    const response = await client.shopping.flightOffersSearch.get(params);
-    return response.data;
+    const response = await client.shopping.flightOffersSearch.get({
+      ...params,
+      max: 5
+    });
+    
+    // Map Amadeus response to StayX format
+    return response.data.map((offer: any) => ({
+      name: offer.itineraries?.[0]?.segments?.[0]?.carrierCode || 'Airline',
+      price: `$${offer.price.total}`,
+      duration: offer.itineraries?.[0]?.duration?.replace('PT', '').toLowerCase() || 'N/A',
+      link: 'https://www.amadeus.com' // Free tier doesn't always provide direct booking links, so we point to general or handled in UI
+    }));
   } catch (error) {
     console.error('Amadeus Flight Search Error:', error);
     return [];
