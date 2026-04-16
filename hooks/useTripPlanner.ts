@@ -31,16 +31,15 @@ export function useTripPlanner() {
       }
 
       if (!aiResponse) {
-        const response = await ai.models.generateContent({
-          model: "gemini-1.5-flash",
+        const model = ai.getGenerativeModel({
+          model: "gemini-2.0-flash",
+        });
+        const result = await model.generateContent({
           contents: [
             ...newMessages.map(m => ({ role: m.role, parts: [{ text: m.content }] })),
           ],
-          config: {
-            systemInstruction,
-          }
         });
-        aiResponse = response.text || "";
+        aiResponse = result.response.text() || "";
       }
 
       setMessages(prev => [...prev, { role: 'assistant', content: aiResponse }]);

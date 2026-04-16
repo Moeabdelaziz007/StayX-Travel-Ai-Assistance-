@@ -60,7 +60,7 @@ export function LiveTranslator() {
       const fromLang = LANGUAGES.find(l => l.code === fromCode)?.name;
       const toLang = LANGUAGES.find(l => l.code === toCode)?.name;
       
-      const model = ai.getGenerativeModel({ model: 'gemini-2.5-flash' });
+      const model = ai.getGenerativeModel({ model: 'gemini-2.0-flash' });
       const prompt = `Translate the following conversational text from ${fromLang} to ${toLang}. Ensure the translation is natural and culturally appropriate for spoken conversation. Do not add notes, just output the translation. Text: "${text}"`;
       
       const result = await model.generateContent(prompt);
@@ -130,7 +130,7 @@ export function LiveTranslator() {
     try {
       const fromLang = LANGUAGES.find(l => l.code === targetLang)?.name;
       const toLang = LANGUAGES.find(l => l.code === sourceLang)?.name;
-      const model = ai.getGenerativeModel({ model: 'gemini-2.5-flash' });
+      const model = ai.getGenerativeModel({ model: 'gemini-2.0-flash' });
       const prompt = `Translate from ${fromLang} to ${toLang}. Output only translation. Text: "${text}"`;
       const result = await model.generateContent(prompt);
       const output = result.response.text().trim();

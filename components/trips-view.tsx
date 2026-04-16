@@ -29,7 +29,7 @@ export function TripsView() {
       setIsLoadingTips(true);
       try {
         const genAI = new GoogleGenerativeAI(process.env.NEXT_PUBLIC_GEMINI_API_KEY);
-        const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+        const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
         const prompt = `Give me 3 short, creative travel tips for today. Language: ${language === 'ar' ? 'Arabic' : 'English'}. Format as markdown list.`;
         const result = await model.generateContent(prompt);
         setTips(result.response.text());

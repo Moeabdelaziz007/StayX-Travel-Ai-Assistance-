@@ -12,7 +12,7 @@ export async function POST(req: Request) {
     // for production. For this demonstration, we focus on safe API wrapping.
 
     const model = ai.getGenerativeModel({
-      model: 'gemini-2.5-flash',
+      model: 'gemini-2.0-flash',
       ...tools && { tools },
     });
 
