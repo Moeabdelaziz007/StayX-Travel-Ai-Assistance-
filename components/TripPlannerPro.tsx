@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
+import dynamic from 'next/dynamic';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   Compass, 
@@ -27,6 +28,11 @@ import {
 import { generateDetailedItinerary, getCityGuide, getLiveHotelPrices } from '@/lib/travel-tools';
 import { toast } from 'sonner';
 import NextImage from 'next/image';
+
+const InteractiveMap = dynamic(
+  () => import('./InteractiveMap').then(mod => mod.InteractiveMap),
+  { ssr: false, loading: () => <div className="h-[300px] w-full bg-zinc-900 rounded-[2rem] flex items-center justify-center animate-pulse">Loading Map...</div> }
+);
 
 export function TripPlannerPro() {
   const [destination, setDestination] = useState('');
@@ -396,13 +402,9 @@ export function TripPlannerPro() {
                   </div>
 
                   <div className="space-y-6">
-                    <h3 className="text-3xl font-bold text-white">Map Preview</h3>
-                    <div className="h-[300px] bg-zinc-900 rounded-[2rem] border border-zinc-800 flex items-center justify-center text-zinc-700 relative overflow-hidden">
-                      <div className="absolute inset-0 opacity-20 grayscale" style={{ backgroundImage: 'url(https://www.transparenttextures.com/patterns/carbon-fibre.png)' }} />
-                      <div className="relative z-10 flex flex-col items-center gap-4">
-                        <MapPin className="h-12 w-12" />
-                        <p className="text-sm font-bold uppercase tracking-widest">Interactive Map Placeholder</p>
-                      </div>
+                    <h3 className="text-3xl font-bold text-white">Interactive Map</h3>
+                    <div className="h-[300px] w-full rounded-[2rem] overflow-hidden border border-zinc-800">
+                      <InteractiveMap locations={tripData.daily_plan.flatMap((d: any) => d.activities.map((a: any) => ({ lat: a.lat, lng: a.lng, title: a.activity }))).filter((loc: any) => loc.lat && loc.lng)} />
                     </div>
                   </div>
                 </div>

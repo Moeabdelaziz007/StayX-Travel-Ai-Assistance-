@@ -2,6 +2,7 @@
 
 import { motion } from 'motion/react';
 import { WeatherWidget } from './weather-widget';
+import { AIConcierge } from './AIConcierge';
 import { 
   Compass, 
   ArrowUpRight, 
@@ -182,11 +183,14 @@ export function HomeView({ onNavigate, tripsCount }: { onNavigate: (tab: string)
               </div>
             </Card>
           </div>
-          <div className="md:col-span-12 lg:col-span-6 h-[240px]">
+          <div className="md:col-span-12 lg:col-span-6 space-y-6">
             <ErrorBoundary name="Weather">
-              <div className="h-full rounded-xl overflow-hidden [&>*]:h-full">
+              <div className="h-[120px] rounded-xl overflow-hidden [&>*]:h-full">
                  <WeatherWidget location="Dubai, UAE" />
               </div>
+            </ErrorBoundary>
+            <ErrorBoundary name="AIConcierge">
+              <AIConcierge itinerary={null} />
             </ErrorBoundary>
           </div>
         </div>
