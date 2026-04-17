@@ -7,6 +7,8 @@ import { I18nProvider } from '@/lib/i18n';
 import { ThemeProvider } from "next-themes";
 import { Toaster } from '@/components/ui/sonner';
 import { VoiceTrigger } from '@/components/voice/VoiceTrigger';
+import { OfflineIndicator } from '@/components/OfflineIndicator';
+import { DebugPanel } from '@/components/DebugPanel';
 
 const inter = Inter({subsets:['latin'],variable:'--font-sans'});
 
@@ -27,6 +29,7 @@ export default function RootLayout({children}: {children: React.ReactNode}) {
         <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
           <I18nProvider>
             <AuthProvider>
+              <OfflineIndicator />
               {children}
               <Toaster />
               <VoiceTrigger />
