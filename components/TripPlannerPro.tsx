@@ -85,15 +85,34 @@ export function TripPlannerPro() {
       // Dynamic import
       const html2pdf = (await import('html2pdf.js')).default;
       
+      // Inject professional PDF styling for the exported element
+      const style = document.createElement('style');
+      style.innerHTML = `
+        .pdf-export-only { display: block !important; }
+        .ui-only { display: none !important; }
+        body { font-family: 'Outfit', sans-serif; background: white !important; color: black !important; }
+        h1, h2, h3, h4 { color: #000 !important; }
+        .bg-zinc-900, .bg-zinc-950, .bg-zinc-900\\/40 { background-color: #f4f4f5 !important; color: #000 !important; border: 1px solid #d4d4d8 !important; }
+        .text-white, .text-zinc-300, .text-zinc-400 { color: #000 !important; }
+      `;
+      document.head.appendChild(style);
+
       const opt = {
-        margin: [15, 15, 15, 15],
+        margin: [10, 10, 10, 10],
         filename: `${destination}_StayX_Itinerary.pdf`,
         image: { type: 'jpeg', quality: 0.98 },
-        html2canvas: { scale: 2, useCORS: true, letterRendering: true, backgroundColor: '#09090b' },
+        html2canvas: { scale: 2, useCORS: true, letterRendering: true, backgroundColor: '#ffffff' },
         jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
       };
       
+      // Apply PDF-specific class to wrap
+      element.classList.add('pdf-mode');
+
       await html2pdf().set(opt).from(element).save();
+      
+      // Cleanup
+      element.classList.remove('pdf-mode');
+      document.head.removeChild(style);
       
       // Restore view
       setActiveDay(originalActive);
