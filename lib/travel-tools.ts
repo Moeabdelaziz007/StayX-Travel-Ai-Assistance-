@@ -27,7 +27,11 @@ export async function getVisaInfo(nationality: string, destination: string) {
     }),
   });
   
-  if (!response.ok) throw new Error('Visa info fetch failed');
+  if (!response.ok) {
+    const text = await response.text();
+    console.error(`Gemini API Error (${response.status}):`, text);
+    throw new Error('Visa info fetch failed');
+  }
   const data = await response.json();
   const result = JSON.parse(data.response);
   await setCache(cacheKey, result, 24); 
@@ -245,6 +249,7 @@ export async function getWeather(args: { location: string, date?: string }) {
 export async function convertCurrency(args: { amount: number, from: string, to: string }) {
   try {
     const res = await fetch(`https://open.er-api.com/v6/latest/${args.from}`);
+    if (!res.ok) throw new Error(`Currency API failed: ${res.status}`);
     const data = await res.json();
     const rate = data.rates[args.to];
     const result = args.amount * rate;

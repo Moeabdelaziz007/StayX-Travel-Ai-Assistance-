@@ -157,7 +157,7 @@ service cloud.firestore {
     // Rules
     // ===============================================================
     match /users/{userId} {
-      allow read: if isOwner(userId) || isAuthenticated(); // Allow reading profiles for matching
+      allow read: if isOwner(userId); // Strictly limit read access to the owner
       allow create: if isOwner(userId) && isValidUser(request.resource.data);
       allow update: if isOwner(userId) && isValidUser(request.resource.data) && 
                     request.resource.data.uid == resource.data.uid &&

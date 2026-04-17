@@ -31,6 +31,7 @@ import { ArabicTravelers } from './travel/ArabicTravelers';
 import { ProgressTracker } from './ProgressTracker';
 import { db, handleFirestoreError, OperationType } from '@/lib/firebase';
 import { collection, query, where, onSnapshot, orderBy, limit } from 'firebase/firestore';
+import { ErrorBoundary } from './ErrorBoundary';
 
 function SectionHeader({ title, description }: { title: string; description: string }) {
   return (
@@ -151,10 +152,14 @@ export function HomeView({ onNavigate, tripsCount }: { onNavigate: (tab: string)
         />
         <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
           <div className="md:col-span-12 lg:col-span-4 h-[240px]">
-            <TripCountdown />
+            <ErrorBoundary name="Trip Countdown">
+              <TripCountdown />
+            </ErrorBoundary>
           </div>
           <div className="md:col-span-12 lg:col-span-8 h-[240px]">
-            <WeatherWidget location="Dubai, UAE" />
+            <ErrorBoundary name="Weather">
+              <WeatherWidget location="Dubai, UAE" />
+            </ErrorBoundary>
           </div>
         </div>
       </section>
@@ -211,19 +216,29 @@ export function HomeView({ onNavigate, tripsCount }: { onNavigate: (tab: string)
         <SectionHeader title={t('home.section_plan_title')} description={t('home.section_plan_desc')} />
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           <Card className="bg-zinc-900/40 border-white/5 rounded-2xl h-full shadow-2xl overflow-hidden">
-            <CardContent className="p-0"><VisaWidget /></CardContent>
+            <CardContent className="p-0">
+              <ErrorBoundary name="Visa Widget">
+                <VisaWidget />
+              </ErrorBoundary>
+            </CardContent>
           </Card>
           <Card className="bg-zinc-900/40 border-white/5 rounded-2xl h-full shadow-2xl">
-            <CardContent className="p-6"><CurrencyWidget defaultTarget="EUR" /></CardContent>
+            <CardContent className="p-6">
+              <ErrorBoundary name="Currency Converter">
+                <CurrencyWidget defaultTarget="EUR" />
+              </ErrorBoundary>
+            </CardContent>
           </Card>
           <Card className="bg-zinc-900/40 border-white/5 rounded-2xl lg:col-span-1 shadow-2xl">
             <CardContent className="p-6">
-               <ProgressTracker steps={[
-                 { label: 'Booking', completed: true },
-                 { label: 'Visas', completed: false },
-                 { label: 'Packing', completed: false },
-                 { label: 'Check-in', completed: false },
-               ]} />
+               <ErrorBoundary name="Progress Tracker">
+                 <ProgressTracker steps={[
+                   { label: 'Booking', completed: true },
+                   { label: 'Visas', completed: false },
+                   { label: 'Packing', completed: false },
+                   { label: 'Check-in', completed: false },
+                 ]} />
+               </ErrorBoundary>
             </CardContent>
           </Card>
         </div>
@@ -271,7 +286,11 @@ export function HomeView({ onNavigate, tripsCount }: { onNavigate: (tab: string)
             </div>
           </motion.div>
           <Card className="border-white/5 bg-zinc-950/20 rounded-2xl overflow-hidden">
-            <CardContent className="p-8"><MoodBoard destination="Tokyo" /></CardContent>
+            <CardContent className="p-8">
+              <ErrorBoundary name="Mood Board">
+                <MoodBoard destination="Tokyo" />
+              </ErrorBoundary>
+            </CardContent>
           </Card>
         </div>
       </section>
@@ -279,7 +298,11 @@ export function HomeView({ onNavigate, tripsCount }: { onNavigate: (tab: string)
       <section>
         <SectionHeader title={t('home.section_community_title')} description={t('home.section_community_desc')} />
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-           <div className="lg:col-span-8"><ArabicTravelers /></div>
+           <div className="lg:col-span-8">
+             <ErrorBoundary name="Arabic Travelers">
+               <ArabicTravelers />
+             </ErrorBoundary>
+           </div>
            <div className="lg:col-span-4 space-y-6">
               <Card className="bg-gradient-to-br from-orange-500/10 to-emerald-500/10 border-white/5 rounded-2xl p-8 flex flex-col items-center justify-center text-center gap-6 min-h-[300px]">
                  <div className="h-20 w-20 rounded-full bg-white/5 flex items-center justify-center border border-white/10 shadow-2xl"><Users className="h-10 w-10 text-emerald-400" /></div>
@@ -304,7 +327,5 @@ export function HomeView({ onNavigate, tripsCount }: { onNavigate: (tab: string)
         </div>
       </section>
     </div>
-  );
-}
   );
 }
