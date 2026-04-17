@@ -7,6 +7,15 @@ import { searchFlightOffers } from './amadeus';
 
 const ai = new GoogleGenerativeAI(process.env.NEXT_PUBLIC_GEMINI_API_KEY!);
 
+const safeJsonParse = (text: string, fallback: any = []) => {
+  try {
+    return JSON.parse(text);
+  } catch (e) {
+    console.error('JSON parse error:', e, 'Text:', text);
+    return fallback;
+  }
+};
+
 // Caching durations (hours)
 const TTL_FLIGHTS = 6;
 const TTL_HOTELS = 12;

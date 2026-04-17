@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { BookUser, PlaneTakeoff, ShieldAlert, Sparkles, Loader2, Info } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { toast } from 'sonner';
-import { getVisaInfo } from '@/lib/travel-tools';
+import { GoogleGenAI, Type } from '@google/genai';
 
 export function VisaWidget() {
   const [nationality, setNationality] = useState('');
@@ -23,11 +23,57 @@ export function VisaWidget() {
     setLoading(true);
     setResult(null);
     try {
-      // Calling our server-side or travel-tools Gemini function
-      const data = await getVisaInfo(nationality, destination);
+      // Lazy initialize AI client
+      const ai = new GoogleGenAI({ apiKey: process.env.NEXT_PUBLIC_GEMINI_API_KEY! });
+      
+      const prompt = `Provide the current tourist visa requirements for a citizen of ${nationality} traveling to ${destination}. 
+      Return the output as a valid JSON object with the following structure:
+      {
+        "requiresVisa": boolean,
+        "visaType": "string",
+        "summary": "string",
+        "duration": "string",
+        "estimatedCost": "string",
+        "link": "string"
+      }
+      If no official link is found, return an empty string for the link.`;
+
+      const response = await ai.models.generateContent({
+        model: 'gemini-3-flash-preview',
+        contents: prompt,
+        config: {
+          responseMimeType: 'application/json',
+          responseSchema: {
+            type: Type.OBJECT,
+            properties: {
+              requiresVisa: { type: Type.BOOLEAN },
+              visaType: { type: Type.STRING },
+              summary: { type: Type.STRING },
+              duration: { type: Type.STRING },
+              estimatedCost: { type: Type.STRING },
+              link: { type: Type.STRING }
+            }
+          }
+        }
+      });
+
+      const rawText = response.text?.trim() || '{}';
+      
+      // Check for specific error strings that might be returned instead of JSON
+      if (rawText.toLowerCase().includes('service unavailable') || rawText.toLowerCase().includes('!doctype')) {
+        throw new Error('Server temporarily unavailable. Please try again.');
+      }
+
+      // Basic check for JSON structure
+      if (!rawText.startsWith('{') && !rawText.startsWith('[')) {
+        throw new Error('AI returned non-JSON response');
+      }
+
+      const data = JSON.parse(rawText);
       setResult(data);
     } catch (e) {
-      toast.error('Failed to analyze visa requirements.');
+      console.error(e);
+      toast.error(e instanceof Error ? e.message : 'Failed to analyze visa requirements.');
     } finally {
       setLoading(false);
     }
