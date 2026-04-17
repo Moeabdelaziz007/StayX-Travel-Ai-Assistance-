@@ -110,15 +110,16 @@ export async function getCityGuide(city: string) {
 export async function getLiveHotelPrices(destination: string, dates: string) {
   try {
     const ai = getAiClient();
-    const model = ai.getGenerativeModel({
-      model: 'gemini-2.5-pro',
-      tools: [{ googleSearch: {} }],
-    });
-    
     const prompt = `Use Google Search to find current average nightly prices for Airbnb and Booking.com for ${destination} around ${dates}. Return a helpful short summary (max 3 sentences) of the expected price range per night in USD. Include explicit mentions of Booking and Airbnb findings if available. Keep formatting simple.`;
     
-    const result = await model.generateContent(prompt);
-    return result.response.text();
+    const result = await ai.models.generateContent({
+      model: 'gemini-3-flash-preview',
+      contents: prompt,
+      config: {
+        tools: [{ googleSearch: {} }] as any
+      }
+    });
+    return result.text;
   } catch (error) {
     console.error("Hotel Price Grounding error:", error);
     return "Could not fetch live pricing at this time.";
@@ -542,12 +543,15 @@ export async function searchSimCards(args: { destination: string }) {
   try {
     const prompt = `Find current real-time eSIM prices for ${args.destination}. Search on Airalo and Holafly. Return a JSON array of objects with fields: name, price (USD), data, link. Return ONLY JSON.`;
     const ai = getAiClient();
-    const model = ai.getGenerativeModel({
-      model: "gemini-2.0-flash",
-      tools: [{ googleSearch: {} }] as any
+    const result = await ai.models.generateContent({
+      model: "gemini-3-flash-preview",
+      contents: prompt,
+      config: {
+        tools: [{ googleSearch: {} }] as any
+      }
     });
-    const result = await model.generateContent(prompt);
-    const match = result.response.text().match(/\[[\s\S]*\]/);
+    const text = result.text || '';
+    const match = text.match(/\[[\s\S]*\]/);
     let sims = match ? JSON.parse(match[0]) : [];
 
     if (sims.length === 0) {
@@ -640,9 +644,14 @@ export async function searchHotels(args: { destination: string, checkIn: string,
       try {
         const prompt = `Find 2 luxury hotels in ${args.destination} for ${args.checkIn} to ${args.checkOut}. Return JSON array: name, price, rating, link.`;
         const ai = getAiClient();
-        const model = ai.getGenerativeModel({ model: "gemini-2.0-flash", tools: [{ googleSearch: {} }] as any });
-        const res = await model.generateContent(prompt);
-        const match = res.response.text().match(/\[[\s\S]*\]/);
+        const res = await ai.models.generateContent({
+          model: "gemini-3-flash-preview",
+          contents: prompt,
+          config: {
+            tools: [{ googleSearch: {} }] as any
+          }
+        });
+        const match = res.text?.match(/\[[\s\S]*\]/);
         return match ? JSON.parse(match[0]) : [];
       } catch (e) { return []; }
     };

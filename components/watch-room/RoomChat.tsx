@@ -13,8 +13,6 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 import { generateWithGroq } from '@/lib/groq';
 import { useI18n } from '@/lib/i18n';
 
-const ai = new GoogleGenerativeAI(process.env.NEXT_PUBLIC_GEMINI_API_KEY!);
-
 interface Message {
   id: string;
   uid: string;
@@ -68,6 +66,7 @@ export function RoomChat({ roomId }: RoomChatProps) {
       if (process.env.GROQ_API_KEY) {
         responseText = await generateWithGroq(query, systemInstruction, "llama3-8b-8192");
       } else {
+        const ai = new GoogleGenerativeAI(process.env.NEXT_PUBLIC_GEMINI_API_KEY!);
         const model = ai.getGenerativeModel({ model: "gemini-2.0-flash" });
         const result = await model.generateContent({
           contents: [{ role: 'user', parts: [{ text: query }] }],

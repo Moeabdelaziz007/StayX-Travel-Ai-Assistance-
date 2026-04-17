@@ -7,11 +7,9 @@ import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Upload, FileText, AlertTriangle, CheckCircle, Loader2 } from 'lucide-react';
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import { GoogleGenAI } from '@google/genai';
 import { toast } from 'sonner';
 import NextImage from 'next/image';
-
-const ai = new GoogleGenerativeAI(process.env.NEXT_PUBLIC_GEMINI_API_KEY!);
 
 interface AnalysisResult {
   isValid: boolean;
@@ -46,6 +44,7 @@ export function DocumentAnalyzer() {
 
     try {
       const base64Data = preview.split(',')[1];
+      const ai = new GoogleGenAI({ apiKey: process.env.NEXT_PUBLIC_GEMINI_API_KEY! });
       
       const response = await ai.models.generateContent({
         model: 'gemini-2.0-flash',

@@ -3,8 +3,6 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 import { ChatMessage, Itinerary } from '@/types/planner';
 import { generateWithGroq } from '@/lib/groq';
 
-const ai = new GoogleGenerativeAI(process.env.NEXT_PUBLIC_GEMINI_API_KEY!);
-
 export function useTripPlanner() {
   const [messages, setMessages] = useState<ChatMessage[]>([
     { role: 'assistant', content: "Hi! Tell me about your dream trip — where to, when, how many days, and what's your budget?" }
@@ -31,6 +29,8 @@ export function useTripPlanner() {
       }
 
       if (!aiResponse) {
+        if (!process.env.NEXT_PUBLIC_GEMINI_API_KEY) throw new Error("API key missing");
+        const ai = new GoogleGenerativeAI(process.env.NEXT_PUBLIC_GEMINI_API_KEY);
         const model = ai.getGenerativeModel({
           model: "gemini-2.0-flash",
         });

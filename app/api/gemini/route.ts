@@ -1,13 +1,17 @@
 import { GoogleGenAI } from '@google/genai';
 import { NextResponse } from 'next/server';
 
-// Initialize with server-side only key
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY! });
-
 export async function POST(req: Request) {
   try {
     const { messages, systemPrompt, tools } = await req.json();
 
+    if (!process.env.GEMINI_API_KEY) {
+      return NextResponse.json({ error: 'GEMINI_API_KEY not configured' }, { status: 500 });
+    }
+
+    // Initialize inside the handler
+    const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+    
     // Note: Simple rate limiting should be implemented via middleware or Firestore 
     // for production. For this demonstration, we focus on safe API wrapping.
 

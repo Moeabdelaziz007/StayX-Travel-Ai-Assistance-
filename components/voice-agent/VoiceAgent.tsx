@@ -6,8 +6,6 @@ import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 
-const ai = new GoogleGenerativeAI(process.env.NEXT_PUBLIC_GEMINI_API_KEY || '');
-
 export function VoiceAgent() {
   const [isListening, setIsListening] = useState(false);
   const [transcript, setTranscript] = useState('');
@@ -57,6 +55,7 @@ export function VoiceAgent() {
   const handleProcessSpeech = async (text: string) => {
     setIsProcessing(true);
     try {
+      const ai = new GoogleGenerativeAI(process.env.NEXT_PUBLIC_GEMINI_API_KEY || '');
       const model = ai.getGenerativeModel({ model: 'gemini-2.0-flash' });
       const prompt = `You are StayX Voice Assistant, a travel AI. When the user asks about flights, hotels, or trips:
 1. Extract: origin city, destination city, dates, passengers

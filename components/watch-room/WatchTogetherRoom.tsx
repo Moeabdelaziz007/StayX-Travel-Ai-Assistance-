@@ -17,8 +17,6 @@ import NextImage from 'next/image';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { searchFlights, getWeather } from '@/lib/travel-tools';
 
-const ai = new GoogleGenerativeAI(process.env.NEXT_PUBLIC_GEMINI_API_KEY!);
-
 interface RoomData {
   hostUid: string;
   videoId: string;
@@ -44,6 +42,7 @@ export function WatchTogetherRoom({ roomId }: { roomId: string }) {
     setIsLoadingPlan(true);
     try {
       // 1. Detect destination
+      const ai = new GoogleGenerativeAI(process.env.NEXT_PUBLIC_GEMINI_API_KEY!);
       const model = ai.getGenerativeModel({ model: 'gemini-2.0-flash' });
       const destRes = await model.generateContent(`Extract destination from: "${title}". Return only the city name.`);
       const dest = destRes.text?.trim() || 'Paris';

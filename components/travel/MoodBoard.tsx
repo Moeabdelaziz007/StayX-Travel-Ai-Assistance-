@@ -5,10 +5,8 @@ import { Card, CardContent } from '@/components/ui/card';
 import NextImage from 'next/image';
 import { motion, AnimatePresence } from 'motion/react';
 import { Sparkles, Music, Palette, Map, Loader2, Compass, Heart, TreePine, Users, Landmark } from 'lucide-react';
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import { GoogleGenAI } from '@google/genai';
 import { Button } from '@/components/ui/button';
-
-const ai = new GoogleGenerativeAI(process.env.NEXT_PUBLIC_GEMINI_API_KEY!);
 
 const MOODS = [
   { id: 'adventure', name: 'Adventure', icon: Compass, color: 'text-orange-500', bg: 'bg-orange-500/10' },
@@ -50,7 +48,7 @@ export function MoodBoard({ destination }: { destination: string }) {
       }
 
       // 2. Generate Insight with Gemini
-      const model = ai.getGenerativeModel({ model: 'gemini-2.0-flash' });
+      const ai = new GoogleGenAI({ apiKey: process.env.NEXT_PUBLIC_GEMINI_API_KEY! });
       const prompt = `Generate a travel mood guide for ${destination} with a ${mood} mood. 
       Return a JSON object with:
       - itinerary: A 2-sentence summary of the perfect ${mood} experience in ${destination}.
@@ -58,8 +56,11 @@ export function MoodBoard({ destination }: { destination: string }) {
       - colors: 3 hex color codes that match this mood and destination.
       Return ONLY the JSON.`;
 
-      const result = await model.generateContent(prompt);
-      const text = result.response.text();
+      const response = await ai.models.generateContent({
+        model: 'gemini-3-flash-preview',
+        contents: prompt
+      });
+      const text = response.text || '';
       const jsonMatch = text.match(/\{[\s\S]*\}/);
       if (jsonMatch) {
         setInsight(JSON.parse(jsonMatch[0]));

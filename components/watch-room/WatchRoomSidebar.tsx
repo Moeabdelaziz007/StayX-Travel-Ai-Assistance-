@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
 import { Heart, Sparkles, MapPin, ChevronLeft, ChevronRight } from 'lucide-react';
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import { GoogleGenAI } from '@google/genai';
 import { db, auth } from '@/lib/firebase';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { toast } from 'sonner';
@@ -38,6 +38,8 @@ export function WatchRoomSidebar({ videoTitle, videoDescription }: WatchRoomSide
       setDestination('Loading...');
       
       try {
+        const ai = new GoogleGenAI({ apiKey: process.env.NEXT_PUBLIC_GEMINI_API_KEY! });
+        
         // First, quickly extract destination name
         let dest = 'this destination';
         try {
@@ -45,7 +47,7 @@ export function WatchRoomSidebar({ videoTitle, videoDescription }: WatchRoomSide
              dest = await generateWithGroq(`Extract the main travel destination (city or country) from this video title: "${videoTitle}". Just return the name, nothing else. If none, return "this destination".`, "You are a helpful assistant.", "llama3-8b-8192");
           } else {
             const destResponse = await ai.models.generateContent({
-              model: 'gemini-2.0-flash',
+              model: 'gemini-3-flash-preview',
               contents: `Extract the main travel destination (city or country) from this video title: "${videoTitle}". Just return the name, nothing else. If none, return "this destination".`
             });
             dest = destResponse.text?.trim() || 'this destination';
@@ -64,7 +66,7 @@ export function WatchRoomSidebar({ videoTitle, videoDescription }: WatchRoomSide
               if (isMounted) setContent(groqContent);
            } else {
               const responseStream = await ai.models.generateContentStream({
-                model: 'gemini-2.0-flash',
+                model: 'gemini-3-flash-preview',
                 contents: `Video Title: ${videoTitle}\nVideo Description: ${videoDescription || 'N/A'}\n\nPlease provide the travel insights.`,
                 config: {
                   systemInstruction,
@@ -73,7 +75,7 @@ export function WatchRoomSidebar({ videoTitle, videoDescription }: WatchRoomSide
 
               for await (const chunk of responseStream) {
                 if (!isMounted) break;
-                setContent((prev) => prev + chunk.text);
+                setContent((prev) => prev + (chunk.text || ''));
               }
            }
         } catch (e) {

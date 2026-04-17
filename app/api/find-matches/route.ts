@@ -1,8 +1,6 @@
 import { NextResponse } from 'next/server';
 import { GoogleGenerativeAI, SchemaType } from '@google/generative-ai';
 
-const ai = new GoogleGenerativeAI(process.env.NEXT_PUBLIC_GEMINI_API_KEY!);
-
 export async function POST(request: Request) {
   try {
     const { profileA, profileB } = await request.json();
@@ -10,6 +8,12 @@ export async function POST(request: Request) {
     if (!profileA || !profileB) {
       return NextResponse.json({ error: 'Missing profiles' }, { status: 400 });
     }
+
+    if (!process.env.NEXT_PUBLIC_GEMINI_API_KEY) {
+      return NextResponse.json({ error: 'API key not configured' }, { status: 500 });
+    }
+
+    const ai = new GoogleGenerativeAI(process.env.NEXT_PUBLIC_GEMINI_API_KEY);
 
     const response = await ai.models.generateContent({
       model: 'gemini-2.0-flash',

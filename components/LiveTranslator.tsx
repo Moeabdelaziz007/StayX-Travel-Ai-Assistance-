@@ -9,8 +9,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { toast } from 'sonner';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 
-const ai = new GoogleGenerativeAI(process.env.NEXT_PUBLIC_GEMINI_API_KEY!);
-
 const LANGUAGES = [
   { code: 'en-US', name: 'English', short: 'EN' },
   { code: 'ar-SA', name: 'Arabic', short: 'AR' },
@@ -61,6 +59,7 @@ export function LiveTranslator() {
       const fromLang = LANGUAGES.find(l => l.code === fromCode)?.name;
       const toLang = LANGUAGES.find(l => l.code === toCode)?.name;
       
+      const ai = new GoogleGenerativeAI(process.env.NEXT_PUBLIC_GEMINI_API_KEY!);
       const model = ai.getGenerativeModel({ model: 'gemini-2.0-flash' });
       const prompt = `Translate the following conversational text from ${fromLang} to ${toLang}. Ensure the translation is natural and culturally appropriate for spoken conversation. Do not add notes, just output the translation. Text: "${text}"`;
       
@@ -133,6 +132,7 @@ export function LiveTranslator() {
     try {
       const fromLang = LANGUAGES.find(l => l.code === targetLang)?.name;
       const toLang = LANGUAGES.find(l => l.code === sourceLang)?.name;
+      const ai = new GoogleGenerativeAI(process.env.NEXT_PUBLIC_GEMINI_API_KEY!);
       const model = ai.getGenerativeModel({ model: 'gemini-2.0-flash' });
       const prompt = `Translate from ${fromLang} to ${toLang}. Output only translation. Text: "${text}"`;
       const result = await model.generateContent(prompt);
