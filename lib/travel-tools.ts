@@ -308,7 +308,12 @@ export async function getSmartAutocomplete(partial: string) {
 
 export async function visualSearchDestination(base64Image: string) {
   const model = ai.getGenerativeModel({ model: "gemini-2.0-flash" });
-  const prompt = "Identify this travel destination or landmark. If it's a generic scene (like a beach or mountain), name the most likely famous location it resembles. Return ONLY the name of the place.";
+  const prompt = `Act as an expert travel guide. Analyze this image to identify the specific travel destination, landmark, city, or site shown. 
+  - If a specific landmark is present (e.g., Eiffel Tower, Great Wall), provide its exact name and city.
+  - If it's a generic but distinct scene (e.g., a specific style of beach hut or mountain range), identify the most famous location it likely represents (e.g., "Maldives", "Swiss Alps").
+  - Look for cultural clues, local architecture, or unique natural features.
+  - Return ONLY the name of the place, formatted as "Landmark, City" or "City, Country" or just "Place Name". 
+  Return ONLY the text name.`;
   
   try {
     const result = await model.generateContent([

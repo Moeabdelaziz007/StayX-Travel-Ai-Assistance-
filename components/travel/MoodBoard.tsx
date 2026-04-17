@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import NextImage from 'next/image';
 import { motion, AnimatePresence } from 'motion/react';
@@ -30,7 +30,7 @@ export function MoodBoard({ destination }: { destination: string }) {
   const [insight, setInsight] = useState<MoodInsight | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
-  const fetchMoodData = async (mood: string) => {
+  const fetchMoodData = useCallback(async (mood: string) => {
     setIsLoading(true);
     try {
       // 1. Fetch Images from Unsplash
@@ -69,11 +69,11 @@ export function MoodBoard({ destination }: { destination: string }) {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [destination]);
 
   useEffect(() => {
     fetchMoodData(selectedMood);
-  }, [destination, selectedMood]);
+  }, [fetchMoodData, selectedMood]);
 
   return (
     <div className="space-y-8">

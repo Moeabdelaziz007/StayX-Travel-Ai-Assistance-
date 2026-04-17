@@ -34,6 +34,7 @@ export function LiveTranslator() {
   const [activeSpeaker, setActiveSpeaker] = useState<'source' | 'target' | null>(null);
 
   const recognitionRef = useRef<any>(null);
+  const transcriptRef = useRef<string>('');
 
   useEffect(() => {
     // Initialize Speech Recognition if supported
@@ -94,7 +95,8 @@ export function LiveTranslator() {
       const transcript = Array.from(event.results)
         .map((result: any) => result[0].transcript)
         .join('');
-        
+      
+      transcriptRef.current = transcript;
       if (speakerMode === 'source') {
         setSourceText(transcript);
       } else {
@@ -110,7 +112,7 @@ export function LiveTranslator() {
 
     recognitionRef.current.onend = () => {
       setIsListening(false);
-      const textToTranslate = speakerMode === 'source' ? sourceText : translatedText;
+      const textToTranslate = transcriptRef.current;
       if (textToTranslate) {
         if (speakerMode === 'source') {
           handleTranslate(textToTranslate, sourceLang, targetLang);
@@ -119,6 +121,7 @@ export function LiveTranslator() {
         }
       }
       setActiveSpeaker(null);
+      transcriptRef.current = '';
     };
 
     recognitionRef.current.start();

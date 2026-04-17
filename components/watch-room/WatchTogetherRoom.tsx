@@ -2,13 +2,14 @@
 
 import { useState, useEffect } from 'react';
 import { db, auth, handleFirestoreError, OperationType } from '@/lib/firebase';
-import { doc, getDoc, setDoc, onSnapshot, updateDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, getDoc, setDoc, onSnapshot, updateDoc, serverTimestamp, collection, query, orderBy, limit, getDocs } from 'firebase/firestore';
 import { SyncedPlayer } from './SyncedPlayer';
 import { RoomChat } from './RoomChat';
 import { WatchRoomSidebar } from './WatchRoomSidebar';
+import { PlaylistManager } from './PlaylistManager';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Users, Share2, Crown, LogOut, MapPin, Plane, Cloud, Thermometer, MonitorPlay } from 'lucide-react';
+import { Users, Share2, Crown, LogOut, MapPin, Plane, Cloud, Thermometer, MonitorPlay, Play } from 'lucide-react';
 import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
 import { useI18n } from '@/lib/i18n';
@@ -152,9 +153,33 @@ export function WatchTogetherRoom({ roomId }: { roomId: string }) {
   };
 
   const copyInviteLink = () => {
-    const link = `${window.location.origin}/room/${roomId}`;
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.APP_URL || (typeof window !== 'undefined' ? window.location.origin : '');
+    const link = `${baseUrl}/room/${roomId}`;
     navigator.clipboard.writeText(link);
     toast.success("Invite link copied!");
+  };
+
+  const playNextVideo = async () => {
+    if (!isHost) return;
+    try {
+      // Find current video in playlist to find the next one
+      const playlistRef = collection(db, 'rooms', roomId, 'playlist');
+      const q = query(playlistRef, orderBy('order', 'asc'));
+      const snapshot = await getDocs(q);
+      const items = snapshot.docs.map(d => ({ id: d.id, ...d.data() } as any));
+      
+      const currentIndex = items.findIndex(item => item.videoId === roomData?.videoId);
+      if (currentIndex !== -1 && currentIndex < items.length - 1) {
+        const nextVideo = items[currentIndex + 1];
+        handleVideoSelect(nextVideo.videoId);
+        toast.info(`Now playing next: ${nextVideo.title}`);
+      } else if (items.length > 0) {
+        // Loop back to start or just stop
+        toast.info("Playlist ended");
+      }
+    } catch (error) {
+      console.error("Error playing next video:", error);
+    }
   };
 
   if (!roomData) {
@@ -233,25 +258,46 @@ export function WatchTogetherRoom({ roomId }: { roomId: string }) {
                 roomId={roomId} 
                 videoId={roomData.videoId} 
                 isHost={isHost} 
+                onVideoEnd={playNextVideo}
               />
             </div>
 
-            {/* Video Grid */}
-            <div className={`transition-opacity duration-700 ${cinemaMode ? 'opacity-30 hover:opacity-100' : 'opacity-100'}`}>
-              {videos.length > 0 && (
-                <div className="grid grid-cols-3 gap-4">
-                  {videos.map((video) => (
-                    <div key={video.videoId} className="cursor-pointer group" onClick={() => { handleVideoSelect(video.videoId); planTrip(video.title); }}>
-                      <div className="relative w-full aspect-video rounded-xl overflow-hidden">
-                        <NextImage src={video.thumbnail} alt={video.title} fill className="object-cover" unoptimized />
-                      </div>
-                      <h4 className="text-xs text-zinc-300 mt-2 truncate group-hover:text-emerald-400">{video.title}</h4>
-                    </div>
-                  ))}
+            {/* Playlist & Recommendations */}
+            <div className={`grid grid-cols-1 md:grid-cols-2 gap-6 transition-opacity duration-700 ${cinemaMode ? 'opacity-30 hover:opacity-100' : 'opacity-100'}`}>
+              <PlaylistManager roomId={roomId} onSelect={handleVideoSelect} />
+              
+              <div className="space-y-4">
+                <div className="flex items-center justify-between px-2">
+                  <h3 className="text-xs font-bold text-zinc-500 uppercase tracking-widest flex items-center gap-2">
+                    <MonitorPlay className="h-3.5 w-3.5 text-blue-500" /> Recommendations
+                  </h3>
                 </div>
-              )}
+                <div className="space-y-3 overflow-y-auto custom-scrollbar max-h-[360px] pr-2">
+                  {videos.length > 0 ? (
+                    videos.map((video) => (
+                      <div key={video.videoId} className="cursor-pointer group flex gap-3 p-2 rounded-xl hover:bg-zinc-900 border border-transparent hover:border-zinc-800 transition-all" onClick={() => { handleVideoSelect(video.videoId); planTrip(video.title); }}>
+                        <div className="relative w-24 aspect-video rounded-lg overflow-hidden flex-shrink-0">
+                          <NextImage src={video.thumbnail} alt={video.title} fill className="object-cover" unoptimized />
+                          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+                            <Play className="h-4 w-4 text-white fill-white" />
+                          </div>
+                        </div>
+                        <div className="flex-1 min-w-0 flex flex-col justify-center">
+                          <h4 className="text-[11px] font-bold text-zinc-300 truncate group-hover:text-emerald-400">{video.title}</h4>
+                          <p className="text-[9px] text-zinc-500 mt-1 uppercase tracking-tighter">Travel Guide • 4K</p>
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="p-8 text-center text-zinc-600 text-[10px] italic bg-zinc-900/40 rounded-xl border border-dashed border-zinc-800">
+                      Search for a destination to see recommended videos
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
 
-              {/* Plan This Trip Panel */}
+            {/* Plan This Trip Panel */}
               {tripPlan && (
                 <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 mt-6">
                   <h3 className="text-lg font-bold text-white mb-4">Plan your trip to {tripPlan.destination}</h3>
@@ -279,15 +325,14 @@ export function WatchTogetherRoom({ roomId }: { roomId: string }) {
               </div>
             </div>
           </div>
-        </div>
 
-        {/* Right Side: Chat */}
-        <div className={`shrink-0 border-l border-zinc-800 transition-all duration-700 z-10 ${cinemaMode ? 'w-0 opacity-0 overflow-hidden border-none' : 'w-80 lg:w-96 bg-zinc-900/30 opacity-100'}`}>
-          <div className="w-80 lg:w-96 h-full">
-            <RoomChat roomId={roomId} />
+          {/* Right Side: Chat */}
+          <div className={`shrink-0 border-l border-zinc-800 transition-all duration-700 z-10 ${cinemaMode ? 'w-0 opacity-0 overflow-hidden border-none' : 'w-80 lg:w-96 bg-zinc-900/30 opacity-100'}`}>
+            <div className="w-80 lg:w-96 h-full">
+              <RoomChat roomId={roomId} />
+            </div>
           </div>
         </div>
       </div>
-    </div>
   );
 }
