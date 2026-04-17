@@ -1,18 +1,19 @@
 import { db, auth } from './firebase';
 import { doc, setDoc, getDoc, collection, addDoc } from 'firebase/firestore';
-import { GoogleGenerativeAI, SchemaType } from '@google/generative-ai';
+import { GoogleGenAI } from '@google/genai';
 import { generateWithGroq } from './groq';
 import { getCache, setCache } from './cache';
 import { searchFlightOffers } from './amadeus';
 
-let _aiClient: GoogleGenerativeAI | null = null;
+let _aiClient: any = null;
 
-const getAiClient = (): GoogleGenerativeAI => {
+const getAiClient = () => {
   if (!_aiClient) {
-    if (!process.env.NEXT_PUBLIC_GEMINI_API_KEY) {
+    const key = process.env.NEXT_PUBLIC_GEMINI_API_KEY;
+    if (!key) {
       console.warn("NEXT_PUBLIC_GEMINI_API_KEY is not defined");
     }
-    _aiClient = new GoogleGenerativeAI(process.env.NEXT_PUBLIC_GEMINI_API_KEY || '');
+    _aiClient = new GoogleGenAI({ apiKey: key || '' });
   }
   return _aiClient;
 };
@@ -20,22 +21,23 @@ const getAiClient = (): GoogleGenerativeAI => {
 export const aiGenerate = async (prompt: string, config: any = {}) => {
   try {
     const ai = getAiClient();
-    const result = await ai.models.generateContent({
-      model: config.model || "gemini-2.5-flash",
+    const response = await ai.models.generateContent({
+      model: config.model || "gemini-3-flash-preview",
       contents: prompt,
-      ...config
+      config: config.config || {}
     });
-    return result;
+    return { text: response.text };
   } catch (error: any) {
     if (error?.message?.includes("429 RESOURCE_EXHAUSTED")) {
-      console.warn("Quota exceeded for requested model. Falling back to smaller model or throwing friendly error.");
-      if (config.model !== "gemini-1.5-flash") {
+      console.warn("Quota exceeded for requested model. Falling back to smaller model.");
+      if (config.model !== "gemini-3-flash-preview") {
         const ai = getAiClient();
-        return await ai.models.generateContent({
-          model: "gemini-1.5-flash",
+        const response = await ai.models.generateContent({
+          model: "gemini-3-flash-preview",
           contents: prompt,
-          ...config
+          config: config.config || {}
         });
+        return { text: response.text };
       }
       throw new Error("AI is currently overloaded due to high demand. Please try again in a few minutes.");
     }
@@ -72,24 +74,17 @@ export async function getVisaInfo(nationality: string, destination: string) {
   const cached = await getCache<any>(cacheKey);
   if (cached) return cached;
 
-  const response = await fetch('/api/gemini', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      messages: `Provide the current tourist visa requirements for a citizen of ${nationality} traveling to ${destination}. Provide accurate and up-to-date information.`,
-      tools: null
-    }),
+  const prompt = `Provide the current tourist visa requirements for a citizen of ${nationality} traveling to ${destination}. Provide accurate and up-to-date information. Return as JSON: { requiresVisa: boolean, visaType: string, summary: string, duration: string, estimatedCost: string, link: string }`;
+  const result = await aiGenerate(prompt, {
+    model: "gemini-3-flash-preview",
+    config: {
+      responseMimeType: "application/json"
+    }
   });
   
-  if (!response.ok) {
-    const text = await response.text();
-    console.error(`Gemini API Error (${response.status}):`, text);
-    throw new Error('Visa info fetch failed');
-  }
-  const data = await fetchJson<any>(response);
-  const result = safeJsonParse(data.response, {});
-  await setCache(cacheKey, result, 24); 
-  return result;
+  const data = safeJsonParse(result.text, {});
+  await setCache(cacheKey, data, 24); 
+  return data;
 }
 
 export async function getCityGuide(city: string) {
@@ -355,9 +350,11 @@ export async function getSmartAutocomplete(partial: string) {
   
   try {
     const ai = getAiClient();
-    const model = ai.getGenerativeModel({ model: "gemini-2.0-flash" });
-    const result = await model.generateContent(prompt);
-    const text = result.response.text();
+    const result = await ai.models.generateContent({
+      model: "gemini-3-flash-preview",
+      contents: prompt
+    });
+    const text = result.text || '';
     const jsonMatch = text.match(/\[.*\]/s);
     return jsonMatch ? JSON.parse(jsonMatch[0]) : [];
   } catch (e) {
@@ -367,7 +364,6 @@ export async function getSmartAutocomplete(partial: string) {
 
 export async function visualSearchDestination(base64Image: string) {
   const ai = getAiClient();
-  const model = ai.getGenerativeModel({ model: "gemini-2.0-flash" });
   const prompt = `Act as an expert travel guide. Analyze this image to identify the specific travel destination, landmark, city, or site shown. 
   - If a specific landmark is present (e.g., Eiffel Tower, Great Wall), provide its exact name and city.
   - If it's a generic but distinct scene (e.g., a specific style of beach hut or mountain range), identify the most famous location it likely represents (e.g., "Maldives", "Swiss Alps").
@@ -376,16 +372,19 @@ export async function visualSearchDestination(base64Image: string) {
   Return ONLY the text name.`;
   
   try {
-    const result = await model.generateContent([
-      prompt,
-      {
-        inlineData: {
-          data: base64Image.split(',')[1],
-          mimeType: "image/jpeg"
+    const result = await ai.models.generateContent({
+      model: "gemini-3-flash-preview",
+      contents: [
+        { text: prompt },
+        {
+          inlineData: {
+            data: base64Image.split(',')[1],
+            mimeType: "image/jpeg"
+          }
         }
-      }
-    ]);
-    return result.response.text().trim();
+      ]
+    });
+    return result.text?.trim() || "Unknown Destination";
   } catch (e) {
     console.error("Visual search error:", e);
     throw new Error("Could not identify image");
@@ -401,12 +400,14 @@ export async function searchGroundingCompare(args: { query: string }) {
     Ensure descriptions are catchy and helpful.
     Return ONLY the JSON.`;
     const ai = getAiClient();
-    const model = ai.getGenerativeModel({
-      model: "gemini-2.0-flash",
-      tools: [{ googleSearch: {} }] as any
+    const result = await ai.models.generateContent({
+      model: "gemini-3-flash-preview",
+      contents: prompt,
+      config: {
+        tools: [{ googleSearch: {} }] as any
+      }
     });
-    const result = await model.generateContent(prompt);
-    const text = result.response.text() || '';
+    const text = result.text || '';
     const jsonMatch = text.match(/\[[\s\S]*\]/);
     if (jsonMatch) {
       return JSON.parse(jsonMatch[0]);
@@ -448,7 +449,7 @@ export async function generateDetailedItinerary(args: { destination: string, day
   try {
     const ai = getAiClient();
     const result = await ai.models.generateContent({
-      model: "gemini-2.0-flash",
+      model: "gemini-3-flash-preview",
       contents: prompt
     });
     const text = result.text || '';

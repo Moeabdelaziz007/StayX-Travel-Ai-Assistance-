@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import { GoogleGenAI } from "@google/genai";
 import { ChatMessage, Itinerary } from '@/types/planner';
 import { generateWithGroq } from '@/lib/groq';
 
@@ -30,16 +30,15 @@ export function useTripPlanner() {
 
       if (!aiResponse) {
         if (!process.env.NEXT_PUBLIC_GEMINI_API_KEY) throw new Error("API key missing");
-        const ai = new GoogleGenerativeAI(process.env.NEXT_PUBLIC_GEMINI_API_KEY);
-        const model = ai.getGenerativeModel({
-          model: "gemini-2.0-flash",
+        const ai = new GoogleGenAI({ apiKey: process.env.NEXT_PUBLIC_GEMINI_API_KEY });
+        const result = await ai.models.generateContent({
+          model: "gemini-3-flash-preview",
+          contents: prompt,
+          config: {
+            systemInstruction
+          }
         });
-        const result = await model.generateContent({
-          contents: [
-            ...newMessages.map(m => ({ role: m.role, parts: [{ text: m.content }] })),
-          ],
-        });
-        aiResponse = result.response.text() || "";
+        aiResponse = result.text || "";
       }
 
       setMessages(prev => [...prev, { role: 'assistant', content: aiResponse }]);

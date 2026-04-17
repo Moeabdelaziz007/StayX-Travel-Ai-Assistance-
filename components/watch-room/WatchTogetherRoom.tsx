@@ -14,7 +14,7 @@ import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
 import { useI18n } from '@/lib/i18n';
 import NextImage from 'next/image';
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import { GoogleGenAI } from '@google/genai';
 import { searchFlights, getWeather } from '@/lib/travel-tools';
 
 interface RoomData {
@@ -42,10 +42,12 @@ export function WatchTogetherRoom({ roomId }: { roomId: string }) {
     setIsLoadingPlan(true);
     try {
       // 1. Detect destination
-      const ai = new GoogleGenerativeAI(process.env.NEXT_PUBLIC_GEMINI_API_KEY!);
-      const model = ai.getGenerativeModel({ model: 'gemini-2.0-flash' });
-      const destRes = await model.generateContent(`Extract destination from: "${title}". Return only the city name.`);
-      const dest = destRes.text?.trim() || 'Paris';
+      const ai = new GoogleGenAI({ apiKey: process.env.NEXT_PUBLIC_GEMINI_API_KEY! });
+      const response = await ai.models.generateContent({
+        model: 'gemini-3-flash-preview',
+        contents: `Extract destination from: "${title}". Return only the city name.`
+      });
+      const dest = response.text?.trim() || 'Paris';
       
       // 2. Fetch data
       const [flights, weather] = await Promise.all([

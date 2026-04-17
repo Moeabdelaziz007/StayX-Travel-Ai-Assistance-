@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { Mic, Square, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import { GoogleGenAI } from '@google/genai';
 
 export function VoiceAgent() {
   const [isListening, setIsListening] = useState(false);
@@ -55,8 +55,7 @@ export function VoiceAgent() {
   const handleProcessSpeech = async (text: string) => {
     setIsProcessing(true);
     try {
-      const ai = new GoogleGenerativeAI(process.env.NEXT_PUBLIC_GEMINI_API_KEY || '');
-      const model = ai.getGenerativeModel({ model: 'gemini-2.0-flash' });
+      const ai = new GoogleGenAI({ apiKey: process.env.NEXT_PUBLIC_GEMINI_API_KEY || '' });
       const prompt = `You are StayX Voice Assistant, a travel AI. When the user asks about flights, hotels, or trips:
 1. Extract: origin city, destination city, dates, passengers
 2. Return JSON: {intent: 'flight'|'hotel'|'trip'|'general', origin, destination, date, response}
@@ -64,8 +63,12 @@ export function VoiceAgent() {
 4. Be conversational and friendly
 User said: "${text}"`;
       
-      const result = await model.generateContent(prompt);
-      const jsonResponse = JSON.parse(result.response.text());
+      const response = await ai.models.generateContent({
+        model: 'gemini-3-flash-preview',
+        contents: prompt
+      });
+      const resultText = response.text || "{}";
+      const jsonResponse = JSON.parse(resultText);
       
       // Handle intent
       let spokenResponse = jsonResponse.response;

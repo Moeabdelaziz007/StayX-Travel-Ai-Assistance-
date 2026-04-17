@@ -9,7 +9,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Send, Bot } from 'lucide-react';
 import { toast } from 'sonner';
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import { GoogleGenAI } from '@google/genai';
 import { generateWithGroq } from '@/lib/groq';
 import { useI18n } from '@/lib/i18n';
 
@@ -66,13 +66,15 @@ export function RoomChat({ roomId }: RoomChatProps) {
       if (process.env.GROQ_API_KEY) {
         responseText = await generateWithGroq(query, systemInstruction, "llama3-8b-8192");
       } else {
-        const ai = new GoogleGenerativeAI(process.env.NEXT_PUBLIC_GEMINI_API_KEY!);
-        const model = ai.getGenerativeModel({ model: "gemini-2.0-flash" });
-        const result = await model.generateContent({
-          contents: [{ role: 'user', parts: [{ text: query }] }],
-          systemInstruction,
+        const ai = new GoogleGenAI({ apiKey: process.env.NEXT_PUBLIC_GEMINI_API_KEY! });
+        const response = await ai.models.generateContent({
+          model: "gemini-3-flash-preview",
+          contents: query,
+          config: {
+            systemInstruction
+          }
         });
-        responseText = result.response.text();
+        responseText = response.text || '';
       }
 
       await addDoc(collection(db, `rooms/${roomId}/messages`), {
