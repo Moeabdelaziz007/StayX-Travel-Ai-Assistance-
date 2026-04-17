@@ -7,6 +7,15 @@ import { searchFlightOffers } from './amadeus';
 
 const ai = new GoogleGenerativeAI(process.env.NEXT_PUBLIC_GEMINI_API_KEY!);
 
+const fetchJson = async <T>(response: Response): Promise<T> => {
+  const contentType = response.headers.get("content-type");
+  if (!contentType || !contentType.includes("application/json")) {
+    const text = await response.text();
+    throw new Error(`Expected JSON but got ${contentType || 'unknown'}: ${text.substring(0, 100)}...`);
+  }
+  return response.json();
+};
+
 const safeJsonParse = (text: string, fallback: any = []) => {
   try {
     return JSON.parse(text);
@@ -41,8 +50,8 @@ export async function getVisaInfo(nationality: string, destination: string) {
     console.error(`Gemini API Error (${response.status}):`, text);
     throw new Error('Visa info fetch failed');
   }
-  const data = await response.json();
-  const result = JSON.parse(data.response);
+  const data = await fetchJson<any>(response);
+  const result = safeJsonParse(data.response, {});
   await setCache(cacheKey, result, 24); 
   return result;
 }
@@ -50,7 +59,7 @@ export async function getVisaInfo(nationality: string, destination: string) {
 export async function getCityGuide(city: string) {
   try {
     const res = await fetch(`https://en.wikivoyage.org/w/api.php?action=query&format=json&prop=extracts&exintro=1&explaintext=1&origin=*&titles=${encodeURIComponent(city)}`);
-    const data = await res.json();
+    const data = await fetchJson<any>(res);
     const pages = data?.query?.pages;
     if (!pages) return null;
     const pageId = Object.keys(pages)[0];
@@ -216,7 +225,7 @@ export async function getWeather(args: { location: string, date?: string }) {
         }
       }
     );
-    const geoData = await geoRes.json();
+    const geoData = await fetchJson<any>(geoRes);
     if (!geoData || geoData.length === 0) throw new Error("Location not found");
     
     const { lat, lon, display_name } = geoData[0];
@@ -224,7 +233,7 @@ export async function getWeather(args: { location: string, date?: string }) {
     const weatherRes = await fetch(
       `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,apparent_temperature,weather_code,wind_speed_10m&timezone=auto`
     );
-    const weatherData = await weatherRes.json();
+    const weatherData = await fetchJson<any>(weatherRes);
     const current = weatherData.current;
     
     const getCondition = (code: number) => {
@@ -259,7 +268,7 @@ export async function convertCurrency(args: { amount: number, from: string, to: 
   try {
     const res = await fetch(`https://open.er-api.com/v6/latest/${args.from}`);
     if (!res.ok) throw new Error(`Currency API failed: ${res.status}`);
-    const data = await res.json();
+    const data = await fetchJson<any>(res);
     const rate = data.rates[args.to];
     const result = args.amount * rate;
     return { amount: args.amount, from: args.from, to: args.to, result: result.toFixed(2) };
@@ -439,7 +448,7 @@ export async function searchFlights(args: { origin: string, destination: string,
       if (!tpToken) return [];
       try {
         const res = await fetch(`https://api.travelpayouts.com/v3/prices_for_dates?origin=${args.origin}&destination=${args.destination}&departure_at=${args.date}&unique=true&token=${tpToken}`);
-        const data = await res.json();
+        const data = await fetchJson<any>(res);
         return (data.data || []).map((f: any) => ({
           name: f.airline || 'Airline',
           price: `$${f.price}`,
@@ -572,7 +581,7 @@ export async function searchHotels(args: { destination: string, checkIn: string,
     const hotelSearch = async () => {
       try {
         const res = await fetch(`https://engine.hotellook.com/api/v2/cache.json?location=${encodeURIComponent(args.destination)}&checkIn=${args.checkIn}&checkOut=${args.checkOut}&currency=usd&limit=5`);
-        const data = await res.json();
+        const data = await fetchJson<any>(res);
         return (data || []).map((h: any) => ({
           name: h.hotelName || 'Comfort Stay',
           price: `$${h.priceAvg}/night`,
@@ -630,7 +639,7 @@ export async function generateDestinationImage(args: { prompt: string }) {
 export async function getCountryInfo(args: { countryName: string }) {
   try {
     const res = await fetch(`https://restcountries.com/v3.1/name/${encodeURIComponent(args.countryName)}?fullText=true`);
-    const data = await res.json();
+    const data = await fetchJson<any>(res);
     if (!data || data.length === 0) throw new Error("Country not found");
     
     const country = data[0];
@@ -658,7 +667,7 @@ export async function searchPlaces(args: { query: string, location?: string }) {
 
   const url = `https://maps.googleapis.com/maps/api/place/textsearch/json?query=${encodeURIComponent(args.query)}&key=${apiKey}`;
   const res = await fetch(url);
-  const data = await res.json();
+  const data = await fetchJson<any>(res);
   return data.results;
 }
 
@@ -668,7 +677,7 @@ export async function getDirections(args: { origin: string, destination: string,
 
   const url = `https://maps.googleapis.com/maps/api/directions/json?origin=${encodeURIComponent(args.origin)}&destination=${encodeURIComponent(args.destination)}&mode=${args.mode || 'driving'}&key=${apiKey}`;
   const res = await fetch(url);
-  const data = await res.json();
+  const data = await fetchJson<any>(res);
   return data.routes;
 }
 
@@ -679,7 +688,7 @@ export async function initiatePayment(args: { amount: number, name: string, desc
     body: JSON.stringify(args),
   });
   
-  const data = await response.json();
+  const data = await fetchJson<any>(response);
   if (data.error) throw new Error(data.error);
   
   if (data.url) {
