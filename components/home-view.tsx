@@ -132,7 +132,7 @@ function TripCountdown() {
 }
 
 export function HomeView({ onNavigate, tripsCount }: { onNavigate: (tab: string) => void, tripsCount: number }) {
-  const { t, language } = useI18n();
+  const { t } = useI18n();
   const { user } = useAuth();
   const firstName = user?.displayName?.split(' ')[0] || t('home.traveler');
 
@@ -144,112 +144,112 @@ export function HomeView({ onNavigate, tripsCount }: { onNavigate: (tab: string)
   ];
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-16 pb-32">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12 pb-32">
+      {/* 1. Welcome Section */}
       <section>
         <SectionHeader 
-          title={t('home.section_welcome_title').replace('{name}', firstName)} 
-          description={t('home.section_welcome_desc')} 
+          title="Welcome" 
+          description="Your personalized travel dashboard." 
         />
         <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
-          <div className="md:col-span-12 lg:col-span-4 h-[240px]">
-            <ErrorBoundary name="Trip Countdown">
-              <TripCountdown />
-            </ErrorBoundary>
+          <div className="md:col-span-12 lg:col-span-6 h-[240px]">
+            <Card className="bg-zinc-900/50 border-white/5 rounded-md h-full flex flex-col justify-center p-8 shadow-2xl relative overflow-hidden">
+              <div className="absolute top-0 right-0 p-32 bg-emerald-500/5 blur-[100px] rounded-full" />
+              <div className="relative z-10 flex items-center gap-6">
+                <NextImage
+                  src={user?.photoURL || "https://picsum.photos/seed/avatar/200/200"}
+                  alt={firstName}
+                  width={80}
+                  height={80}
+                  className="rounded-full border-2 border-emerald-500/20"
+                />
+                <div className="space-y-2">
+                  <h2 className="text-3xl font-black text-white italic tracking-tight flex items-center gap-2">
+                    Hello, {firstName} <Sparkles className="h-6 w-6 text-emerald-500" />
+                  </h2>
+                  <p className="text-zinc-400 font-medium">{user?.email}</p>
+                </div>
+              </div>
+              <div className="relative z-10 mt-6 pt-6 border-t border-zinc-800/50 flex gap-6">
+                 <div>
+                    <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Active Trips</p>
+                    <p className="text-2xl font-black text-white">{tripsCount}</p>
+                 </div>
+                 <div>
+                    <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Rewards Score</p>
+                    <p className="text-2xl font-black text-emerald-400">1,240</p>
+                 </div>
+              </div>
+            </Card>
           </div>
-          <div className="md:col-span-12 lg:col-span-8 h-[240px]">
+          <div className="md:col-span-12 lg:col-span-6 h-[240px]">
             <ErrorBoundary name="Weather">
-              <WeatherWidget location="Dubai, UAE" />
+              <div className="h-full rounded-xl overflow-hidden [&>*]:h-full">
+                 <WeatherWidget location="Dubai, UAE" />
+              </div>
             </ErrorBoundary>
           </div>
         </div>
       </section>
 
+      {/* 2. Quick Tools Section */}
       <section>
         <SectionHeader 
-          title={t('home.section_tools_title')} 
-          description={t('home.section_tools_desc')} 
+          title="Quick Tools" 
+          description="Actionable tools to manage your travels." 
         />
-        <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 items-start">
-          <div className="xl:col-span-8 grid grid-cols-2 md:grid-cols-4 lg:grid-cols-4 gap-4">
-            {mainFeatures.map((feat) => (
-              <motion.button
-                key={feat.id}
-                whileHover={{ scale: 1.02, y: -2 }}
-                whileTap={{ scale: 0.98 }}
-                onClick={() => onNavigate(feat.id)}
-                className="group relative flex flex-col items-center justify-center p-6 bg-zinc-900/40 border border-white/5 rounded-xl hover:border-emerald-500/20 transition-all text-center gap-3 overflow-hidden"
-              >
-                <div className={`h-12 w-12 rounded-lg bg-${feat.color}-500/10 flex items-center justify-center text-${feat.color}-500 border border-${feat.color}-500/20`}>
-                  <feat.icon className="h-6 w-6" />
-                </div>
-                <div className="space-y-0.5">
-                  <span className="text-xs font-black text-white uppercase tracking-wider block">{feat.label}</span>
-                  <span className="text-[9px] font-bold text-zinc-600 uppercase tracking-tighter block">{feat.desc}</span>
-                </div>
-                <div className="absolute top-0 right-0 p-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                   <ArrowUpRight className="h-3 w-3 text-zinc-700" />
-                </div>
-              </motion.button>
-            ))}
-          </div>
-          <div className="xl:col-span-4 bg-zinc-900/20 p-4 border border-zinc-800/50 rounded-2xl flex items-center justify-center min-h-[140px]">
-             <div className="text-center space-y-3">
-                <LayoutDashboard className="h-6 w-6 text-zinc-700 mx-auto" />
-                <p className="text-[10px] font-black text-zinc-600 uppercase tracking-widest italic leading-none">Quick Access Center</p>
-                <div className="flex gap-2">
-                   <Button variant="ghost" size="icon" className="rounded-lg text-zinc-500 hover:text-white hover:bg-white/10" onClick={() => onNavigate('search')}>
-                      <Search className="h-4 w-4" />
-                   </Button>
-                   <Button variant="ghost" size="icon" className="rounded-lg text-zinc-500 hover:text-white hover:bg-white/10" onClick={() => onNavigate('watch')}>
-                      <MonitorPlay className="h-4 w-4" />
-                   </Button>
-                   <Button variant="ghost" size="icon" className="rounded-lg text-zinc-500 hover:text-white hover:bg-white/10" onClick={() => onNavigate('planner-pro')}>
-                      <MapPin className="h-4 w-4" />
-                   </Button>
-                </div>
-             </div>
-          </div>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          {mainFeatures.map((feat) => (
+            <motion.button
+              key={feat.id}
+              whileHover={{ scale: 1.02, y: -2 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={() => onNavigate(feat.id)}
+              className="group relative flex flex-col items-center justify-center p-6 bg-zinc-900/40 border border-white/5 rounded-xl hover:border-emerald-500/20 transition-all text-center gap-3 overflow-hidden"
+            >
+              <div className={`h-12 w-12 rounded-xl bg-${feat.color}-500/10 flex items-center justify-center text-${feat.color}-500 border border-${feat.color}-500/20`}>
+                <feat.icon className="h-6 w-6" />
+              </div>
+              <div className="space-y-0.5">
+                <span className="text-xs font-black text-white uppercase tracking-wider block">{feat.label}</span>
+                <span className="text-[9px] font-bold text-zinc-600 uppercase tracking-tighter block">{feat.desc}</span>
+              </div>
+              <div className="absolute top-0 right-0 p-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                 <ArrowUpRight className="h-3 w-3 text-zinc-700" />
+              </div>
+            </motion.button>
+          ))}
         </div>
       </section>
 
+      {/* 3. Plan & Prepare Section */}
       <section>
-        <SectionHeader title={t('home.section_plan_title')} description={t('home.section_plan_desc')} />
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          <Card className="bg-zinc-900/40 border-white/5 rounded-2xl h-full shadow-2xl overflow-hidden">
-            <CardContent className="p-0">
+        <SectionHeader title="Plan & Prepare" description="Information on visas and budgets for your next trip." />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <Card className="bg-zinc-900/40 border-white/5 rounded-md overflow-hidden shadow-2xl flex flex-col">
+            <CardContent className="p-0 flex-1">
               <ErrorBoundary name="Visa Widget">
                 <VisaWidget />
               </ErrorBoundary>
             </CardContent>
           </Card>
-          <Card className="bg-zinc-900/40 border-white/5 rounded-2xl h-full shadow-2xl">
-            <CardContent className="p-6">
+          <Card className="bg-zinc-900/40 border-white/5 rounded-md overflow-hidden shadow-2xl flex flex-col">
+            <CardContent className="p-6 flex-1 flex flex-col justify-center">
               <ErrorBoundary name="Currency Converter">
                 <CurrencyWidget defaultTarget="EUR" />
               </ErrorBoundary>
             </CardContent>
           </Card>
-          <Card className="bg-zinc-900/40 border-white/5 rounded-2xl lg:col-span-1 shadow-2xl">
-            <CardContent className="p-6">
-               <ErrorBoundary name="Progress Tracker">
-                 <ProgressTracker steps={[
-                   { label: 'Booking', completed: true },
-                   { label: 'Visas', completed: false },
-                   { label: 'Packing', completed: false },
-                   { label: 'Check-in', completed: false },
-                 ]} />
-               </ErrorBoundary>
-            </CardContent>
-          </Card>
         </div>
       </section>
 
+      {/* 4. Explore Section */}
       <section>
-        <SectionHeader title={t('home.section_explore_title')} description={t('home.section_explore_desc')} />
-        <div className="space-y-12">
+        <SectionHeader title="Explore" description="Discover new destinations and ideas." />
+        <div className="space-y-6">
           <motion.div 
             whileHover={{ y: -5 }}
-            className="group relative rounded-2xl overflow-hidden border border-white/5 bg-zinc-900/40 backdrop-blur-3xl cursor-pointer"
+            className="group relative rounded-xl overflow-hidden border border-white/5 bg-zinc-900/40 backdrop-blur-3xl cursor-pointer"
             onClick={() => onNavigate('search')}
           >
             <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/10 via-transparent to-blue-500/10" />
@@ -285,7 +285,8 @@ export function HomeView({ onNavigate, tripsCount }: { onNavigate: (tab: string)
               </div>
             </div>
           </motion.div>
-          <Card className="border-white/5 bg-zinc-950/20 rounded-2xl overflow-hidden">
+          
+          <Card className="border-white/5 bg-zinc-950/20 rounded-md overflow-hidden">
             <CardContent className="p-8">
               <ErrorBoundary name="Mood Board">
                 <MoodBoard destination="Tokyo" />
@@ -295,34 +296,28 @@ export function HomeView({ onNavigate, tripsCount }: { onNavigate: (tab: string)
         </div>
       </section>
 
+      {/* 5. Community Section */}
       <section>
-        <SectionHeader title={t('home.section_community_title')} description={t('home.section_community_desc')} />
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-           <div className="lg:col-span-8">
-             <ErrorBoundary name="Arabic Travelers">
-               <ArabicTravelers />
-             </ErrorBoundary>
+        <SectionHeader title="Community" description="Connect with other travelers and locals." />
+        <div className="grid grid-cols-1 xl:grid-cols-12 gap-8 items-start">
+           <div className="xl:col-span-8">
+             <Card className="rounded-md border-white/5 bg-zinc-900/40 p-6 overflow-hidden">
+                <ErrorBoundary name="Arabic Travelers">
+                  <ArabicTravelers />
+                </ErrorBoundary>
+             </Card>
            </div>
-           <div className="lg:col-span-4 space-y-6">
-              <Card className="bg-gradient-to-br from-orange-500/10 to-emerald-500/10 border-white/5 rounded-2xl p-8 flex flex-col items-center justify-center text-center gap-6 min-h-[300px]">
-                 <div className="h-20 w-20 rounded-full bg-white/5 flex items-center justify-center border border-white/10 shadow-2xl"><Users className="h-10 w-10 text-emerald-400" /></div>
+           <div className="xl:col-span-4 space-y-6">
+              <Card className="bg-gradient-to-br from-orange-500/10 to-emerald-500/10 border-white/5 rounded-md p-8 flex flex-col items-center justify-center text-center gap-6 min-h-[300px]">
+                 <div className="h-20 w-20 rounded-xl bg-white/5 flex items-center justify-center border border-white/10 shadow-2xl"><Users className="h-10 w-10 text-emerald-400" /></div>
                  <div className="space-y-2">
                     <h3 className="text-2xl font-black text-white italic uppercase tracking-tighter">StayX Buddies</h3>
                     <p className="text-zinc-500 text-sm font-medium">Connect with travelers visiting the same destinations as you.</p>
                  </div>
-                 <Button className="rounded-lg bg-white text-black font-black uppercase tracking-widest px-8 hover:bg-white/90 shadow-xl transition-all active:scale-95" onClick={() => onNavigate('nav.buddies')}>
+                 <Button className="rounded-md bg-white text-black font-black uppercase tracking-widest px-8 hover:bg-white/90 shadow-xl transition-all active:scale-95" onClick={() => onNavigate('nav.buddies')}>
                     {t('home.buddies')}
                  </Button>
               </Card>
-              <div className="p-6 rounded-2xl bg-zinc-900/40 border border-white/5 space-y-4">
-                 <div className="flex items-center gap-3">
-                    <Briefcase className="h-4 w-4 text-emerald-500" />
-                    <span className="text-xs font-black text-white uppercase tracking-widest italic">Global Expert Network</span>
-                 </div>
-                 <p className="text-[10px] text-zinc-500 font-bold leading-relaxed uppercase">
-                   Verified guides and travel experts from over 50 countries available for live consultations.
-                 </p>
-              </div>
            </div>
         </div>
       </section>

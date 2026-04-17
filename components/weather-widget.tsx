@@ -39,7 +39,7 @@ export function WeatherWidget({ location: initialLocation = 'Paris, France' }: {
 
   if (loading && !weather) {
     return (
-      <div className="flex h-[300px] items-center justify-center bg-zinc-900/50 rounded-3xl border border-zinc-800">
+      <div className="flex h-[300px] items-center justify-center bg-zinc-900/50 rounded-xl border border-zinc-800">
         <Loader2 className="h-8 w-8 animate-spin text-green-500" />
       </div>
     );
@@ -59,7 +59,7 @@ export function WeatherWidget({ location: initialLocation = 'Paris, France' }: {
       className="relative overflow-hidden group h-full"
     >
       <div className="absolute inset-0 bg-gradient-to-br from-green-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-      <Card className="border-zinc-800 bg-zinc-900/50 backdrop-blur-xl rounded-3xl overflow-hidden h-full flex flex-col">
+      <Card className="border-zinc-800 bg-zinc-900/50 backdrop-blur-xl rounded-xl overflow-hidden h-full flex flex-col">
         <CardHeader className="pb-2">
           <div className="flex items-center justify-between gap-4">
             <div className="relative flex-1 max-w-[200px]">
