@@ -6,9 +6,9 @@ import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useTheme } from "next-themes";
 import { Moon, Sun, Plane, Youtube, LogOut, Mic, Compass, Bell, LayoutDashboard, Plus, Search as SearchIcon, Menu, X } from 'lucide-react';
+import { YouTubeRoomService } from './YouTubeRoomService';
 import { HomeView } from './home-view';
 import { TripsView } from './trips-view';
-import { WatchRoom } from './watch-room';
 import { NotificationsView } from './notifications-view';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { toast } from 'sonner';
@@ -326,7 +326,7 @@ export function Dashboard() {
               {activeTab === 'translator' && <LiveTranslator />}
               {activeTab === 'trips' && <TripsView />}
               {activeTab === 'search' && <SearchCompareView />}
-              {activeTab === 'watch' && <WatchRoom />}
+              {activeTab === 'watch' && <YouTubeRoomService destination="" />}
               {activeTab === 'notifications' && <NotificationsView />}
             </>
           )}

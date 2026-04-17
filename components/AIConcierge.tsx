@@ -5,8 +5,6 @@ import { GoogleGenAI, Type } from '@google/genai';
 import { Card, CardContent, CardTitle } from '@/components/ui/card';
 import { Sparkles, Loader2, MapPin, AlertCircle, Clock } from 'lucide-react';
 
-const ai = new GoogleGenAI({ apiKey: process.env.NEXT_PUBLIC_GEMINI_API_KEY! });
-
 export function AIConcierge({ itinerary }: { itinerary: any }) {
   const [suggestion, setSuggestion] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -34,6 +32,8 @@ export function AIConcierge({ itinerary }: { itinerary: any }) {
     async function getSuggestion() {
       setLoading(true);
       try {
+        const ai = new GoogleGenAI({ apiKey: process.env.NEXT_PUBLIC_GEMINI_API_KEY! });
+        
         const prompt = `It is currently ${new Date().toLocaleTimeString()}. 
         The traveler is at ${location}. 
         Their itinerary: ${JSON.stringify(itinerary)}. 

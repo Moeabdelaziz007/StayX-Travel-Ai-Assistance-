@@ -5,7 +5,43 @@ import { generateWithGroq } from './groq';
 import { getCache, setCache } from './cache';
 import { searchFlightOffers } from './amadeus';
 
-const ai = new GoogleGenerativeAI(process.env.NEXT_PUBLIC_GEMINI_API_KEY!);
+let _aiClient: GoogleGenerativeAI | null = null;
+
+const getAiClient = (): GoogleGenerativeAI => {
+  if (!_aiClient) {
+    if (!process.env.NEXT_PUBLIC_GEMINI_API_KEY) {
+      console.warn("NEXT_PUBLIC_GEMINI_API_KEY is not defined");
+    }
+    _aiClient = new GoogleGenerativeAI(process.env.NEXT_PUBLIC_GEMINI_API_KEY || '');
+  }
+  return _aiClient;
+};
+
+export const aiGenerate = async (prompt: string, config: any = {}) => {
+  try {
+    const ai = getAiClient();
+    const result = await ai.models.generateContent({
+      model: config.model || "gemini-2.5-flash",
+      contents: prompt,
+      ...config
+    });
+    return result;
+  } catch (error: any) {
+    if (error?.message?.includes("429 RESOURCE_EXHAUSTED")) {
+      console.warn("Quota exceeded for requested model. Falling back to smaller model or throwing friendly error.");
+      if (config.model !== "gemini-1.5-flash") {
+        const ai = getAiClient();
+        return await ai.models.generateContent({
+          model: "gemini-1.5-flash",
+          contents: prompt,
+          ...config
+        });
+      }
+      throw new Error("AI is currently overloaded due to high demand. Please try again in a few minutes.");
+    }
+    throw error;
+  }
+};
 
 const fetchJson = async <T>(response: Response): Promise<T> => {
   const contentType = response.headers.get("content-type");
@@ -73,6 +109,7 @@ export async function getCityGuide(city: string) {
 
 export async function getLiveHotelPrices(destination: string, dates: string) {
   try {
+    const ai = getAiClient();
     const model = ai.getGenerativeModel({
       model: 'gemini-2.5-pro',
       tools: [{ googleSearch: {} }],
@@ -288,6 +325,7 @@ export async function translateText(args: { text: string, targetLanguage: string
       return { original: args.text, translated, language: args.targetLanguage };
     }
     
+    const ai = getAiClient();
     const result = await ai.models.generateContent({
       model: "gemini-2.0-flash",
       contents: prompt
@@ -296,6 +334,7 @@ export async function translateText(args: { text: string, targetLanguage: string
   } catch (e) {
     console.warn("Translation AI failed, falling back to Gemini", e);
     try {
+      const ai = getAiClient();
       const result = await ai.models.generateContent({
         model: "gemini-2.0-flash",
         contents: prompt
@@ -314,6 +353,7 @@ export async function getSmartAutocomplete(partial: string) {
   Return ONLY a JSON array of strings.`;
   
   try {
+    const ai = getAiClient();
     const model = ai.getGenerativeModel({ model: "gemini-2.0-flash" });
     const result = await model.generateContent(prompt);
     const text = result.response.text();
@@ -325,6 +365,7 @@ export async function getSmartAutocomplete(partial: string) {
 }
 
 export async function visualSearchDestination(base64Image: string) {
+  const ai = getAiClient();
   const model = ai.getGenerativeModel({ model: "gemini-2.0-flash" });
   const prompt = `Act as an expert travel guide. Analyze this image to identify the specific travel destination, landmark, city, or site shown. 
   - If a specific landmark is present (e.g., Eiffel Tower, Great Wall), provide its exact name and city.
@@ -358,6 +399,7 @@ export async function searchGroundingCompare(args: { query: string }) {
     Return a JSON array of objects with fields: source, price, currency, description, link, rating.
     Ensure descriptions are catchy and helpful.
     Return ONLY the JSON.`;
+    const ai = getAiClient();
     const model = ai.getGenerativeModel({
       model: "gemini-2.0-flash",
       tools: [{ googleSearch: {} }] as any
@@ -403,6 +445,7 @@ export async function generateDetailedItinerary(args: { destination: string, day
   }`;
 
   try {
+    const ai = getAiClient();
     const result = await ai.models.generateContent({
       model: "gemini-2.0-flash",
       contents: prompt
@@ -498,6 +541,7 @@ export async function searchSimCards(args: { destination: string }) {
 
   try {
     const prompt = `Find current real-time eSIM prices for ${args.destination}. Search on Airalo and Holafly. Return a JSON array of objects with fields: name, price (USD), data, link. Return ONLY JSON.`;
+    const ai = getAiClient();
     const model = ai.getGenerativeModel({
       model: "gemini-2.0-flash",
       tools: [{ googleSearch: {} }] as any
@@ -595,6 +639,7 @@ export async function searchHotels(args: { destination: string, checkIn: string,
     const groundingSearch = async () => {
       try {
         const prompt = `Find 2 luxury hotels in ${args.destination} for ${args.checkIn} to ${args.checkOut}. Return JSON array: name, price, rating, link.`;
+        const ai = getAiClient();
         const model = ai.getGenerativeModel({ model: "gemini-2.0-flash", tools: [{ googleSearch: {} }] as any });
         const res = await model.generateContent(prompt);
         const match = res.response.text().match(/\[[\s\S]*\]/);
