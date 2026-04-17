@@ -11,7 +11,7 @@ const travelers = [
   { name: 'يوسف العربي', channel: 'Youssef Al-Arabi', subscribers: '2M+', id: 'youssef', image: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=400&h=400&fit=crop' },
   { name: 'هيفاء بسيسو', channel: 'Haifa Beseisso', subscribers: '1M+', id: 'haifa', image: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&h=400&fit=crop' },
   { name: 'أحمد البدوي', channel: 'Ahmed Al-Badawi', subscribers: '1.5M+', id: 'ahmed', image: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=400&h=400&fit=crop' },
-  { name: 'فطيم', channel: 'Futaim', subscribers: '800K+', id: 'futaim', image: 'https://images.unsplash.com/photo-1531123897727-8f129e16fd3c?w=400&h=400&fit=crop' },
+  { name: 'فطيم', channel: 'Futaim', subscribers: '800K+', id: 'futaim', image: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=400&h=400&fit=crop' },
   { name: 'جاسم', channel: 'Jassim', subscribers: '500K+', id: 'jassim', image: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop' },
   { name: 'سارة', channel: 'Sara Travels', subscribers: '300K+', id: 'sara', image: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=400&h=400&fit=crop' },
 ];

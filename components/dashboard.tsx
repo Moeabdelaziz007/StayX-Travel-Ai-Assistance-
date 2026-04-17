@@ -21,11 +21,12 @@ import { useI18n } from '@/lib/i18n';
 import { CommandMenu } from './CommandMenu';
 import { TripPlannerPro } from './TripPlannerPro';
 import { LiveTranslator } from './LiveTranslator';
+import { BudgetManager } from './planner/BudgetManager';
 import { QuickActionBar } from './QuickActionBar';
 import { ProgressTracker } from './ProgressTracker';
 import { DashboardSkeleton } from './DashboardSkeleton';
 import { Onboarding } from './Onboarding';
-import { Sparkles, Languages } from 'lucide-react';
+import { Sparkles, Languages, Wallet } from 'lucide-react';
 
 export function ThemeToggle() {
   const { theme, setTheme } = useTheme();
@@ -181,6 +182,7 @@ export function Dashboard() {
       <nav className="flex-1 space-y-1 overflow-y-auto pr-2 custom-scrollbar">
         <SidebarButton icon={LayoutDashboard} label={t('nav.dashboard')} active={activeTab === 'home'} onClick={() => handleTabChange('home')} />
         <SidebarButton icon={Sparkles} label="AI Planner Pro" active={activeTab === 'planner-pro'} onClick={() => handleTabChange('planner-pro')} />
+        <SidebarButton icon={Wallet} label="Budget & Expenses" active={activeTab === 'budget'} onClick={() => handleTabChange('budget')} />
         <SidebarButton icon={Languages} label="Live Translator" active={activeTab === 'translator'} onClick={() => handleTabChange('translator')} />
         <SidebarButton icon={Plane} label={t('nav.trips')} active={activeTab === 'trips'} onClick={() => handleTabChange('trips')} badge={tripsCount > 0 ? tripsCount.toString() : undefined} />
         <SidebarButton icon={Compass} label={t('nav.search')} active={activeTab === 'search'} onClick={() => handleTabChange('search')} />
@@ -320,6 +322,7 @@ export function Dashboard() {
                 </div>
               )}
               {activeTab === 'planner-pro' && <TripPlannerPro />}
+              {activeTab === 'budget' && <BudgetManager />}
               {activeTab === 'translator' && <LiveTranslator />}
               {activeTab === 'trips' && <TripsView />}
               {activeTab === 'search' && <SearchCompareView />}
