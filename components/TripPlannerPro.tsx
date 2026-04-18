@@ -38,6 +38,7 @@ export function TripPlannerPro() {
   const [destination, setDestination] = useState('');
   const [days, setDays] = useState('3');
   const [budget, setBudget] = useState('moderate');
+  const [selectedInterests, setSelectedInterests] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [tripData, setTripData] = useState<any>(null);
   const [cityGuide, setCityGuide] = useState<string | null>(null);
@@ -56,7 +57,12 @@ export function TripPlannerPro() {
     try {
       const dates = new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
       const [data, guide, prices] = await Promise.all([
-        generateDetailedItinerary({ destination, days: parseInt(days), budget }),
+        generateDetailedItinerary({ 
+          destination, 
+          days: parseInt(days), 
+          budget, 
+          interests: selectedInterests 
+        }),
         getCityGuide(destination),
         getLiveHotelPrices(destination, dates)
       ]);
@@ -216,6 +222,34 @@ export function TripPlannerPro() {
               {loading ? <CircleNotch className="h-6 w-6 animate-spin" /> : <><Compass className="mr-2 h-6 w-6" /> Plan Trip</>}
             </Button>
           </motion.div>
+
+          {/* Interests Selector */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.3 }}
+            className="flex flex-wrap justify-center gap-3 mt-6"
+          >
+            {["History", "Adventure", "Relaxation", "Food", "Culture", "Nightlife", "Nature", "Shopping", "Arts"].map((interest) => (
+              <button
+                key={interest}
+                onClick={() => {
+                  setSelectedInterests(prev => 
+                    prev.includes(interest) 
+                      ? prev.filter(i => i !== interest) 
+                      : [...prev, interest]
+                  );
+                }}
+                className={`px-5 py-2 rounded-full text-sm font-medium transition-all border ${
+                  selectedInterests.includes(interest)
+                    ? 'bg-indigo-500/20 border-indigo-500 text-indigo-200'
+                    : 'bg-white/5 border-white/10 text-zinc-500 hover:border-white/20 hover:text-zinc-300'
+                }`}
+              >
+                {interest}
+              </button>
+            ))}
+          </motion.div>
         </div>
       </section>
 
@@ -373,8 +407,20 @@ export function TripPlannerPro() {
                               </div>
                               <h5 className="text-xl font-bold text-white mb-2">{act.activity}</h5>
                               <p className="text-zinc-400 text-sm leading-relaxed mb-4">{act.description}</p>
-                              <div className="flex items-center gap-2 text-xs text-zinc-500">
-                                <MapPin className="h-3 w-3" /> {act.location}
+                              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                                <div className="flex items-center gap-2 text-xs text-zinc-500">
+                                  <MapPin className="h-3 w-3" /> {act.location}
+                                </div>
+                                {act.booking_link && (
+                                  <a 
+                                    href={act.booking_link} 
+                                    target="_blank" 
+                                    rel="noopener noreferrer"
+                                    className="text-xs font-bold text-indigo-400 hover:text-indigo-300 flex items-center gap-1"
+                                  >
+                                    View Attraction <ArrowRight className="h-3 w-3" />
+                                  </a>
+                                )}
                               </div>
                             </div>
                           </div>
@@ -410,8 +456,15 @@ export function TripPlannerPro() {
                             <p className="text-zinc-400 text-xs leading-relaxed">{hotel.description}</p>
                             <div className="pt-4 flex justify-between items-center border-t border-zinc-800">
                               <span className="text-emerald-400 font-bold">{hotel.price_per_night} / night</span>
-                              <Button variant="ghost" size="sm" className="text-indigo-400 hover:text-indigo-300 gap-1">
-                                Book Now <ArrowRight className="h-4 w-4" />
+                              <Button 
+                                variant="ghost" 
+                                size="sm" 
+                                className="text-indigo-400 hover:text-indigo-300 gap-1"
+                                asChild
+                              >
+                                <a href={hotel.booking_link || "#"} target="_blank" rel="noopener noreferrer">
+                                  Book Now <ArrowRight className="h-4 w-4" />
+                                </a>
                               </Button>
                             </div>
                           </div>

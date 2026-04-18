@@ -15,7 +15,7 @@ import { generateWithGroq } from '@/lib/groq';
 import { useI18n } from '@/lib/i18n';
 import Markdown from 'react-markdown';
 
-const ai = new GoogleGenerativeAI(process.env.NEXT_PUBLIC_GEMINI_API_KEY!);
+const ai = new GoogleGenAI({ apiKey: process.env.NEXT_PUBLIC_GEMINI_API_KEY! });
 
 interface WatchRoomSidebarProps {
   videoTitle: string;
@@ -38,8 +38,6 @@ export function WatchRoomSidebar({ videoTitle, videoDescription }: WatchRoomSide
       setDestination('Loading...');
       
       try {
-        const ai = new GoogleGenAI({ apiKey: process.env.NEXT_PUBLIC_GEMINI_API_KEY! });
-        
         // First, quickly extract destination name
         let dest = 'this destination';
         try {

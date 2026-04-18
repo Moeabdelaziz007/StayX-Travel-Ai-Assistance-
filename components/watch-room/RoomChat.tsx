@@ -13,6 +13,8 @@ import { GoogleGenAI } from '@google/genai';
 import { generateWithGroq } from '@/lib/groq';
 import { useI18n } from '@/lib/i18n';
 
+const ai = new GoogleGenAI({ apiKey: process.env.NEXT_PUBLIC_GEMINI_API_KEY! });
+
 interface Message {
   id: string;
   uid: string;
@@ -66,15 +68,14 @@ export function RoomChat({ roomId }: RoomChatProps) {
       if (process.env.GROQ_API_KEY) {
         responseText = await generateWithGroq(query, systemInstruction, "llama3-8b-8192");
       } else {
-        const ai = new GoogleGenAI({ apiKey: process.env.NEXT_PUBLIC_GEMINI_API_KEY! });
-        const response = await ai.models.generateContent({
+        const result = await ai.models.generateContent({
           model: "gemini-3-flash-preview",
-          contents: query,
+          contents: [{ role: 'user', parts: [{ text: query }] }],
           config: {
-            systemInstruction
+            systemInstruction,
           }
         });
-        responseText = response.text || '';
+        responseText = result.text || "";
       }
 
       await addDoc(collection(db, `rooms/${roomId}/messages`), {

@@ -1,4 +1,4 @@
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import { GoogleGenAI } from "@google/genai";
 import { db } from "@/lib/firebase";
 import { collection, query, where, getDocs, limit, doc, setDoc, serverTimestamp } from "firebase/firestore";
 import { generateWithGroq } from '@/lib/groq';
@@ -25,19 +25,23 @@ export async function generateAISummary(destination: string) {
     } else {
       // Fallback to Gemini if Groq is not configured
       if (!process.env.NEXT_PUBLIC_GEMINI_API_KEY) throw new Error("Gemini API key missing");
-      const ai = new GoogleGenerativeAI(process.env.NEXT_PUBLIC_GEMINI_API_KEY);
-      const model = ai.getGenerativeModel({ model: "gemini-2.0-flash" });
-      const response = await model.generateContent(prompt);
-      summary = response.response.text() || summary;
+      const ai = new GoogleGenAI({ apiKey: process.env.NEXT_PUBLIC_GEMINI_API_KEY });
+      const response = await ai.models.generateContent({
+        model: "gemini-3-flash-preview",
+        contents: prompt
+      });
+      summary = response.text || summary;
     }
   } catch (error) {
     console.warn("Primary AI failed, falling back to Gemini", error);
     try {
       if (!process.env.NEXT_PUBLIC_GEMINI_API_KEY) throw new Error("Gemini API key missing");
-      const ai = new GoogleGenerativeAI(process.env.NEXT_PUBLIC_GEMINI_API_KEY);
-      const model = ai.getGenerativeModel({ model: "gemini-2.0-flash" });
-      const response = await model.generateContent(prompt);
-      summary = response.response.text() || summary;
+      const ai = new GoogleGenAI({ apiKey: process.env.NEXT_PUBLIC_GEMINI_API_KEY });
+      const response = await ai.models.generateContent({
+        model: "gemini-3-flash-preview",
+        contents: prompt
+      });
+      summary = response.text || summary;
     } catch (geminiError) {
       console.error("All AI models failed:", geminiError);
     }

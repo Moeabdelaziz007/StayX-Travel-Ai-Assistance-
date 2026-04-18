@@ -2,10 +2,12 @@
 
 import { useState, useEffect } from 'react';
 import { GoogleGenAI, Type } from '@google/genai';
+import { useI18n } from '@/lib/i18n';
 import { Card, CardContent, CardTitle } from '@/components/ui/card';
 import { Sparkles, Loader2, MapPin, AlertCircle, Clock } from 'lucide-react';
 
 export function AIConcierge({ itinerary }: { itinerary: any }) {
+  const { language } = useI18n();
   const [suggestion, setSuggestion] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [location, setLocation] = useState<string | null>(null);
@@ -38,6 +40,7 @@ export function AIConcierge({ itinerary }: { itinerary: any }) {
         The traveler is at ${location}. 
         Their itinerary: ${JSON.stringify(itinerary)}. 
         Provide one proactive short suggestion, e.g., location based for pharmacy, restaurant, weather, or event. 
+        The user's preferred language is ${language}. Respond ONLY in ${language === 'ar' ? 'Arabic' : 'English'}.
         Be concise.`;
 
         const response = await ai.models.generateContent({
@@ -49,16 +52,16 @@ export function AIConcierge({ itinerary }: { itinerary: any }) {
           }
         });
 
-        setSuggestion(response.text || "Everything looks good for your trip!");
+        setSuggestion(response.text || (language === 'ar' ? "كل شيء يبدو جيداً في رحلتك!" : "Everything looks good for your trip!"));
       } catch (err) {
         console.error(err);
-        setSuggestion("Enjoy your trip!");
+        setSuggestion(language === 'ar' ? "استمتع برحلتك!" : "Enjoy your trip!");
       } finally {
         setLoading(false);
       }
     }
     getSuggestion();
-  }, [location, itinerary]);
+  }, [location, itinerary, language]);
 
   if (loading) return (
     <Card className="bg-zinc-900/50 border border-emerald-500/20 rounded-xl p-4">

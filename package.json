@@ -75,6 +75,7 @@
   },
   "overrides": {
     "react": "^19.0.0",
-    "react-dom": "^19.0.0"
+    "react-dom": "^19.0.0",
+    "node-domexception": "https://registry.npmjs.org/@nolyfill/domexception/-/domexception-1.0.28.tgz"
   }
 }

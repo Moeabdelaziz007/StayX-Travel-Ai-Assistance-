@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Loader2, Play, Search, Video } from 'lucide-react';
+import { safeFetchJson } from '@/lib/fetch-utils';
 
 export function YouTubeRoomService({ destination }: { destination: string }) {
   const [query, setQuery] = useState(destination || '');
@@ -15,9 +16,8 @@ export function YouTubeRoomService({ destination }: { destination: string }) {
   const searchVideos = async (searchQuery: string) => {
     setLoading(true);
     try {
-      const response = await fetch(`/api/youtube/search?destination=${encodeURIComponent(searchQuery)}`);
-      const data = await response.json();
-      if (Array.isArray(data)) setVideos(data);
+      const data = await safeFetchJson(`/api/youtube/search?destination=${encodeURIComponent(searchQuery)}`);
+      if (data && Array.isArray(data)) setVideos(data);
     } catch (error) {
       console.error('Search error:', error);
     } finally {

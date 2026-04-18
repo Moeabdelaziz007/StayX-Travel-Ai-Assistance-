@@ -1,19 +1,18 @@
 import { db, auth } from './firebase';
 import { doc, setDoc, getDoc, collection, addDoc } from 'firebase/firestore';
-import { GoogleGenAI } from '@google/genai';
+import { GoogleGenAI, Type } from '@google/genai';
 import { generateWithGroq } from './groq';
 import { getCache, setCache } from './cache';
 import { searchFlightOffers } from './amadeus';
 
-let _aiClient: any = null;
+let _aiClient: GoogleGenAI | null = null;
 
-const getAiClient = () => {
+const getAiClient = (): GoogleGenAI => {
   if (!_aiClient) {
-    const key = process.env.NEXT_PUBLIC_GEMINI_API_KEY;
-    if (!key) {
+    if (!process.env.NEXT_PUBLIC_GEMINI_API_KEY) {
       console.warn("NEXT_PUBLIC_GEMINI_API_KEY is not defined");
     }
-    _aiClient = new GoogleGenAI({ apiKey: key || '' });
+    _aiClient = new GoogleGenAI({ apiKey: process.env.NEXT_PUBLIC_GEMINI_API_KEY || '' });
   }
   return _aiClient;
 };
@@ -21,23 +20,22 @@ const getAiClient = () => {
 export const aiGenerate = async (prompt: string, config: any = {}) => {
   try {
     const ai = getAiClient();
-    const response = await ai.models.generateContent({
+    const result = await ai.models.generateContent({
       model: config.model || "gemini-3-flash-preview",
       contents: prompt,
-      config: config.config || {}
+      ...config
     });
-    return { text: response.text };
+    return result;
   } catch (error: any) {
-    if (error?.message?.includes("429 RESOURCE_EXHAUSTED")) {
-      console.warn("Quota exceeded for requested model. Falling back to smaller model.");
+    if (error?.message?.includes("429") && error?.message?.includes("RESOURCE_EXHAUSTED")) {
+      console.warn("Quota exceeded for requested model. Falling back to smaller model or throwing friendly error.");
       if (config.model !== "gemini-3-flash-preview") {
         const ai = getAiClient();
-        const response = await ai.models.generateContent({
+        return await ai.models.generateContent({
           model: "gemini-3-flash-preview",
           contents: prompt,
-          config: config.config || {}
+          ...config
         });
-        return { text: response.text };
       }
       throw new Error("AI is currently overloaded due to high demand. Please try again in a few minutes.");
     }
@@ -74,17 +72,24 @@ export async function getVisaInfo(nationality: string, destination: string) {
   const cached = await getCache<any>(cacheKey);
   if (cached) return cached;
 
-  const prompt = `Provide the current tourist visa requirements for a citizen of ${nationality} traveling to ${destination}. Provide accurate and up-to-date information. Return as JSON: { requiresVisa: boolean, visaType: string, summary: string, duration: string, estimatedCost: string, link: string }`;
-  const result = await aiGenerate(prompt, {
-    model: "gemini-3-flash-preview",
-    config: {
-      responseMimeType: "application/json"
-    }
+  const response = await fetch('/api/gemini', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      messages: `Provide the current tourist visa requirements for a citizen of ${nationality} traveling to ${destination}. Provide accurate and up-to-date information.`,
+      tools: null
+    }),
   });
   
-  const data = safeJsonParse(result.text, {});
-  await setCache(cacheKey, data, 24); 
-  return data;
+  if (!response.ok) {
+    const text = await response.text();
+    console.error(`Gemini API Error (${response.status}):`, text);
+    throw new Error('Visa info fetch failed');
+  }
+  const data = await fetchJson<any>(response);
+  const result = safeJsonParse(data.response, {});
+  await setCache(cacheKey, result, 24); 
+  return result;
 }
 
 export async function getCityGuide(city: string) {
@@ -111,9 +116,10 @@ export async function getLiveHotelPrices(destination: string, dates: string) {
       model: 'gemini-3-flash-preview',
       contents: prompt,
       config: {
-        tools: [{ googleSearch: {} }] as any
+        tools: [{ googleSearch: {} }]
       }
     });
+
     return result.text;
   } catch (error) {
     console.error("Hotel Price Grounding error:", error);
@@ -323,7 +329,7 @@ export async function translateText(args: { text: string, targetLanguage: string
     
     const ai = getAiClient();
     const result = await ai.models.generateContent({
-      model: "gemini-2.0-flash",
+      model: "gemini-3-flash-preview",
       contents: prompt
     });
     return { original: args.text, translated: result.text, language: args.targetLanguage };
@@ -332,7 +338,7 @@ export async function translateText(args: { text: string, targetLanguage: string
     try {
       const ai = getAiClient();
       const result = await ai.models.generateContent({
-        model: "gemini-2.0-flash",
+        model: "gemini-3-flash-preview",
         contents: prompt
       });
       return { original: args.text, translated: result.text, language: args.targetLanguage };
@@ -354,7 +360,7 @@ export async function getSmartAutocomplete(partial: string) {
       model: "gemini-3-flash-preview",
       contents: prompt
     });
-    const text = result.text || '';
+    const text = result.text || "";
     const jsonMatch = text.match(/\[.*\]/s);
     return jsonMatch ? JSON.parse(jsonMatch[0]) : [];
   } catch (e) {
@@ -375,16 +381,20 @@ export async function visualSearchDestination(base64Image: string) {
     const result = await ai.models.generateContent({
       model: "gemini-3-flash-preview",
       contents: [
-        { text: prompt },
         {
-          inlineData: {
-            data: base64Image.split(',')[1],
-            mimeType: "image/jpeg"
-          }
+          parts: [
+            { text: prompt },
+            {
+              inlineData: {
+                data: base64Image.split(',')[1],
+                mimeType: "image/jpeg"
+              }
+            }
+          ]
         }
       ]
     });
-    return result.text?.trim() || "Unknown Destination";
+    return (result.text || "").trim();
   } catch (e) {
     console.error("Visual search error:", e);
     throw new Error("Could not identify image");
@@ -404,10 +414,10 @@ export async function searchGroundingCompare(args: { query: string }) {
       model: "gemini-3-flash-preview",
       contents: prompt,
       config: {
-        tools: [{ googleSearch: {} }] as any
+        tools: [{ googleSearch: {} }]
       }
     });
-    const text = result.text || '';
+    const text = result.text || "";
     const jsonMatch = text.match(/\[[\s\S]*\]/);
     if (jsonMatch) {
       return JSON.parse(jsonMatch[0]);
@@ -419,12 +429,19 @@ export async function searchGroundingCompare(args: { query: string }) {
   }
 }
 
-export async function generateDetailedItinerary(args: { destination: string, days: number, budget: string }) {
-  const prompt = `Develop a fully detailed travel itinerary for:
+export async function generateDetailedItinerary(args: { destination: string, days: number, budget: string, interests?: string[] }) {
+  const prompt = `Develop a fully detailed, personalized travel itinerary for:
   Destination: ${args.destination}
   Duration: ${args.days} days
-  Budget: ${args.budget}
+  Budget Level: ${args.budget}
+  User Interests: ${args.interests ? args.interests.join(', ') : 'general sightseeing'}
   
+  Constraints:
+  - Focus on cost-effectiveness and highlight budget-friendly options if the budget is "budget" or "moderate".
+  - Include specific suggested timings for each activity.
+  - Provide realistic booking links or search links for major attractions and hotels.
+  - Research actual popular spots based on the destination.
+
   Return ONLY a JSON object with this structure:
   {
     "trip_title": "string",
@@ -437,12 +454,12 @@ export async function generateDetailedItinerary(args: { destination: string, day
         "theme": "string",
         "best_image_keyword": "string",
         "activities": [
-          {"time": "string", "activity": "string", "description": "string", "location": "string", "cost": "string"}
+          {"time": "string", "activity": "string", "description": "string", "location": "string", "cost": "string", "booking_link": "string"}
         ]
       }
     ],
     "hotels": [
-      {"name": "string", "rating": "string", "price_per_night": "string", "description": "string", "image_keyword": "string"}
+      {"name": "string", "rating": "string", "price_per_night": "string", "description": "string", "image_keyword": "string", "booking_link": "string"}
     ]
   }`;
 
@@ -452,7 +469,7 @@ export async function generateDetailedItinerary(args: { destination: string, day
       model: "gemini-3-flash-preview",
       contents: prompt
     });
-    const text = result.text || '';
+    const text = result.text || "";
     const jsonMatch = text.match(/\{[\s\S]*\}/);
     if (jsonMatch) {
       return JSON.parse(jsonMatch[0]);
@@ -548,10 +565,10 @@ export async function searchSimCards(args: { destination: string }) {
       model: "gemini-3-flash-preview",
       contents: prompt,
       config: {
-        tools: [{ googleSearch: {} }] as any
+        tools: [{ googleSearch: {} }]
       }
     });
-    const text = result.text || '';
+    const text = result.text || "";
     const match = text.match(/\[[\s\S]*\]/);
     let sims = match ? JSON.parse(match[0]) : [];
 
@@ -589,7 +606,12 @@ export async function addToCalendar(args: { title: string, description: string, 
           location: args.location
         })
       });
-      googleEvent = await response.json();
+      if (response.ok) {
+        googleEvent = await fetchJson<any>(response);
+      } else {
+        const errText = await response.text();
+        console.warn("Google Calendar Sync failed:", response.status, errText);
+      }
     } catch (e) {
       console.error("Failed to sync with Google Calendar", e);
     }
@@ -649,10 +671,11 @@ export async function searchHotels(args: { destination: string, checkIn: string,
           model: "gemini-3-flash-preview",
           contents: prompt,
           config: {
-            tools: [{ googleSearch: {} }] as any
+            tools: [{ googleSearch: {} }]
           }
         });
-        const match = res.text?.match(/\[[\s\S]*\]/);
+        const text = res.text || "";
+        const match = text.match(/\[[\s\S]*\]/);
         return match ? JSON.parse(match[0]) : [];
       } catch (e) { return []; }
     };

@@ -1,12 +1,12 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import { GoogleGenAI } from "@google/genai";
 import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
 import { useI18n } from '@/lib/i18n';
 
-const MODEL = "gemini-2.0-flash-exp";
+const MODEL = "gemini-3-flash-preview";
 
 export type VoiceState = 'idle' | 'connecting' | 'listening' | 'processing' | 'speaking';
 
@@ -163,7 +163,7 @@ export function useVoiceAgent() {
     playBeep(880, 0.1); // Start beep
 
     try {
-      const ai = new GoogleGenerativeAI(process.env.NEXT_PUBLIC_GEMINI_API_KEY!);
+      const ai = new GoogleGenAI({ apiKey: process.env.NEXT_PUBLIC_GEMINI_API_KEY! });
       
       const sessionPromise = ai.live.connect({
         model: MODEL,

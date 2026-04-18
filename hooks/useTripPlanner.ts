@@ -3,6 +3,8 @@ import { GoogleGenAI } from "@google/genai";
 import { ChatMessage, Itinerary } from '@/types/planner';
 import { generateWithGroq } from '@/lib/groq';
 
+const ai = new GoogleGenAI({ apiKey: process.env.NEXT_PUBLIC_GEMINI_API_KEY! });
+
 export function useTripPlanner() {
   const [messages, setMessages] = useState<ChatMessage[]>([
     { role: 'assistant', content: "Hi! Tell me about your dream trip — where to, when, how many days, and what's your budget?" }
@@ -33,10 +35,9 @@ export function useTripPlanner() {
         const ai = new GoogleGenAI({ apiKey: process.env.NEXT_PUBLIC_GEMINI_API_KEY });
         const result = await ai.models.generateContent({
           model: "gemini-3-flash-preview",
-          contents: prompt,
-          config: {
-            systemInstruction
-          }
+          contents: [
+            ...newMessages.map(m => ({ role: m.role === 'assistant' ? 'model' : 'user', parts: [{ text: m.content }] })),
+          ],
         });
         aiResponse = result.text || "";
       }

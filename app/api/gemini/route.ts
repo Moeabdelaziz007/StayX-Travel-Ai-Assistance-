@@ -12,23 +12,24 @@ export async function POST(req: Request) {
     // Initialize inside the handler
     const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
     
-    // Note: Simple rate limiting should be implemented via middleware or Firestore 
-    // for production. For this demonstration, we focus on safe API wrapping.
-
-    const model = ai.getGenerativeModel({
-      model: 'gemini-2.0-flash',
-      ...tools && { tools },
+    const response = await ai.models.generateContent({
+      model: 'gemini-3-flash-preview',
+      contents: messages,
+      config: {
+        ...(tools && { tools }),
+        ...(systemPrompt && { systemInstruction: systemPrompt })
+      }
     });
 
-    // In a real app, you'd handle streaming here. 
-    // For simplicity, we return a standard response.
-    const result = await model.generateContent({
-        contents: messages
-    });
-
-    return NextResponse.json({ response: result.text });
-  } catch (error) {
+    return NextResponse.json({ response: response.text });
+  } catch (error: any) {
     console.error('Gemini API Error:', error);
+    if (error.message?.includes('429') && error.message?.includes('RESOURCE_EXHAUSTED')) {
+      return NextResponse.json(
+        { error: 'Quota exceeded. Please check your Gemini API plan.' },
+        { status: 429 }
+      );
+    }
     return NextResponse.json({ error: 'Failed to process Gemini request' }, { status: 500 });
   }
 }

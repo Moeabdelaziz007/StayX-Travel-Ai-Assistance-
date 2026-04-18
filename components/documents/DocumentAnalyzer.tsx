@@ -11,6 +11,8 @@ import { GoogleGenAI } from '@google/genai';
 import { toast } from 'sonner';
 import NextImage from 'next/image';
 
+const ai = new GoogleGenAI({ apiKey: process.env.NEXT_PUBLIC_GEMINI_API_KEY! });
+
 interface AnalysisResult {
   isValid: boolean;
   daysUntilExpiry: number;
@@ -44,7 +46,6 @@ export function DocumentAnalyzer() {
 
     try {
       const base64Data = preview.split(',')[1];
-      const ai = new GoogleGenAI({ apiKey: process.env.NEXT_PUBLIC_GEMINI_API_KEY! });
       
       const response = await ai.models.generateContent({
         model: 'gemini-3-flash-preview',

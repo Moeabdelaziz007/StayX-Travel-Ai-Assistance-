@@ -7,7 +7,9 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
-import { GoogleGenAI } from '@google/genai';
+import { GoogleGenAI, Type } from '@google/genai';
+
+const ai = new GoogleGenAI({ apiKey: process.env.NEXT_PUBLIC_GEMINI_API_KEY! });
 
 const LANGUAGES = [
   { code: 'en-US', name: 'English', short: 'EN' },
@@ -20,6 +22,7 @@ const LANGUAGES = [
 ];
 
 export function LiveTranslator() {
+  const [mode, setMode] = useState<'voice' | 'document'>('voice');
   const [sourceLang, setSourceLang] = useState('en-US');
   const [targetLang, setTargetLang] = useState('ar-SA');
   
@@ -28,22 +31,21 @@ export function LiveTranslator() {
   
   const [isListening, setIsListening] = useState<boolean>(false);
   const [isTranslating, setIsTranslating] = useState<boolean>(false);
-  
   const [activeSpeaker, setActiveSpeaker] = useState<'source' | 'target' | null>(null);
+
+  const [image, setImage] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const recognitionRef = useRef<any>(null);
   const transcriptRef = useRef<string>('');
 
   useEffect(() => {
-    // Initialize Speech Recognition if supported
     if (typeof window !== 'undefined') {
       const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
       if (SpeechRecognition) {
         recognitionRef.current = new SpeechRecognition();
         recognitionRef.current.continuous = false;
         recognitionRef.current.interimResults = true;
-      } else {
-        console.warn('Speech recognition not supported in this browser.');
       }
     }
   }, []);
@@ -59,15 +61,12 @@ export function LiveTranslator() {
       const fromLang = LANGUAGES.find(l => l.code === fromCode)?.name;
       const toLang = LANGUAGES.find(l => l.code === toCode)?.name;
       
-      const ai = new GoogleGenAI({ apiKey: process.env.NEXT_PUBLIC_GEMINI_API_KEY! });
-      const prompt = `Translate the following conversational text from ${fromLang} to ${toLang}. Ensure the translation is natural and culturally appropriate for spoken conversation. Do not add notes, just output the translation. Text: "${text}"`;
-      
       const response = await ai.models.generateContent({
         model: 'gemini-3-flash-preview',
-        contents: prompt
+        contents: `Translate the following conversational text from ${fromLang} to ${toLang}. Ensure the translation is natural and culturally appropriate for spoken conversation. Do not add notes, just output the translation. Text: "${text}"`
       });
-      const output = response.text?.trim() || '';
-      setTranslatedText(output);
+      
+      setTranslatedText(response.text.trim());
     } catch (e) {
       toast.error('Translation failed. Please try again.');
     } finally {
@@ -75,38 +74,62 @@ export function LiveTranslator() {
     }
   };
 
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onloadend = async () => {
+      const base64 = (reader.result as string).split(',')[1];
+      setImage(reader.result as string);
+      translateDocument(base64);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const translateDocument = async (base64: string) => {
+    setIsTranslating(true);
+    try {
+      const toLang = LANGUAGES.find(l => l.code === targetLang)?.name;
+      
+      const response = await ai.models.generateContent({
+        model: 'gemini-3-flash-preview',
+        contents: {
+          parts: [
+            { text: `Analyze this document (like a menu or confirmation). Extract the text and translate it into ${toLang}. Format the output clearly, matching the original structure if possible.` },
+            { inlineData: { data: base64, mimeType: 'image/jpeg' } }
+          ]
+        }
+      });
+      
+      setTranslatedText(response.text.trim());
+    } catch (e) {
+      toast.error('Failed to translate document.');
+    } finally {
+      setIsTranslating(false);
+    }
+  };
+
   const startListening = (langCode: string, speakerMode: 'source' | 'target') => {
     if (!recognitionRef.current) {
-      toast.error('Speech recognition not supported on this browser (Try Chrome).');
+      toast.error('Speech recognition not supported on this browser.');
       return;
     }
 
-    if (isListening) {
-      recognitionRef.current.stop();
-    }
+    if (isListening) recognitionRef.current.stop();
 
     setActiveSpeaker(speakerMode);
     recognitionRef.current.lang = langCode;
     
-    recognitionRef.current.onstart = () => {
-      setIsListening(true);
-    };
-
+    recognitionRef.current.onstart = () => setIsListening(true);
     recognitionRef.current.onresult = (event: any) => {
-      const transcript = Array.from(event.results)
-        .map((result: any) => result[0].transcript)
-        .join('');
-      
+      const transcript = Array.from(event.results).map((result: any) => result[0].transcript).join('');
       transcriptRef.current = transcript;
-      if (speakerMode === 'source') {
-        setSourceText(transcript);
-      } else {
-        setTranslatedText(transcript); 
-      }
+      if (speakerMode === 'source') setSourceText(transcript);
+      else setTranslatedText(transcript); 
     };
 
-    recognitionRef.current.onerror = (event: any) => {
-      console.error(event.error);
+    recognitionRef.current.onerror = () => {
       setIsListening(false);
       setActiveSpeaker(null);
     };
@@ -115,11 +138,8 @@ export function LiveTranslator() {
       setIsListening(false);
       const textToTranslate = transcriptRef.current;
       if (textToTranslate) {
-        if (speakerMode === 'source') {
-          handleTranslate(textToTranslate, sourceLang, targetLang);
-        } else {
-          invertTranslation(textToTranslate);
-        }
+        if (speakerMode === 'source') handleTranslate(textToTranslate, sourceLang, targetLang);
+        else invertTranslation(textToTranslate);
       }
       setActiveSpeaker(null);
       transcriptRef.current = '';
@@ -134,14 +154,11 @@ export function LiveTranslator() {
     try {
       const fromLang = LANGUAGES.find(l => l.code === targetLang)?.name;
       const toLang = LANGUAGES.find(l => l.code === sourceLang)?.name;
-      const ai = new GoogleGenAI({ apiKey: process.env.NEXT_PUBLIC_GEMINI_API_KEY! });
-      const prompt = `Translate from ${fromLang} to ${toLang}. Output only translation. Text: "${text}"`;
       const response = await ai.models.generateContent({
         model: 'gemini-3-flash-preview',
-        contents: prompt
+        contents: `Translate from ${fromLang} to ${toLang}. Output only translation. Text: "${text}"`
       });
-      const output = response.text?.trim() || '';
-      setSourceText(output); 
+      setSourceText(response.text.trim()); 
     } catch {
       toast.error('Translation failed.');
     } finally {
@@ -170,25 +187,42 @@ export function LiveTranslator() {
       const utterance = new SpeechSynthesisUtterance(text);
       utterance.lang = langCode;
       window.speechSynthesis.speak(utterance);
-    } else {
-      toast.error('Text-to-speech not supported.');
     }
   };
 
   return (
     <div className="flex flex-col h-full max-w-4xl mx-auto space-y-6">
-      <div className="flex flex-col gap-2">
-        <h2 className="text-3xl font-bold flex items-center gap-3 text-white">
-          <Languages className="h-8 w-8 text-blue-500" />
-          Live Local Translator
-        </h2>
-        <p className="text-zinc-400">Bridge the gap instantly. Speak or type to translate conversations.</p>
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+        <div className="flex flex-col gap-2">
+          <h2 className="text-3xl font-bold flex items-center gap-3 text-white">
+            <Languages className="h-8 w-8 text-blue-500" />
+            Live Local Translator
+          </h2>
+          <p className="text-zinc-400">Bridge the gap instantly. Speak, type, or scan to translate.</p>
+        </div>
+
+        <div className="flex bg-zinc-900 p-1 rounded-xl border border-zinc-800">
+          <Button 
+            variant={mode === 'voice' ? 'default' : 'ghost'} 
+            onClick={() => setMode('voice')}
+            className="rounded-lg px-6 h-9"
+          >
+            Voice & Text
+          </Button>
+          <Button 
+            variant={mode === 'document' ? 'default' : 'ghost'} 
+            onClick={() => setMode('document')}
+            className="rounded-lg px-6 h-9"
+          >
+            Document Scan
+          </Button>
+        </div>
       </div>
 
-      <div className="flex items-center gap-4 bg-zinc-900 border border-zinc-800 p-2 rounded-2xl">
+      <div className="flex items-center gap-4 bg-zinc-900 border border-zinc-800 p-2 rounded-2xl shadow-xl">
         <Select value={sourceLang} onValueChange={setSourceLang}>
           <SelectTrigger className="flex-1 bg-zinc-950 border-0 h-14 text-lg font-medium rounded-xl">
-            <SelectValue placeholder="Language 1" />
+            <SelectValue placeholder="Original Language" />
           </SelectTrigger>
           <SelectContent className="bg-zinc-900 border-zinc-800">
             {LANGUAGES.map(l => (
@@ -203,7 +237,7 @@ export function LiveTranslator() {
         
         <Select value={targetLang} onValueChange={setTargetLang}>
           <SelectTrigger className="flex-1 bg-zinc-950 border-0 h-14 text-lg font-medium rounded-xl">
-            <SelectValue placeholder="Language 2" />
+            <SelectValue placeholder="Translate To" />
           </SelectTrigger>
           <SelectContent className="bg-zinc-900 border-zinc-800">
             {LANGUAGES.map(l => (
@@ -214,85 +248,121 @@ export function LiveTranslator() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 flex-1">
-        {/* Source Language Card */}
-        <Card className={`relative overflow-hidden flex flex-col border-2 transition-all duration-500 ${activeSpeaker === 'source' ? 'border-blue-500 bg-blue-500/5' : 'border-zinc-800 bg-zinc-900/50'}`}>
-          <div className="p-6 flex-1 flex flex-col">
-            <div className="flex justify-between items-center mb-4">
-              <span className="font-bold text-zinc-300 flex items-center gap-2">
-                <Globe className="h-4 w-4" /> You ({LANGUAGES.find(l => l.code === sourceLang)?.short})
-              </span>
-              <Button variant="ghost" size="icon" onClick={() => speakText(sourceText, sourceLang)} className="text-zinc-500 hover:text-white rounded-full">
-                <Volume2 className="h-5 w-5" />
-              </Button>
-            </div>
-            
-            <textarea
-              className="flex-1 bg-transparent border-0 text-2xl font-medium text-white resize-none focus:outline-none placeholder:text-zinc-700"
-              placeholder="Type or speak here..."
-              value={sourceText}
-              onChange={(e) => setSourceText(e.target.value)}
-              onBlur={() => handleTranslate(sourceText, sourceLang, targetLang)}
-            />
-          </div>
-          
-          <div className="p-4 bg-black/20 flex justify-center border-t border-zinc-800/50">
-            <Button 
-              size="lg" 
-              className={`rounded-full h-16 w-16 shadow-2xl transition-all ${isListening && activeSpeaker === 'source' ? 'bg-red-500 hover:bg-red-600 animate-pulse scale-110' : 'bg-blue-600 hover:bg-blue-700'}`}
-              onClick={() => isListening && activeSpeaker === 'source' ? stopListening() : startListening(sourceLang, 'source')}
-            >
-              {isListening && activeSpeaker === 'source' ? <MicOff className="h-6 w-6" /> : <Mic className="h-6 w-6" />}
-            </Button>
-          </div>
-        </Card>
-
-        {/* Target Language Card */}
-        <Card className={`relative overflow-hidden flex flex-col border-2 transition-all duration-500 ${activeSpeaker === 'target' ? 'border-emerald-500 bg-emerald-500/5' : 'border-zinc-800 bg-zinc-900/50'}`}>
-          <AnimatePresence>
-            {isTranslating && (
-              <motion.div 
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="absolute inset-0 bg-zinc-950/40 backdrop-blur-sm z-10 flex items-center justify-center"
-              >
-                <div className="bg-black/80 px-6 py-3 rounded-full flex items-center gap-3 shadow-2xl border border-white/10">
-                  <Loader2 className="h-5 w-5 text-emerald-500 animate-spin" />
-                  <span className="font-medium text-white">Translating...</span>
+        {mode === 'voice' ? (
+          <>
+            <Card className={`relative overflow-hidden flex flex-col border-2 transition-all duration-500 ${activeSpeaker === 'source' ? 'border-blue-500 bg-blue-500/5' : 'border-zinc-800 bg-zinc-900/50'}`}>
+              <div className="p-6 flex-1 flex flex-col">
+                <div className="flex justify-between items-center mb-4">
+                  <span className="font-bold text-zinc-300 flex items-center gap-2 uppercase tracking-widest text-xs">
+                    <Globe className="h-3.5 w-3.5" /> Source ({LANGUAGES.find(l => l.code === sourceLang)?.short})
+                  </span>
+                  <Button variant="ghost" size="icon" onClick={() => speakText(sourceText, sourceLang)} className="text-zinc-500 hover:text-white rounded-full">
+                    <Volume2 className="h-5 w-5" />
+                  </Button>
                 </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-          
-          <div className="p-6 flex-1 flex flex-col">
-            <div className="flex justify-between items-center mb-4">
-              <span className="font-bold text-zinc-300 flex items-center gap-2">
-                <Globe className="h-4 w-4" /> Local ({LANGUAGES.find(l => l.code === targetLang)?.short})
-              </span>
-              <Button variant="ghost" size="icon" onClick={() => speakText(translatedText, targetLang)} className="text-zinc-500 hover:text-white rounded-full">
-                <Volume2 className="h-5 w-5" />
-              </Button>
-            </div>
-            
-            <textarea
-              className="flex-1 bg-transparent border-0 text-2xl font-medium text-emerald-400 resize-none focus:outline-none placeholder:text-zinc-700"
-              placeholder="Translation will appear here..."
-              value={translatedText}
-              onChange={(e) => setTranslatedText(e.target.value)}
-              readOnly={!isListening || activeSpeaker !== 'target'}
-            />
+                
+                <textarea
+                  className="flex-1 bg-transparent border-0 text-2xl font-medium text-white resize-none focus:outline-none placeholder:text-zinc-700"
+                  placeholder="Type or speak..."
+                  value={sourceText}
+                  onChange={(e) => setSourceText(e.target.value)}
+                  onBlur={() => handleTranslate(sourceText, sourceLang, targetLang)}
+                />
+              </div>
+              
+              <div className="p-4 bg-black/20 flex justify-center border-t border-zinc-800/50">
+                <Button 
+                  size="lg" 
+                  className={`rounded-full h-16 w-16 shadow-2xl transition-all ${isListening && activeSpeaker === 'source' ? 'bg-red-500 hover:bg-red-600 animate-pulse scale-110' : 'bg-blue-600 hover:bg-blue-700'}`}
+                  onClick={() => isListening && activeSpeaker === 'source' ? stopListening() : startListening(sourceLang, 'source')}
+                >
+                  {isListening && activeSpeaker === 'source' ? <MicOff className="h-6 w-6" /> : <Mic className="h-6 w-6" />}
+                </Button>
+              </div>
+            </Card>
+
+            <Card className={`relative overflow-hidden flex flex-col border-2 transition-all duration-500 ${activeSpeaker === 'target' ? 'border-emerald-500 bg-emerald-500/5' : 'border-zinc-800 bg-zinc-900/50'}`}>
+              <AnimatePresence>
+                {isTranslating && (
+                  <motion.div 
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    className="absolute inset-0 bg-zinc-950/40 backdrop-blur-sm z-10 flex items-center justify-center"
+                  >
+                    <div className="bg-black/80 px-6 py-3 rounded-full flex items-center gap-3 shadow-2xl border border-white/10">
+                      <Loader2 className="h-5 w-5 text-emerald-500 animate-spin" />
+                      <span className="font-medium text-white">Translating...</span>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+              
+              <div className="p-6 flex-1 flex flex-col">
+                <div className="flex justify-between items-center mb-4">
+                  <span className="font-bold text-zinc-300 flex items-center gap-2 uppercase tracking-widest text-xs">
+                    <Globe className="h-3.5 w-3.5" /> Result ({LANGUAGES.find(l => l.code === targetLang)?.short})
+                  </span>
+                  <Button variant="ghost" size="icon" onClick={() => speakText(translatedText, targetLang)} className="text-zinc-500 hover:text-white rounded-full">
+                    <Volume2 className="h-5 w-5" />
+                  </Button>
+                </div>
+                
+                <textarea
+                  className="flex-1 bg-transparent border-0 text-2xl font-medium text-emerald-400 resize-none focus:outline-none placeholder:text-zinc-700"
+                  placeholder="Translation..."
+                  value={translatedText}
+                  onChange={(e) => setTranslatedText(e.target.value)}
+                  readOnly={!isListening || activeSpeaker !== 'target'}
+                />
+              </div>
+              
+              <div className="p-4 bg-black/20 flex justify-center border-t border-zinc-800/50">
+                <Button 
+                  size="lg" 
+                  className={`rounded-full h-16 w-16 shadow-2xl transition-all ${isListening && activeSpeaker === 'target' ? 'bg-red-500 hover:bg-red-600 animate-pulse scale-110' : 'bg-emerald-600 hover:bg-emerald-700'}`}
+                  onClick={() => isListening && activeSpeaker === 'target' ? stopListening() : startListening(targetLang, 'target')}
+                >
+                  {isListening && activeSpeaker === 'target' ? <MicOff className="h-6 w-6" /> : <Mic className="h-6 w-6" />}
+                </Button>
+              </div>
+            </Card>
+          </>
+        ) : (
+          <div className="col-span-full grid grid-cols-1 md:grid-cols-2 gap-6">
+            <Card className="p-8 border-2 border-dashed border-zinc-800 bg-zinc-900/50 flex flex-col items-center justify-center text-center space-y-4 hover:border-blue-500/50 transition-all cursor-pointer group" onClick={() => fileInputRef.current?.click()}>
+              <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleImageUpload} />
+              <div className="h-20 w-20 rounded-full bg-zinc-950 flex items-center justify-center group-hover:bg-blue-500/10 transition-all">
+                {image ? (
+                  <img src={image} className="h-full w-full object-cover rounded-full" alt="Preview" />
+                ) : (
+                  <Globe className="h-10 w-10 text-zinc-500 group-hover:text-blue-500" />
+                )}
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-white">Upload Document Photo</h3>
+                <p className="text-zinc-400 text-sm max-w-xs">Scan menus, boarding passes, or signs to translate them instantly.</p>
+              </div>
+              <Button>Select Image</Button>
+            </Card>
+
+            <Card className="p-6 bg-zinc-900 border-2 border-zinc-800 flex flex-col">
+              <div className="flex items-center gap-2 mb-4 text-emerald-400 font-bold uppercase tracking-widest text-xs">
+                <Globe className="h-4 w-4" /> Translation Output
+              </div>
+              {isTranslating ? (
+                <div className="flex-1 flex flex-col items-center justify-center space-y-4">
+                  <Loader2 className="h-10 w-10 animate-spin text-emerald-500" />
+                  <p className="text-zinc-400">Processing image contents...</p>
+                </div>
+              ) : (
+                <div className="flex-1 text-zinc-300 font-medium leading-relaxed whitespace-pre-wrap">
+                  {translatedText || "Your digital translation will appear here after upload."}
+                </div>
+              )}
+            </Card>
           </div>
-          
-          <div className="p-4 bg-black/20 flex justify-center border-t border-zinc-800/50">
-            <Button 
-              size="lg" 
-              className={`rounded-full h-16 w-16 shadow-2xl transition-all ${isListening && activeSpeaker === 'target' ? 'bg-red-500 hover:bg-red-600 animate-pulse scale-110' : 'bg-emerald-600 hover:bg-emerald-700'}`}
-              onClick={() => isListening && activeSpeaker === 'target' ? stopListening() : startListening(targetLang, 'target')}
-            >
-              {isListening && activeSpeaker === 'target' ? <MicOff className="h-6 w-6" /> : <Mic className="h-6 w-6" />}
-            </Button>
-          </div>
-        </Card>
+        )}
       </div>
     </div>
   );

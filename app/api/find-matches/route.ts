@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { GoogleGenerativeAI, SchemaType } from '@google/generative-ai';
+import { GoogleGenAI, Type } from '@google/genai';
 
 export async function POST(request: Request) {
   try {
@@ -13,10 +13,10 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'API key not configured' }, { status: 500 });
     }
 
-    const ai = new GoogleGenerativeAI(process.env.NEXT_PUBLIC_GEMINI_API_KEY);
+    const ai = new GoogleGenAI({ apiKey: process.env.NEXT_PUBLIC_GEMINI_API_KEY });
 
     const response = await ai.models.generateContent({
-      model: 'gemini-2.0-flash',
+      model: 'gemini-3.1-flash-preview',
       contents: `Rate compatibility between these two travelers on a scale of 0-100 and explain why.
       Traveler A: ${JSON.stringify(profileA)}.
       Traveler B: ${JSON.stringify(profileB)}.
@@ -24,12 +24,12 @@ export async function POST(request: Request) {
       config: {
         responseMimeType: 'application/json',
         responseSchema: {
-          type: SchemaType.OBJECT,
+          type: Type.OBJECT,
           properties: {
-            score: { type: SchemaType.NUMBER },
-            reasons: { type: SchemaType.ARRAY, items: { type: SchemaType.STRING } },
-            commonInterests: { type: SchemaType.ARRAY, items: { type: SchemaType.STRING } },
-            potentialChallenges: { type: SchemaType.ARRAY, items: { type: SchemaType.STRING } }
+            score: { type: Type.NUMBER },
+            reasons: { type: Type.ARRAY, items: { type: Type.STRING } },
+            commonInterests: { type: Type.ARRAY, items: { type: Type.STRING } },
+            potentialChallenges: { type: Type.ARRAY, items: { type: Type.STRING } }
           },
           required: ['score', 'reasons', 'commonInterests', 'potentialChallenges']
         }
@@ -40,8 +40,17 @@ export async function POST(request: Request) {
     const result = JSON.parse(resultText);
 
     return NextResponse.json(result);
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error finding matches:', error);
-    return NextResponse.json({ error: 'Failed to find matches' }, { status: 500 });
+    
+    // Check for RESOURCE_EXHAUSTED quota error
+    if (error.message && error.message.includes('429') && error.message.includes('RESOURCE_EXHAUSTED')) {
+      return NextResponse.json(
+        { error: 'You have exceeded your Gemini API quota. Please check your Google Cloud plan and billing details.' },
+        { status: 429 }
+      );
+    }
+
+    return NextResponse.json({ error: 'Failed to find matches: ' + (error.message || 'Unknown error') }, { status: 500 });
   }
 }

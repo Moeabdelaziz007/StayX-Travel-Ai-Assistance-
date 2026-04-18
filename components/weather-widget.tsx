@@ -6,6 +6,7 @@ import { Cloud, Sun, CloudRain, Wind, Thermometer, Loader2, MapPin, Search } fro
 import { Input } from '@/components/ui/input';
 import { getWeather } from '@/lib/travel-tools';
 import { motion } from 'motion/react';
+import { safeFetchJson } from '@/lib/fetch-utils';
 
 export function WeatherWidget({ location: initialLocation = 'Paris, France' }: { location?: string }) {
   const [weather, setWeather] = useState<any>(null);
@@ -16,9 +17,8 @@ export function WeatherWidget({ location: initialLocation = 'Paris, France' }: {
   const fetchWeather = async (loc: string) => {
     setLoading(true);
     try {
-      const res = await fetch(`/api/weather?city=${encodeURIComponent(loc)}`);
-      const data = await res.json();
-      setWeather(data);
+      const data = await safeFetchJson(`/api/weather?city=${encodeURIComponent(loc)}`);
+      if (data) setWeather(data);
     } catch (e) {
       console.error(e);
     } finally {
