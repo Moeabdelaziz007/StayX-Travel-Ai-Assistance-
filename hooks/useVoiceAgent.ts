@@ -6,7 +6,7 @@ import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
 import { useI18n } from '@/lib/i18n';
 
-const MODEL = "gemini-3-flash-preview";
+const MODEL = "gemini-2.0-flash";
 
 export type VoiceState = 'idle' | 'connecting' | 'listening' | 'processing' | 'speaking';
 

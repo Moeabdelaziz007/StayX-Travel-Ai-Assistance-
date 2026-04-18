@@ -1,9 +1,9 @@
 {
-  "name": "StayX - Travel AI",
-  "description": "An AI voice-based personal travel assistant for booking, scheduling, and entertainment.",
+  "name": "StayX Travel AI",
+  "description": "An AI-powered personal travel assistant with voice features, itinerary planning, and trip buddy matchmaking.",
   "requestFramePermissions": [
+    "camera",
     "microphone",
     "geolocation"
-  ],
-  "majorCapabilities": []
+  ]
 }

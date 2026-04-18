@@ -39,7 +39,7 @@ export function VisaWidget() {
       If no official link is found, return an empty string for the link.`;
 
       const response = await ai.models.generateContent({
-        model: 'gemini-3-flash-preview',
+        model: 'gemini-2.0-flash',
         contents: prompt,
         config: {
           responseMimeType: 'application/json',

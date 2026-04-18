@@ -1,6 +1,6 @@
 // Groq API wrapper
 // Note: In a real app, you'd want to handle the case where the API key is missing more gracefully
-export async function generateWithGroq(prompt: string, systemPrompt: string = "You are a helpful assistant.", model: string = "llama3-8b-8192") {
+export async function generateWithGroq(prompt: string, systemPrompt: string = "You are a helpful assistant.", model: string = "llama-3.3-70b-versatile") {
   try {
     const response = await fetch('/api/groq', {
       method: 'POST',

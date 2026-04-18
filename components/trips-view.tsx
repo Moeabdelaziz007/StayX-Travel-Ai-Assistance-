@@ -29,12 +29,11 @@ export function TripsView() {
       setIsLoadingTips(true);
       try {
         const ai = new GoogleGenAI({ apiKey: process.env.NEXT_PUBLIC_GEMINI_API_KEY });
-        const prompt = `Give me 3 short, creative travel tips for today. Language: ${language === 'ar' ? 'Arabic' : 'English'}. Format as markdown list.`;
         const result = await ai.models.generateContent({
-          model: 'gemini-3-flash-preview',
-          contents: prompt
+          model: 'gemini-2.0-flash',
+          contents: `Give me 3 short, creative travel tips for today. Language: ${language === 'ar' ? 'Arabic' : 'English'}. Format as markdown list.`
         });
-        setTips(result.text || '');
+        setTips(result.text || "");
       } catch (e) {
         console.error(e);
       } finally {

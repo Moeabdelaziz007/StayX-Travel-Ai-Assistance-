@@ -1,264 +1,31 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    
-    // ===============================================================
-    // Helper Functions
-    // ===============================================================
-    function isAuthenticated() {
-      return request.auth != null;
+    match /{document=**} {
+      allow read, write: if false;
     }
     
-    function isOwner(userId) {
-      return isAuthenticated() && request.auth.uid == userId;
+    match /users/{uid} {
+      allow read, write: if request.auth != null && request.auth.uid == uid;
     }
     
-    function hasRequiredFields(fields) {
-      return request.resource.data.keys().hasAll(fields);
-    }
-    
-    function hasOnlyAllowedFields(fields) {
-      return request.resource.data.keys().hasOnly(fields);
-    }
-    
-    function isValidEmail(email) {
-      return email is string && email.matches("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$");
-    }
-    
-    // ===============================================================
-    // Domain Validators
-    // ===============================================================
-    function isValidUser(data) {
-      return hasOnlyAllowedFields(['uid', 'name', 'email', 'voiceTone', 'budgetPreference', 'createdAt']) &&
-             data.uid is string && data.uid == request.auth.uid &&
-             data.name is string && data.name.size() > 0 && data.name.size() < 100 &&
-             data.email is string && isValidEmail(data.email) &&
-             (!('voiceTone' in data) || (data.voiceTone in ['professional', 'friendly', 'energetic', 'calm'])) &&
-             (!('budgetPreference' in data) || (data.budgetPreference in ['budget', 'moderate', 'luxury'])) &&
-             data.createdAt is string;
-    }
-    
-    function isValidTrip(data) {
-      return hasOnlyAllowedFields(['userId', 'destination', 'startDate', 'endDate', 'budget', 'status', 'paymentStatus', 'stripeSessionId', 'createdAt']) &&
-             data.userId is string && data.userId == request.auth.uid &&
-             data.destination is string && data.destination.size() > 0 && data.destination.size() < 200 &&
-             (!('startDate' in data) || data.startDate is string) &&
-             (!('endDate' in data) || data.endDate is string) &&
-             (!('budget' in data) || data.budget is number && data.budget >= 0) &&
-             data.status in ['planning', 'booked', 'completed', 'cancelled'] &&
-             (!('paymentStatus' in data) || data.paymentStatus in ['unpaid', 'pending', 'paid']) &&
-             (!('stripeSessionId' in data) || data.stripeSessionId is string) &&
-             data.createdAt is string;
-    }
-    
-    function isValidAppointment(data) {
-      return hasOnlyAllowedFields(['userId', 'title', 'date', 'type', 'details', 'paymentStatus', 'stripeSessionId', 'price', 'createdAt']) &&
-             data.userId is string && data.userId == request.auth.uid &&
-             data.title is string && data.title.size() > 0 && data.title.size() < 200 &&
-             data.date is string &&
-             data.type in ['restaurant', 'nightclub', 'flight', 'hotel', 'cinema', 'event', 'other'] &&
-             (!('details' in data) || (data.details is string && data.details.size() < 1000)) &&
-             (!('paymentStatus' in data) || data.paymentStatus in ['unpaid', 'pending', 'paid']) &&
-             (!('stripeSessionId' in data) || data.stripeSessionId is string) &&
-             (!('price' in data) || data.price is number) &&
-             data.createdAt is string;
-    }
-
-    function isValidInvitation(data) {
-      return hasOnlyAllowedFields(['senderId', 'senderName', 'receiverEmail', 'bookingId', 'bookingType', 'status', 'createdAt']) &&
-             data.senderId is string && data.senderId == request.auth.uid &&
-             data.senderName is string &&
-             data.receiverEmail is string && isValidEmail(data.receiverEmail) &&
-             data.bookingId is string &&
-             data.bookingType in ['trip', 'appointment'] &&
-             data.status in ['pending', 'accepted', 'declined'] &&
-             data.createdAt is string;
-    }
-
-    function isValidFavorite(data) {
-      return hasOnlyAllowedFields(['userId', 'itemId', 'type', 'title', 'thumbnail', 'createdAt']) &&
-             data.userId is string && data.userId == request.auth.uid &&
-             data.itemId is string &&
-             data.type in ['music', 'video'] &&
-             data.title is string &&
-             (!('thumbnail' in data) || data.thumbnail is string) &&
-             data.createdAt is string;
-    }
-
-    function isValidOrder(data) {
-      return hasOnlyAllowedFields(['userId', 'itemName', 'price', 'currency', 'status', 'trackingNumber', 'createdAt']) &&
-             data.userId is string && data.userId == request.auth.uid &&
-             data.itemName is string &&
-             data.price is number &&
-             data.currency is string &&
-             data.status in ['processing', 'shipped', 'delivered'] &&
-             data.trackingNumber is string &&
-             data.createdAt is string;
-    }
-
-    function isValidNotification(data) {
-      return hasOnlyAllowedFields(['userId', 'title', 'message', 'read', 'type', 'createdAt']) &&
-             data.userId is string && data.userId == request.auth.uid &&
-             data.title is string &&
-             data.message is string &&
-             data.read is bool &&
-             data.type in ['invitation', 'payment', 'booking', 'system'] &&
-             data.createdAt is string;
-    }
-
-    function isValidWishlistItem(data) {
-      return hasOnlyAllowedFields(['userId', 'destination', 'videoTitle', 'type', 'addedAt']) &&
-             data.userId is string && data.userId == request.auth.uid &&
-             data.destination is string && data.destination.size() > 0 && data.destination.size() < 200 &&
-             data.videoTitle is string && data.videoTitle.size() > 0 && data.videoTitle.size() < 500 &&
-             data.type is string &&
-             data.addedAt is string;
-    }
-
-    function isValidTravelProfile(data) {
-      return hasOnlyAllowedFields(['userId', 'destination', 'dateFrom', 'dateTo', 'budget', 'travelStyle', 'interests', 'age', 'bio', 'photoURL', 'optIn', 'updatedAt']) &&
-             data.userId is string && data.userId == request.auth.uid &&
-             data.destination is string &&
-             data.dateFrom is string &&
-             data.dateTo is string &&
-             (!('budget' in data) || data.budget is string) &&
-             (!('travelStyle' in data) || data.travelStyle in ['solo', 'couple', 'group']) &&
-             (!('interests' in data) || data.interests is list) &&
-             (!('age' in data) || data.age is number) &&
-             (!('bio' in data) || data.bio is string && data.bio.size() < 1000) &&
-             (!('photoURL' in data) || data.photoURL is string) &&
-             data.optIn is bool &&
-             (!('updatedAt' in data) || data.updatedAt is string);
-    }
-
-    function isValidMatch(data) {
-      return hasOnlyAllowedFields(['users', 'compatibilityScore', 'compatibilityReasons', 'commonInterests', 'potentialChallenges', 'status', 'user1Status', 'user2Status', 'createdAt']) &&
-             data.users is list && data.users.size() == 2 && request.auth.uid in data.users &&
-             data.compatibilityScore is number &&
-             (!('compatibilityReasons' in data) || data.compatibilityReasons is list) &&
-             (!('commonInterests' in data) || data.commonInterests is list) &&
-             (!('potentialChallenges' in data) || data.potentialChallenges is list) &&
-             data.status in ['pending', 'accepted', 'declined', 'connected'] &&
-             (!('user1Status' in data) || data.user1Status in ['pending', 'accepted', 'declined']) &&
-             (!('user2Status' in data) || data.user2Status in ['pending', 'accepted', 'declined']) &&
-             data.createdAt is string;
-    }
-
-    function isValidExpense(data) {
-      return hasOnlyAllowedFields(['userId', 'category', 'amount', 'description', 'createdAt']) &&
-             data.userId is string && data.userId == request.auth.uid &&
-             data.category in ['food', 'transport', 'activities', 'other'] &&
-             data.amount is number && data.amount >= 0 &&
-             data.description is string && data.description.size() > 0 && data.description.size() < 500 &&
-             data.createdAt is string;
-    }
-
-    function isValidLoyalty(data) {
-      return hasOnlyAllowedFields(['userId', 'points', 'history', 'tier', 'updatedAt']) &&
-             data.userId is string && data.userId == request.auth.uid &&
-             data.points is number && data.points >= 0 &&
-             data.history is list &&
-             data.tier in ['Silver', 'Gold', 'Platinum'] &&
-             data.updatedAt is string;
-    }
-
-    // ===============================================================
-    // Rules
-    // ===============================================================
-    match /users/{userId} {
-      allow read: if isOwner(userId); // Strictly limit read access to the owner
-      allow create: if isOwner(userId) && isValidUser(request.resource.data);
-      allow update: if isOwner(userId) && isValidUser(request.resource.data) && 
-                    request.resource.data.uid == resource.data.uid &&
-                    request.resource.data.createdAt == resource.data.createdAt;
-      allow delete: if isOwner(userId);
-
-      match /travelProfile/{profileId} {
-        allow read: if isAuthenticated();
-        allow create: if isOwner(userId) && isValidTravelProfile(request.resource.data);
-        allow update: if isOwner(userId) && isValidTravelProfile(request.resource.data);
-        allow delete: if isOwner(userId);
-      }
-
-      match /wishlist/{wishlistItemId} {
-        allow read: if isOwner(userId);
-        allow create: if isOwner(userId) && isValidWishlistItem(request.resource.data);
-        allow delete: if isOwner(userId);
-      }
-    }
-    
-    match /matches/{matchId} {
-      allow read: if isAuthenticated() && request.auth.uid in resource.data.users;
-      allow create: if isAuthenticated() && isValidMatch(request.resource.data);
-      allow update: if isAuthenticated() && request.auth.uid in resource.data.users && 
-                    isValidMatch(request.resource.data) &&
-                    request.resource.data.users == resource.data.users &&
-                    request.resource.data.createdAt == resource.data.createdAt;
-    }
-
     match /trips/{tripId} {
-      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
-      allow create: if isAuthenticated() && isValidTrip(request.resource.data);
-      allow update: if isAuthenticated() && resource.data.userId == request.auth.uid && 
-                    isValidTrip(request.resource.data) &&
-                    request.resource.data.userId == resource.data.userId &&
-                    request.resource.data.createdAt == resource.data.createdAt;
-      allow delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      allow read, write: if request.auth != null && request.auth.uid == resource.data.userId;
     }
     
-    match /appointments/{appointmentId} {
-      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
-      allow create: if isAuthenticated() && isValidAppointment(request.resource.data);
-      allow update: if isAuthenticated() && resource.data.userId == request.auth.uid && 
-                    isValidAppointment(request.resource.data) &&
-                    request.resource.data.userId == resource.data.userId &&
-                    request.resource.data.createdAt == resource.data.createdAt;
-      allow delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
-    }
-
-    match /invitations/{invitationId} {
-      allow read: if isAuthenticated() && (resource.data.senderId == request.auth.uid || resource.data.receiverEmail == request.auth.token.email);
-      allow create: if isAuthenticated() && isValidInvitation(request.resource.data);
-      allow update: if isAuthenticated() && (resource.data.senderId == request.auth.uid || resource.data.receiverEmail == request.auth.token.email) &&
-                    (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status']));
-      allow delete: if isAuthenticated() && resource.data.senderId == request.auth.uid;
-    }
-
-    match /favorites/{favoriteId} {
-      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
-      allow create: if isAuthenticated() && isValidFavorite(request.resource.data);
-      allow delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
-    }
-
-    match /orders/{orderId} {
-      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
-      allow create: if isAuthenticated() && isValidOrder(request.resource.data);
-      allow update: if false; // Orders are immutable for users
-      allow delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
-    }
-
-    match /notifications/{notificationId} {
-      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
-      allow create: if isAuthenticated() && isValidNotification(request.resource.data);
-      allow update: if isAuthenticated() && resource.data.userId == request.auth.uid && 
-                    request.resource.data.diff(resource.data).affectedKeys().hasOnly(['read']);
-      allow delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
-    }
-
-    match /expenses/{expenseId} {
-      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
-      allow create: if isAuthenticated() && isValidExpense(request.resource.data);
-      allow update: if isAuthenticated() && resource.data.userId == request.auth.uid && 
-                    isValidExpense(request.resource.data) &&
-                    request.resource.data.userId == resource.data.userId &&
-                    request.resource.data.createdAt == resource.data.createdAt;
-      allow delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
-    }
-
-    match /users/{userId}/loyalty/{loyaltyId} {
-      allow read: if isOwner(userId);
-      allow create: if isOwner(userId) && isValidLoyalty(request.resource.data);
-      allow update: if isOwner(userId) && isValidLoyalty(request.resource.data);
+    match /rooms/{roomId} {
+      allow read: if request.auth != null && request.auth.uid in resource.data.participants;
+      allow write: if request.auth != null && request.auth.uid == resource.data.hostUid;
+      
+      match /messages/{messageId} {
+        allow read: if request.auth != null && exists(/databases/$(database)/documents/rooms/$(roomId));
+        allow write: if request.auth != null && exists(/databases/$(database)/documents/rooms/$(roomId));
+      }
+      
+      match /playlist/{itemId} {
+        allow read: if request.auth != null && exists(/databases/$(database)/documents/rooms/$(roomId));
+        allow write: if request.auth != null && get(/databases/$(database)/documents/rooms/$(roomId)).data.hostUid == request.auth.uid;
+      }
     }
   }
 }

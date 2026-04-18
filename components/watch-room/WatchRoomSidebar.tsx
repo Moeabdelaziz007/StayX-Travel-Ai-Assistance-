@@ -15,8 +15,6 @@ import { generateWithGroq } from '@/lib/groq';
 import { useI18n } from '@/lib/i18n';
 import Markdown from 'react-markdown';
 
-const ai = new GoogleGenAI({ apiKey: process.env.NEXT_PUBLIC_GEMINI_API_KEY! });
-
 interface WatchRoomSidebarProps {
   videoTitle: string;
   videoDescription?: string;
@@ -38,14 +36,16 @@ export function WatchRoomSidebar({ videoTitle, videoDescription }: WatchRoomSide
       setDestination('Loading...');
       
       try {
+        const ai = new GoogleGenAI({ apiKey: process.env.NEXT_PUBLIC_GEMINI_API_KEY! });
+        
         // First, quickly extract destination name
         let dest = 'this destination';
         try {
           if (process.env.GROQ_API_KEY) {
-             dest = await generateWithGroq(`Extract the main travel destination (city or country) from this video title: "${videoTitle}". Just return the name, nothing else. If none, return "this destination".`, "You are a helpful assistant.", "llama3-8b-8192");
+             dest = await generateWithGroq(`Extract the main travel destination (city or country) from this video title: "${videoTitle}". Just return the name, nothing else. If none, return "this destination".`, "You are a helpful assistant.");
           } else {
             const destResponse = await ai.models.generateContent({
-              model: 'gemini-3-flash-preview',
+              model: 'gemini-2.0-flash',
               contents: `Extract the main travel destination (city or country) from this video title: "${videoTitle}". Just return the name, nothing else. If none, return "this destination".`
             });
             dest = destResponse.text?.trim() || 'this destination';
@@ -60,11 +60,11 @@ export function WatchRoomSidebar({ videoTitle, videoDescription }: WatchRoomSide
 
         try {
            if (process.env.GROQ_API_KEY) {
-              const groqContent = await generateWithGroq(`Video Title: ${videoTitle}\nVideo Description: ${videoDescription || 'N/A'}\n\nPlease provide the travel insights.`, systemInstruction, "llama3-8b-8192");
+              const groqContent = await generateWithGroq(`Video Title: ${videoTitle}\nVideo Description: ${videoDescription || 'N/A'}\n\nPlease provide the travel insights.`, systemInstruction);
               if (isMounted) setContent(groqContent);
            } else {
               const responseStream = await ai.models.generateContentStream({
-                model: 'gemini-3-flash-preview',
+                model: 'gemini-2.0-flash',
                 contents: `Video Title: ${videoTitle}\nVideo Description: ${videoDescription || 'N/A'}\n\nPlease provide the travel insights.`,
                 config: {
                   systemInstruction,

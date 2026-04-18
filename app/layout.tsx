@@ -7,6 +7,7 @@ import { I18nProvider } from '@/lib/i18n';
 import { ThemeProvider } from "next-themes";
 import { Toaster } from '@/components/ui/sonner';
 import { VoiceTrigger } from '@/components/voice/VoiceTrigger';
+import { BottomNav } from '@/components/ui/BottomNav';
 import { OfflineIndicator } from '@/components/OfflineIndicator';
 import { DebugPanel } from '@/components/DebugPanel';
 
@@ -33,6 +34,7 @@ export default function RootLayout({children}: {children: React.ReactNode}) {
               {children}
               <Toaster />
               <VoiceTrigger />
+              <BottomNav />
             </AuthProvider>
           </I18nProvider>
         </ThemeProvider>

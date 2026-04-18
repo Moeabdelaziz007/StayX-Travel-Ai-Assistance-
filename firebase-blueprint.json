@@ -1,246 +1,39 @@
 {
   "entities": {
     "UserProfile": {
-      "title": "UserProfile",
-      "description": "User profile information and preferences",
+      "title": "User Profile",
+      "description": "User profile containing settings and preferences.",
       "type": "object",
       "properties": {
         "uid": { "type": "string" },
-        "name": { "type": "string" },
-        "email": { "type": "string", "format": "email" },
-        "voiceTone": { "type": "string", "enum": ["professional", "friendly", "energetic", "calm"] },
-        "budgetPreference": { "type": "string", "enum": ["budget", "moderate", "luxury"] },
-        "createdAt": { "type": "string", "format": "date-time" }
+        "displayName": { "type": "string" },
+        "voiceTone": { "type": "string", "enum": ["Friendly", "Professional"] },
+        "loyaltyLevel": { "type": "string", "enum": ["Silver", "Gold", "Platinum"] }
       },
-      "required": ["uid", "name", "email", "createdAt"]
+      "required": ["uid", "displayName"]
     },
     "Trip": {
       "title": "Trip",
-      "description": "A planned trip",
+      "description": "A trip itinerary.",
       "type": "object",
       "properties": {
         "userId": { "type": "string" },
         "destination": { "type": "string" },
-        "startDate": { "type": "string", "format": "date-time" },
-        "endDate": { "type": "string", "format": "date-time" },
-        "budget": { "type": "number" },
-        "status": { "type": "string", "enum": ["planning", "booked", "completed", "cancelled"] },
-        "paymentStatus": { "type": "string", "enum": ["unpaid", "pending", "paid"] },
-        "stripeSessionId": { "type": "string" },
-        "createdAt": { "type": "string", "format": "date-time" }
+        "startDate": { "type": "string", "format": "date" },
+        "endDate": { "type": "string", "format": "date" },
+        "status": { "type": "string" }
       },
-      "required": ["userId", "destination", "status", "createdAt"]
-    },
-    "Appointment": {
-      "title": "Appointment",
-      "description": "An appointment or schedule item",
-      "type": "object",
-      "properties": {
-        "userId": { "type": "string" },
-        "title": { "type": "string" },
-        "date": { "type": "string", "format": "date-time" },
-        "type": { "type": "string", "enum": ["restaurant", "nightclub", "flight", "hotel", "cinema", "event", "other"] },
-        "details": { "type": "string" },
-        "paymentStatus": { "type": "string", "enum": ["unpaid", "pending", "paid"] },
-        "stripeSessionId": { "type": "string" },
-        "createdAt": { "type": "string", "format": "date-time" }
-      },
-      "required": ["userId", "title", "date", "type", "createdAt"]
-    },
-    "Invitation": {
-      "title": "Invitation",
-      "description": "An invitation sent to a friend",
-      "type": "object",
-      "properties": {
-        "senderId": { "type": "string" },
-        "senderName": { "type": "string" },
-        "receiverEmail": { "type": "string", "format": "email" },
-        "bookingId": { "type": "string" },
-        "bookingType": { "type": "string", "enum": ["trip", "appointment"] },
-        "status": { "type": "string", "enum": ["pending", "accepted", "declined"] },
-        "createdAt": { "type": "string", "format": "date-time" }
-      },
-      "required": ["senderId", "receiverEmail", "bookingId", "status", "createdAt"]
-    },
-    "Favorite": {
-      "title": "Favorite",
-      "description": "A favorite item (music or video)",
-      "type": "object",
-      "properties": {
-        "userId": { "type": "string" },
-        "itemId": { "type": "string" },
-        "type": { "type": "string", "enum": ["music", "video"] },
-        "title": { "type": "string" },
-        "thumbnail": { "type": "string" },
-        "createdAt": { "type": "string", "format": "date-time" }
-      },
-      "required": ["userId", "itemId", "type", "title", "createdAt"]
-    },
-    "Order": {
-      "title": "Order",
-      "description": "A shopping order",
-      "type": "object",
-      "properties": {
-        "userId": { "type": "string" },
-        "itemName": { "type": "string" },
-        "price": { "type": "number" },
-        "currency": { "type": "string" },
-        "status": { "type": "string", "enum": ["processing", "shipped", "delivered"] },
-        "trackingNumber": { "type": "string" },
-        "createdAt": { "type": "string", "format": "date-time" }
-      },
-      "required": ["userId", "itemName", "price", "status", "createdAt"]
-    },
-    "Notification": {
-      "title": "Notification",
-      "description": "A system notification",
-      "type": "object",
-      "properties": {
-        "userId": { "type": "string" },
-        "title": { "type": "string" },
-        "message": { "type": "string" },
-        "read": { "type": "boolean" },
-        "type": { "type": "string", "enum": ["invitation", "payment", "booking", "system"] },
-        "createdAt": { "type": "string", "format": "date-time" }
-      },
-      "required": ["userId", "title", "message", "read", "createdAt"]
-    },
-    "WishlistItem": {
-      "title": "WishlistItem",
-      "description": "An item in the user's wishlist",
-      "type": "object",
-      "properties": {
-        "userId": { "type": "string" },
-        "destination": { "type": "string" },
-        "videoTitle": { "type": "string" },
-        "type": { "type": "string" },
-        "addedAt": { "type": "string", "format": "date-time" }
-      },
-      "required": ["userId", "destination", "videoTitle", "addedAt"]
-    },
-    "TravelProfile": {
-      "title": "TravelProfile",
-      "description": "User travel profile for buddy matching",
-      "type": "object",
-      "properties": {
-        "userId": { "type": "string" },
-        "destination": { "type": "string" },
-        "dateFrom": { "type": "string", "format": "date-time" },
-        "dateTo": { "type": "string", "format": "date-time" },
-        "budget": { "type": "string" },
-        "travelStyle": { "type": "string", "enum": ["solo", "couple", "group"] },
-        "interests": { "type": "array", "items": { "type": "string" } },
-        "age": { "type": "number" },
-        "bio": { "type": "string" },
-        "photoURL": { "type": "string" },
-        "optIn": { "type": "boolean" },
-        "updatedAt": { "type": "string", "format": "date-time" }
-      },
-      "required": ["userId", "destination", "dateFrom", "dateTo", "optIn"]
-    },
-    "Match": {
-      "title": "Match",
-      "description": "A travel buddy match",
-      "type": "object",
-      "properties": {
-        "users": { "type": "array", "items": { "type": "string" } },
-        "compatibilityScore": { "type": "number" },
-        "compatibilityReasons": { "type": "array", "items": { "type": "string" } },
-        "commonInterests": { "type": "array", "items": { "type": "string" } },
-        "potentialChallenges": { "type": "array", "items": { "type": "string" } },
-        "status": { "type": "string", "enum": ["pending", "accepted", "declined", "connected"] },
-        "user1Status": { "type": "string", "enum": ["pending", "accepted", "declined"] },
-        "user2Status": { "type": "string", "enum": ["pending", "accepted", "declined"] },
-        "createdAt": { "type": "string", "format": "date-time" }
-      },
-      "required": ["users", "compatibilityScore", "status", "createdAt"]
-    },
-    "Expense": {
-      "title": "Expense",
-      "description": "A travel expense",
-      "type": "object",
-      "properties": {
-        "userId": { "type": "string" },
-        "category": { "type": "string", "enum": ["food", "transport", "activities", "other"] },
-        "amount": { "type": "number" },
-        "description": { "type": "string" },
-        "createdAt": { "type": "string", "format": "date-time" }
-      },
-      "required": ["userId", "category", "amount", "description", "createdAt"]
-    },
-    "Loyalty": {
-      "title": "Loyalty",
-      "description": "User loyalty points and rewards info",
-      "type": "object",
-      "properties": {
-        "userId": { "type": "string" },
-        "points": { "type": "number" },
-        "history": {
-          "type": "array",
-          "items": {
-            "type": "object",
-            "properties": {
-              "type": { "type": "string", "enum": ["earn", "redeem"] },
-              "points": { "type": "number" },
-              "reason": { "type": "string" },
-              "createdAt": { "type": "string", "format": "date-time" }
-            }
-          }
-        },
-        "tier": { "type": "string", "enum": ["Silver", "Gold", "Platinum"] },
-        "updatedAt": { "type": "string", "format": "date-time" }
-      },
-      "required": ["userId", "points", "tier", "updatedAt"]
+      "required": ["userId", "destination"]
     }
   },
   "firestore": {
-    "/users/{userId}": {
-      "schema": { "$ref": "#/entities/UserProfile" },
-      "description": "User profiles"
-    },
-    "/users/{userId}/loyalty": {
-      "schema": { "$ref": "#/entities/Loyalty" },
-      "description": "User loyalty status"
-    },
-    "/users/{userId}/travelProfile": {
-      "schema": { "$ref": "#/entities/TravelProfile" },
-      "description": "User travel profiles"
-    },
-    "/users/{userId}/wishlist/{wishlistItemId}": {
-      "schema": { "$ref": "#/entities/WishlistItem" },
-      "description": "User wishlist items"
+    "/users/{uid}": {
+      "schema": "UserProfile",
+      "description": "User profile documents."
     },
     "/trips/{tripId}": {
-      "schema": { "$ref": "#/entities/Trip" },
-      "description": "User trips"
-    },
-    "/matches/{matchId}": {
-      "schema": { "$ref": "#/entities/Match" },
-      "description": "Buddy matches"
-    },
-    "/appointments/{appointmentId}": {
-      "schema": { "$ref": "#/entities/Appointment" },
-      "description": "User appointments"
-    },
-    "/invitations/{invitationId}": {
-      "schema": { "$ref": "#/entities/Invitation" },
-      "description": "Friend invitations"
-    },
-    "/favorites/{favoriteId}": {
-      "schema": { "$ref": "#/entities/Favorite" },
-      "description": "User favorites"
-    },
-    "/orders/{orderId}": {
-      "schema": { "$ref": "#/entities/Order" },
-      "description": "Shopping orders"
-    },
-    "/notifications/{notificationId}": {
-      "schema": { "$ref": "#/entities/Notification" },
-      "description": "User notifications"
-    },
-    "/expenses/{expenseId}": {
-      "schema": { "$ref": "#/entities/Expense" },
-      "description": "User expenses"
+      "schema": "Trip",
+      "description": "Trip itinerary documents."
     }
   }
 }

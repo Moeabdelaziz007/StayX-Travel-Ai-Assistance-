@@ -16,6 +16,11 @@ export async function GET(req: Request) {
     const response = await fetch(
       `${YOUTUBE_SEARCH_URL}?part=snippet&q=${encodeURIComponent(query)}&type=video&videoCategoryId=19&order=rating&maxResults=6&key=${YOUTUBE_API_KEY}`
     );
+    
+    if (!response.ok) {
+        throw new Error(`YouTube API returned status: ${response.status}`);
+    }
+
     const data = await response.json();
 
     if (!data.items) {

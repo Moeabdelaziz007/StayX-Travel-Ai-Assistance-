@@ -20,6 +20,10 @@ export async function POST(req: Request) {
     const stripe = getStripe();
     const { amount, name, description, metadata } = await req.json();
 
+    if (!amount || amount <= 0 || amount > 50000) {
+      return NextResponse.json({ error: 'Invalid amount' }, { status: 400 });
+    }
+
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
       line_items: [

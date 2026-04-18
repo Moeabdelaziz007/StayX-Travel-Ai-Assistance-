@@ -167,7 +167,7 @@ export function SyncedPlayer({ roomId, videoId, isHost, onVideoEnd }: SyncedPlay
 
   return (
     <div className="w-full h-full relative group flex flex-col">
-      <div className="flex-1 relative pointer-events-none bg-black">
+      <div className="flex-1 relative bg-black">
         {!isHost && <div className="absolute inset-0 z-10" />}
         <div ref={containerRef} className="w-full h-full" />
       </div>

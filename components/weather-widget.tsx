@@ -6,7 +6,6 @@ import { Cloud, Sun, CloudRain, Wind, Thermometer, Loader2, MapPin, Search } fro
 import { Input } from '@/components/ui/input';
 import { getWeather } from '@/lib/travel-tools';
 import { motion } from 'motion/react';
-import { safeFetchJson } from '@/lib/fetch-utils';
 
 export function WeatherWidget({ location: initialLocation = 'Paris, France' }: { location?: string }) {
   const [weather, setWeather] = useState<any>(null);
@@ -17,8 +16,9 @@ export function WeatherWidget({ location: initialLocation = 'Paris, France' }: {
   const fetchWeather = async (loc: string) => {
     setLoading(true);
     try {
-      const data = await safeFetchJson(`/api/weather?city=${encodeURIComponent(loc)}`);
-      if (data) setWeather(data);
+      const res = await fetch(`/api/weather?city=${encodeURIComponent(loc)}`);
+      const data = await res.json();
+      setWeather(data);
     } catch (e) {
       console.error(e);
     } finally {
@@ -50,6 +50,28 @@ export function WeatherWidget({ location: initialLocation = 'Paris, France' }: {
     if (code <= 3) return <Cloud className="h-12 w-12 text-zinc-300" />;
     if (code <= 67) return <CloudRain className="h-12 w-12 text-blue-400" />;
     return <Cloud className="h-12 w-12 text-zinc-300" />;
+  };
+
+  const getWeatherDesc = (code: number) => {
+    const codes: Record<number, string> = {
+      0: 'Clear Sky',
+      1: 'Mainly Clear',
+      2: 'Partly Cloudy',
+      3: 'Overcast',
+      45: 'Fog',
+      48: 'Depositing Rime Fog',
+      51: 'Light Drizzle',
+      53: 'Moderate Drizzle',
+      55: 'Dense Drizzle',
+      61: 'Slight Rain',
+      63: 'Moderate Rain',
+      65: 'Heavy Rain',
+      71: 'Slight Snow Fall',
+      73: 'Moderate Snow Fall',
+      75: 'Heavy Snow Fall',
+      95: 'Thunderstorm',
+    };
+    return codes[code] || 'Cloudy';
   };
 
   return (
@@ -91,7 +113,7 @@ export function WeatherWidget({ location: initialLocation = 'Paris, France' }: {
                   <div className="text-5xl font-bold tracking-tighter text-white">
                     {Math.round(weather?.current?.temperature_2m)}°C
                   </div>
-                  <div className="text-lg font-medium text-zinc-200">{weather?.current?.weather_code}</div>
+                  <div className="text-lg font-medium text-zinc-200">{getWeatherDesc(weather?.current?.weather_code)}</div>
                 </div>
                 <div className="relative">
                   <div className="absolute inset-0 blur-2xl bg-green-500/20 rounded-full" />

@@ -27,7 +27,7 @@ export async function generateAISummary(destination: string) {
       if (!process.env.NEXT_PUBLIC_GEMINI_API_KEY) throw new Error("Gemini API key missing");
       const ai = new GoogleGenAI({ apiKey: process.env.NEXT_PUBLIC_GEMINI_API_KEY });
       const response = await ai.models.generateContent({
-        model: "gemini-3-flash-preview",
+        model: "gemini-2.0-flash",
         contents: prompt
       });
       summary = response.text || summary;
@@ -38,7 +38,7 @@ export async function generateAISummary(destination: string) {
       if (!process.env.NEXT_PUBLIC_GEMINI_API_KEY) throw new Error("Gemini API key missing");
       const ai = new GoogleGenAI({ apiKey: process.env.NEXT_PUBLIC_GEMINI_API_KEY });
       const response = await ai.models.generateContent({
-        model: "gemini-3-flash-preview",
+        model: "gemini-2.0-flash",
         contents: prompt
       });
       summary = response.text || summary;

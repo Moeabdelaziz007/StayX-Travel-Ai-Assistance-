@@ -8,8 +8,6 @@ import { Sparkles, Music, Palette, Map, Loader2, Compass, Heart, TreePine, Users
 import { GoogleGenAI } from '@google/genai';
 import { Button } from '@/components/ui/button';
 
-const ai = new GoogleGenAI({ apiKey: process.env.NEXT_PUBLIC_GEMINI_API_KEY! });
-
 const MOODS = [
   { id: 'adventure', name: 'Adventure', icon: Compass, color: 'text-orange-500', bg: 'bg-orange-500/10' },
   { id: 'relax', name: 'Relaxation', icon: TreePine, color: 'text-emerald-500', bg: 'bg-emerald-500/10' },
@@ -50,6 +48,7 @@ export function MoodBoard({ destination }: { destination: string }) {
       }
 
       // 2. Generate Insight with Gemini
+      const ai = new GoogleGenAI({ apiKey: process.env.NEXT_PUBLIC_GEMINI_API_KEY! });
       const prompt = `Generate a travel mood guide for ${destination} with a ${mood} mood. 
       Return a JSON object with:
       - itinerary: A 2-sentence summary of the perfect ${mood} experience in ${destination}.
@@ -57,14 +56,11 @@ export function MoodBoard({ destination }: { destination: string }) {
       - colors: 3 hex color codes that match this mood and destination.
       Return ONLY the JSON.`;
 
-      const result = await ai.models.generateContent({
-        model: 'gemini-3-flash-preview',
-        contents: prompt,
-        config: {
-          responseMimeType: "application/json"
-        }
+      const response = await ai.models.generateContent({
+        model: 'gemini-2.0-flash',
+        contents: prompt
       });
-      const text = result.text || "";
+      const text = response.text || '';
       const jsonMatch = text.match(/\{[\s\S]*\}/);
       if (jsonMatch) {
         setInsight(JSON.parse(jsonMatch[0]));
