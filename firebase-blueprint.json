@@ -167,12 +167,40 @@
         "createdAt": { "type": "string", "format": "date-time" }
       },
       "required": ["userId", "category", "amount", "description", "createdAt"]
+    },
+    "Loyalty": {
+      "title": "Loyalty",
+      "description": "User loyalty points and rewards info",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "points": { "type": "number" },
+        "history": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "type": { "type": "string", "enum": ["earn", "redeem"] },
+              "points": { "type": "number" },
+              "reason": { "type": "string" },
+              "createdAt": { "type": "string", "format": "date-time" }
+            }
+          }
+        },
+        "tier": { "type": "string", "enum": ["Silver", "Gold", "Platinum"] },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "points", "tier", "updatedAt"]
     }
   },
   "firestore": {
     "/users/{userId}": {
       "schema": { "$ref": "#/entities/UserProfile" },
       "description": "User profiles"
+    },
+    "/users/{userId}/loyalty": {
+      "schema": { "$ref": "#/entities/Loyalty" },
+      "description": "User loyalty status"
     },
     "/users/{userId}/travelProfile": {
       "schema": { "$ref": "#/entities/TravelProfile" },

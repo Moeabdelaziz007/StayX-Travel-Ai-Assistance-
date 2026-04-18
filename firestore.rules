@@ -153,6 +153,15 @@ service cloud.firestore {
              data.createdAt is string;
     }
 
+    function isValidLoyalty(data) {
+      return hasOnlyAllowedFields(['userId', 'points', 'history', 'tier', 'updatedAt']) &&
+             data.userId is string && data.userId == request.auth.uid &&
+             data.points is number && data.points >= 0 &&
+             data.history is list &&
+             data.tier in ['Silver', 'Gold', 'Platinum'] &&
+             data.updatedAt is string;
+    }
+
     // ===============================================================
     // Rules
     // ===============================================================
@@ -244,6 +253,12 @@ service cloud.firestore {
                     request.resource.data.userId == resource.data.userId &&
                     request.resource.data.createdAt == resource.data.createdAt;
       allow delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
+    }
+
+    match /users/{userId}/loyalty/{loyaltyId} {
+      allow read: if isOwner(userId);
+      allow create: if isOwner(userId) && isValidLoyalty(request.resource.data);
+      allow update: if isOwner(userId) && isValidLoyalty(request.resource.data);
     }
   }
 }
